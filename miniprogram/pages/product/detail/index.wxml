@@ -1,0 +1,30 @@
+<view class="page">
+  <view wx:if="{{product}}" class="panel">
+    <view class="cover-wrap placeholder">
+      <view class="cover-tag">{{conditionText}}</view>
+      <view class="cover-title">{{coverText}}</view>
+    </view>
+    <view class="title">{{product.title}}</view>
+    <view class="row">
+      <text class="price">￥{{product.price}}</text>
+      <status-badge status="{{product.status}}"></status-badge>
+    </view>
+    <view class="meta-line">
+      <text>{{product.seller.campus || product.campus || '校内'}}</text>
+      <text>库存 {{product.stock}}</text>
+      <text>{{product.seller.nickname}}</text>
+    </view>
+    <view class="detail-block">
+      <view class="block-title">商品描述</view>
+      <view class="desc">{{product.description}}</view>
+    </view>
+
+    <view class="actions">
+      <button wx:if="{{product.allowed_actions.can_add_cart}}" class="ghost-btn" bindtap="addCart">加入购物车</button>
+      <button wx:if="{{product.allowed_actions.can_buy}}" class="ghost-btn" bindtap="contactSeller">联系卖家</button>
+      <button wx:if="{{product.allowed_actions.can_buy}}" class="primary-btn" bindtap="buyNow">立即购买</button>
+      <button wx:if="{{product.allowed_actions.can_off_shelf || product.allowed_actions.can_force_off_shelf}}" class="ghost-btn danger" bindtap="offShelf">下架</button>
+    </view>
+  </view>
+  <view wx:else class="panel muted">正在加载商品信息...</view>
+</view>

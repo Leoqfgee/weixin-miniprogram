@@ -1,0 +1,17 @@
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 24rpx;
+  padding: 18rpx 20rpx;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+}
+
+textarea {
+  height: 180rpx;
+}
+
+.action {
+  margin-top: 32rpx;
+}

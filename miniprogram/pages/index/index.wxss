@@ -1,0 +1,122 @@
+.market-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 34rpx 28rpx;
+  background: #1f7a68;
+  border-radius: 8rpx;
+  color: #ffffff;
+  box-shadow: 0 14rpx 34rpx rgba(31, 122, 104, 0.18);
+}
+
+.header-main {
+  max-width: 520rpx;
+}
+
+.location {
+  display: inline-block;
+  padding: 8rpx 14rpx;
+  color: #ffe0b5;
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 8rpx;
+  font-size: 23rpx;
+}
+
+.headline {
+  margin-top: 20rpx;
+  font-size: 42rpx;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.subline {
+  margin-top: 12rpx;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+
+.refresh-btn {
+  width: 112rpx;
+  height: 58rpx;
+  line-height: 56rpx;
+  padding: 0;
+  color: #1f7a68;
+  background: #ffffff;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.search-panel {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 16rpx;
+  background: #ffffff;
+  border: 1rpx solid #ebe2d6;
+  border-radius: 8rpx;
+}
+
+.search-panel input {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 20rpx;
+  background: #f7f4ee;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.search-btn {
+  width: 132rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  padding: 0;
+  font-size: 26rpx;
+}
+
+.category-strip {
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.category-chip {
+  display: inline-block;
+  width: auto;
+  margin-right: 14rpx;
+  padding: 0 26rpx;
+  height: 60rpx;
+  line-height: 58rpx;
+  color: #35414d;
+  background: #ffffff;
+  border: 1rpx solid #eadfce;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.board-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.small-title {
+  font-size: 32rpx;
+}
+
+.cart-link {
+  width: 128rpx;
+  height: 58rpx;
+  line-height: 56rpx;
+  padding: 0;
+  color: #e0522d;
+  background: #fff3ed;
+  border: 1rpx solid #ffd2bf;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.product-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}

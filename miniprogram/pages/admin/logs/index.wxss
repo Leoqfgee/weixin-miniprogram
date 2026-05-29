@@ -1,0 +1,19 @@
+.stats {
+  margin-bottom: 24rpx;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.small {
+  font-size: 30rpx;
+}
+
+.log {
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #e6ebf1;
+}

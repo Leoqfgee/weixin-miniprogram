@@ -1,0 +1,28 @@
+.badge {
+  display: inline-block;
+  min-width: 84rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.success {
+  color: #0b6b3a;
+  background: #d9fbe6;
+}
+
+.warning {
+  color: #8a4b00;
+  background: #fff3c4;
+}
+
+.danger {
+  color: #a61b1b;
+  background: #ffe3e3;
+}
+
+.neutral {
+  color: #52606d;
+  background: #edf2f7;
+}

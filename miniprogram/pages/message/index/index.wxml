@@ -1,0 +1,10 @@
+<view class="page">
+  <view wx:if="{{conversations.length}}" class="list">
+    <view wx:for="{{conversations}}" wx:key="id" class="panel item">
+      <view class="title small">会话 {{item.id}}</view>
+      <view class="muted">{{item.last_message.content}}</view>
+      <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}} 条未读</view>
+    </view>
+  </view>
+  <empty-state wx:else title="暂无消息" description="商品详情页可联系卖家"></empty-state>
+</view>

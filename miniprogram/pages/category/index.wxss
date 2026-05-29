@@ -1,0 +1,46 @@
+.search-box {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+}
+
+input {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 20rpx;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+}
+
+button {
+  width: 144rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 26rpx;
+}
+
+.filters {
+  display: flex;
+  gap: 16rpx;
+  margin: 20rpx 0;
+}
+
+.filters picker {
+  flex: 1;
+}
+
+.filter {
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #e6ebf1;
+  border-radius: 8rpx;
+  color: #334e68;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}

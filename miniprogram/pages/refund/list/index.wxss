@@ -1,0 +1,25 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.small {
+  font-size: 30rpx;
+}
+
+.reason {
+  margin-top: 16rpx;
+  color: #334e68;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 24rpx;
+}

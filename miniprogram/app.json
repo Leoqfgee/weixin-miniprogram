@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/category/index",
+    "pages/publish/edit/index",
+    "pages/message/index/index",
+    "pages/mine/index/index",
+    "pages/login/index",
+    "pages/product/detail/index",
+    "pages/cart/index/index",
+    "pages/order/confirm/index",
+    "pages/order/detail/index",
+    "pages/refund/list/index",
+    "pages/refund/apply/index",
+    "pages/admin/products/index",
+    "pages/admin/logs/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "校园二手",
+    "navigationBarBackgroundColor": "#1F7A68",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F6F3EE",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#7A869A",
+    "selectedColor": "#1F7A68",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/publish/edit/index",
+        "text": "发布"
+      },
+      {
+        "pagePath": "pages/message/index/index",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/mine/index/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

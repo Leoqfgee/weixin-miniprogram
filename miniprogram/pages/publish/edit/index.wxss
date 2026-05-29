@@ -1,0 +1,55 @@
+.field {
+  margin-top: 24rpx;
+}
+
+.field text {
+  display: block;
+  margin-bottom: 10rpx;
+  color: #334e68;
+}
+
+input,
+textarea,
+.picker {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 76rpx;
+  padding: 18rpx 20rpx;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+}
+
+textarea {
+  height: 180rpx;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+.picker {
+  margin-top: 20rpx;
+  color: #334e68;
+}
+
+.upload {
+  margin: 12rpx 0;
+}
+
+.error {
+  color: #a61b1b !important;
+  font-size: 24rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 32rpx;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 24rpx;
+}

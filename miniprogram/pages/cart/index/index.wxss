@@ -1,0 +1,38 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.item-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.row,
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.price {
+  color: #d64545;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+input {
+  width: 140rpx;
+  height: 64rpx;
+  text-align: center;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+}
+
+button {
+  flex: 1;
+  font-size: 26rpx;
+}

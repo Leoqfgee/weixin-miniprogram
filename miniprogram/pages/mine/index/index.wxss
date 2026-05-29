@@ -1,0 +1,12 @@
+.profile,
+.admin-entry {
+  margin-bottom: 24rpx;
+}
+
+.small {
+  font-size: 30rpx;
+}
+
+.action {
+  margin-top: 28rpx;
+}

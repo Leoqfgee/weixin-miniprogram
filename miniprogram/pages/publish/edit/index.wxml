@@ -1,0 +1,48 @@
+<view class="page">
+  <view class="panel">
+    <view class="title">发布商品</view>
+    <view class="muted">填写清楚成色、配件和交付方式，审核通过后展示给校内同学</view>
+
+    <view class="field">
+      <text>标题</text>
+      <input value="{{form.title}}" data-field="title" bindinput="setField" placeholder="例如：九成新蓝牙耳机" />
+      <text wx:if="{{errors.title}}" class="error">{{errors.title}}</text>
+    </view>
+
+    <view class="field">
+      <text>描述</text>
+      <textarea value="{{form.description}}" data-field="description" bindinput="setField" placeholder="说明成色、配件和交付方式" />
+    </view>
+
+    <view class="grid">
+      <view class="field">
+        <text>价格</text>
+        <input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="0.00" />
+      </view>
+      <view class="field">
+        <text>库存</text>
+        <input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" />
+      </view>
+    </view>
+
+    <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
+      <view class="picker">{{categoryIndex >= 0 ? categories[categoryIndex].name : '选择分类'}}</view>
+    </picker>
+
+    <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
+      <view class="picker">{{conditionOptions[conditionIndex].label}}</view>
+    </picker>
+
+    <view class="field">
+      <text>图片</text>
+      <button class="ghost-btn upload" bindtap="chooseImages">选择图片</button>
+      <view class="muted">已选择 {{form.images.length}} 张，建议上传实物图和瑕疵细节</view>
+    </view>
+
+    <view class="actions">
+      <button class="ghost-btn" bindtap="useAiMock">AI 建议</button>
+      <button class="ghost-btn" data-action="draft" bindtap="submit">保存草稿</button>
+      <button class="primary-btn" data-action="review" bindtap="submit">提交审核</button>
+    </view>
+  </view>
+</view>

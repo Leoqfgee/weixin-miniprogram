@@ -1,0 +1,18 @@
+<view class="page">
+  <view wx:if="{{stats}}" class="panel stats">
+    <view class="title">基础统计</view>
+    <view class="grid">
+      <view>用户 {{stats.users}}</view>
+      <view>在售 {{stats.products_on_sale}}</view>
+      <view>待审 {{stats.products_pending_review}}</view>
+      <view>订单 {{stats.orders}}</view>
+    </view>
+  </view>
+  <view class="panel">
+    <view class="title small">操作日志</view>
+    <view wx:for="{{logs}}" wx:key="id" class="log">
+      <view>{{item.action}} · {{item.target_type}}</view>
+      <view class="muted">{{item.created_at}}</view>
+    </view>
+  </view>
+</view>

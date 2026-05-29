@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="panel profile">
+    <view class="title">{{user ? user.profile.nickname : '未登录'}}</view>
+    <view class="muted">{{user ? user.phone : '登录后可发布商品和管理订单'}}</view>
+    <button wx:if="{{!user}}" class="primary-btn action" bindtap="goLogin">去登录</button>
+    <button wx:else class="ghost-btn action" bindtap="logout">退出登录</button>
+  </view>
+
+  <view wx:if="{{user}}" class="panel admin-entry" bindtap="goCart">
+    <view class="title small">购物车</view>
+    <view class="muted">查看已加入的商品并创建订单</view>
+  </view>
+  <view wx:if="{{user}}" class="panel admin-entry" bindtap="goRefunds">
+    <view class="title small">退款售后</view>
+    <view class="muted">查看退款进度，卖家可处理退款</view>
+  </view>
+
+  <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminProducts">
+    <view class="title small">管理员入口</view>
+    <view class="muted">商品审核页面不放入普通用户 tabBar</view>
+  </view>
+  <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminLogs">
+    <view class="title small">后台日志与统计</view>
+    <view class="muted">查看操作日志和基础统计</view>
+  </view>
+</view>

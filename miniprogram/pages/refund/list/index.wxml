@@ -1,0 +1,16 @@
+<view class="page">
+  <view wx:if="{{refunds.length}}" class="list">
+    <view wx:for="{{refunds}}" wx:key="id" class="panel item">
+      <view class="title small">退款 ￥{{item.amount}}</view>
+      <view class="muted">状态：{{item.status}}</view>
+      <view class="reason">{{item.reason}}</view>
+      <view class="actions">
+        <button wx:if="{{item.status === 'requested'}}" class="ghost-btn" data-id="{{item.id}}" data-result="rejected" bindtap="sellerHandle">卖家拒绝</button>
+        <button wx:if="{{item.status === 'requested'}}" class="primary-btn" data-id="{{item.id}}" data-result="approved" bindtap="sellerHandle">卖家同意</button>
+        <button wx:if="{{isAdmin && item.status === 'arbitration'}}" class="ghost-btn" data-id="{{item.id}}" data-result="rejected" bindtap="arbitrate">仲裁驳回</button>
+        <button wx:if="{{isAdmin && item.status === 'arbitration'}}" class="primary-btn" data-id="{{item.id}}" data-result="approved" bindtap="arbitrate">仲裁通过</button>
+      </view>
+    </view>
+  </view>
+  <empty-state wx:else title="暂无退款记录" description="订单详情页可申请退款"></empty-state>
+</view>

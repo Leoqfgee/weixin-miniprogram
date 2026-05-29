@@ -1,0 +1,31 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20rpx;
+}
+
+.amount {
+  margin-top: 24rpx;
+  color: #d64545;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.item {
+  margin-top: 24rpx;
+  padding: 20rpx;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.actions button {
+  flex: 1;
+  font-size: 26rpx;
+}

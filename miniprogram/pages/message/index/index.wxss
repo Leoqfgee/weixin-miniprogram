@@ -1,0 +1,19 @@
+page {
+  background: #f5f7fa;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.small {
+  font-size: 28rpx;
+}
+
+.badge {
+  margin-top: 12rpx;
+  color: #1d4e89;
+  font-size: 24rpx;
+}

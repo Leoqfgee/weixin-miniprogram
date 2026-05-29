@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="section market-header">
+    <view class="header-main">
+      <view class="location">主校区 · 今日闲置</view>
+      <view class="headline">把闲置留给刚好需要的人</view>
+      <view class="subline">教材、数码、宿舍好物，校内见面交易更安心</view>
+    </view>
+    <button class="refresh-btn" bindtap="loadProducts">刷新</button>
+  </view>
+
+  <view class="section search-panel">
+    <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜教材、键盘、台灯" confirm-type="search" bindconfirm="goSearch" />
+    <button class="primary-btn search-btn" bindtap="goSearch">搜索</button>
+  </view>
+
+  <view class="section category-strip" wx:if="{{categories.length}}">
+    <button wx:for="{{categories}}" wx:key="id" class="category-chip" data-id="{{item.id}}" bindtap="goCategory">{{item.name}}</button>
+  </view>
+
+  <view class="section board-title">
+    <view>
+      <view class="title small-title">正在出售</view>
+      <view class="muted">只展示审核通过的商品</view>
+    </view>
+    <button class="cart-link" bindtap="goCart">购物车</button>
+  </view>
+
+  <view wx:if="{{products.length}}" class="product-grid">
+    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
+  </view>
+
+  <empty-state wx:else title="暂无在售商品" description="换个关键词试试，或稍后刷新"></empty-state>
+</view>

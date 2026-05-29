@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="panel search-box">
+    <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索教材、耳机、台灯..." />
+    <button class="primary-btn" bindtap="onSearch">搜索</button>
+  </view>
+
+  <view class="filters">
+    <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
+      <view class="filter">{{categoryIndex >= 0 ? categories[categoryIndex].name : '全部分类'}}</view>
+    </picker>
+    <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
+      <view class="filter">{{conditionIndex >= 0 ? conditionOptions[conditionIndex].label : '全部成色'}}</view>
+    </picker>
+  </view>
+
+  <view wx:if="{{products.length}}" class="list">
+    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
+  </view>
+  <empty-state wx:else title="没有匹配商品" description="换个关键词或筛选条件试试"></empty-state>
+</view>

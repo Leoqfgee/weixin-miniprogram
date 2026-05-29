@@ -1,0 +1,22 @@
+<view class="page">
+  <view wx:if="{{order}}" class="panel">
+    <view class="title">订单详情</view>
+    <view class="row">
+      <text>状态</text>
+      <status-badge type="order" status="{{order.status}}"></status-badge>
+    </view>
+    <view class="amount">￥{{order.total_amount}}</view>
+    <view wx:for="{{order.items}}" wx:key="id" class="item">
+      <view>{{item.product_snapshot.title}}</view>
+      <view class="muted">数量 {{item.quantity}} · 快照价 ￥{{item.unit_price}}</view>
+    </view>
+    <view class="actions">
+      <button wx:if="{{order.allowed_actions.can_pay}}" class="primary-btn" bindtap="pay">模拟支付</button>
+      <button wx:if="{{order.allowed_actions.can_cancel}}" class="ghost-btn" bindtap="cancel">取消订单</button>
+      <button wx:if="{{order.allowed_actions.can_confirm_receipt}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
+      <button wx:if="{{order.allowed_actions.can_review}}" class="ghost-btn" bindtap="review">评价</button>
+      <button wx:if="{{order.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
+    </view>
+  </view>
+  <view wx:else class="panel muted">正在加载订单...</view>
+</view>

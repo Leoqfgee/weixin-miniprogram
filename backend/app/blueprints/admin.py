@@ -1,0 +1,61 @@
+from flask import Blueprint, current_app, g, request
+
+from ..services.engagement import AdminReportService, RefundService
+from ..services.products import ProductService
+from ..utils.jwt import roles_required
+from ..utils.response import success_response
+
+admin_bp = Blueprint("admin", __name__)
+
+
+@admin_bp.get("/admin/products")
+@roles_required("admin")
+def list_admin_products():
+    data = ProductService(current_app.db).list_admin_products(request.args, g.current_user)
+    return success_response(data)
+
+
+@admin_bp.post("/admin/products/<product_id>/audit")
+@roles_required("admin")
+def audit_product(product_id):
+    payload = request.get_json(silent=True) or {}
+    data = ProductService(current_app.db).audit_product(
+        product_id,
+        g.current_user,
+        payload,
+        trace_id=getattr(g, "trace_id", None),
+    )
+    return success_response(data)
+
+
+@admin_bp.post("/admin/refunds/<refund_id>/arbitrate")
+@roles_required("admin")
+def arbitrate_refund(refund_id):
+    data = RefundService(current_app.db).admin_arbitrate(
+        refund_id,
+        g.current_user,
+        request.get_json(silent=True) or {},
+        trace_id=getattr(g, "trace_id", None),
+    )
+    return success_response(data)
+
+
+@admin_bp.get("/admin/refunds")
+@roles_required("admin")
+def list_admin_refunds():
+    data = RefundService(current_app.db).list_refunds(g.current_user, request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/operation-logs")
+@roles_required("admin")
+def list_operation_logs():
+    data = AdminReportService(current_app.db).list_operation_logs(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/stats")
+@roles_required("admin")
+def get_stats():
+    data = AdminReportService(current_app.db).stats()
+    return success_response(data)

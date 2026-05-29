@@ -1,0 +1,104 @@
+.product-card {
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #ebe2d6;
+  border-radius: 8rpx;
+  box-shadow: 0 8rpx 20rpx rgba(80, 65, 47, 0.05);
+}
+
+.cover {
+  width: 176rpx;
+  height: 176rpx;
+  flex: none;
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.placeholder {
+  position: relative;
+  background: linear-gradient(145deg, #f7c66b 0%, #ef8b58 52%, #1f7a68 100%);
+}
+
+.cover-text {
+  position: absolute;
+  left: 18rpx;
+  bottom: 22rpx;
+  color: #ffffff;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.cover-tag {
+  position: absolute;
+  left: 14rpx;
+  top: 14rpx;
+  padding: 5rpx 10rpx;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 31rpx;
+  font-weight: 800;
+  color: #17202a;
+  line-height: 1.35;
+}
+
+.desc {
+  display: -webkit-box;
+  margin-top: 8rpx;
+  color: #697580;
+  font-size: 24rpx;
+  line-height: 1.42;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+
+.tag {
+  padding: 5rpx 10rpx;
+  color: #56616d;
+  background: #f7f4ee;
+  border-radius: 8rpx;
+  font-size: 21rpx;
+}
+
+.bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 14rpx;
+}
+
+.seller {
+  max-width: 170rpx;
+  color: #8a6f4d;
+  font-size: 23rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.price {
+  color: #e0522d;
+  font-size: 38rpx;
+  font-weight: 900;
+}

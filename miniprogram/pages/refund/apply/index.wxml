@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="panel">
+    <view class="title">申请退款</view>
+    <view class="muted">退款金额不能超过订单实付金额</view>
+    <input value="{{amount}}" type="digit" bindinput="onAmountInput" placeholder="退款金额" />
+    <textarea value="{{reason}}" bindinput="onReasonInput" placeholder="填写退款原因"></textarea>
+    <button class="primary-btn action" bindtap="submit">提交申请</button>
+  </view>
+</view>
