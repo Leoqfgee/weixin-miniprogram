@@ -36,7 +36,7 @@
     <view class="field">
       <text>图片</text>
       <button class="ghost-btn upload" bindtap="chooseImages">选择图片</button>
-      <view class="muted">已选择 {{form.images.length}} 张，建议上传实物图和瑕疵细节</view>
+      <view class="muted">已上传 {{form.images.length}} 张，建议上传实物图和瑕疵细节</view>
     </view>
 
     <view class="actions">

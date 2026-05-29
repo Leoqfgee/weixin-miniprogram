@@ -12,3 +12,10 @@ deliveries_bp = Blueprint("deliveries", __name__)
 def confirm_receipt(order_id):
     data = DeliveryService(current_app.db).confirm_receipt(order_id, g.current_user_id)
     return success_response(data)
+
+
+@deliveries_bp.post("/deliveries/<order_id>/seller-deliver")
+@auth_required
+def seller_deliver(order_id):
+    data = DeliveryService(current_app.db).seller_deliver(order_id, g.current_user_id)
+    return success_response(data)

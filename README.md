@@ -508,6 +508,40 @@ python .\scripts\init_db.py
 - 前端请求统一走 `miniprogram/utils/request.js`
 - 商品、订单、支付、退款状态由后端 Service 层控制
 
+## 真实化改进说明
+
+在初版课程流程基础上，已补充更接近真实微信小程序的关键能力：
+
+- 微信登录适配器：新增 `POST /api/v1/auth/wechat-login`，本地开发默认 mock，生产可切换真实 code2Session
+- 账号体系：新增注册、绑定手机号、修改密码、退出登录接口
+- 图片上传：新增 `POST /api/v1/files/upload`，小程序使用 `wx.chooseMedia` + `wx.uploadFile` 上传到后端 `uploads/`
+- 订单状态机：买家下单后进入 `pending_seller_confirm`，卖家确认后进入 `pending_payment`
+- 卖家操作：新增卖家确认交易、卖家取消交易、卖家确认交付
+- 买家收货：买家只能在卖家确认交付后确认收货
+- 支付结构：新增 `PaymentAdapter`、`MockPaymentAdapter`、`WechatPayAdapter`，课程阶段仍使用 mock 支付
+
+新增接口：
+
+```text
+POST /api/v1/auth/wechat-login
+POST /api/v1/auth/register
+POST /api/v1/auth/bind-phone
+POST /api/v1/auth/change-password
+POST /api/v1/auth/logout
+POST /api/v1/files/upload
+POST /api/v1/orders/{id}/seller-confirm
+POST /api/v1/orders/{id}/seller-cancel
+POST /api/v1/deliveries/{order_id}/seller-deliver
+```
+
+新的订单主流程：
+
+```text
+pending_seller_confirm -> pending_payment -> paid -> delivering -> completed
+pending_seller_confirm -> seller_cancelled
+pending_seller_confirm/pending_payment -> closed
+```
+
 ## 小程序上传注意事项
 
 当前项目以本地课程演示为主。真机预览或正式上传前需要：

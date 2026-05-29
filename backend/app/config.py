@@ -37,6 +37,9 @@ class Config:
 
     PAYMENT_MODE = os.getenv("PAYMENT_MODE", "mock")
     AI_MODE = os.getenv("AI_MODE", "mock")
+    WECHAT_AUTH_MODE = os.getenv("WECHAT_AUTH_MODE", "mock")
+    WECHAT_APPID = os.getenv("WECHAT_APPID", "")
+    WECHAT_APPSECRET = os.getenv("WECHAT_APPSECRET", "")
     FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
     FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
     DEBUG = os.getenv("FLASK_DEBUG", "1") == "1"

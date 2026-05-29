@@ -1,5 +1,6 @@
 <view class="product-card" bindtap="onTap">
-  <view class="cover placeholder">
+  <image wx:if="{{product.cover_image}}" class="cover" src="{{product.cover_image}}" mode="aspectFill"></image>
+  <view wx:else class="cover placeholder">
     <view class="cover-text">{{coverText}}</view>
     <view class="cover-tag">{{conditionText}}</view>
   </view>

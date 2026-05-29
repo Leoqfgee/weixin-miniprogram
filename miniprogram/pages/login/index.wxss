@@ -82,3 +82,7 @@ input {
   font-size: 29rpx;
   font-weight: 800;
 }
+
+.secondary-action {
+  margin-top: 18rpx;
+}

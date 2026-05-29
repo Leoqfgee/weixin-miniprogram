@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from .blueprints.admin import admin_bp
@@ -7,6 +7,7 @@ from .blueprints.auth import auth_bp
 from .blueprints.cart import cart_bp
 from .blueprints.categories import categories_bp
 from .blueprints.deliveries import deliveries_bp
+from .blueprints.files import files_bp
 from .blueprints.health import health_bp
 from .blueprints.messages import messages_bp
 from .blueprints.orders import orders_bp
@@ -51,6 +52,11 @@ def create_app(config_class=Config):
     app.register_blueprint(reviews_bp, url_prefix=api_prefix)
     app.register_blueprint(refunds_bp, url_prefix=api_prefix)
     app.register_blueprint(ai_bp, url_prefix=api_prefix)
+    app.register_blueprint(files_bp, url_prefix=api_prefix)
+
+    @app.get("/uploads/<path:filename>")
+    def uploaded_file(filename):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
 
     @app.teardown_appcontext
     def _close_mongo(exception=None):

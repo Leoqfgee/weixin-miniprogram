@@ -1,6 +1,7 @@
 <view class="page">
   <view wx:if="{{product}}" class="panel">
-    <view class="cover-wrap placeholder">
+    <image wx:if="{{product.cover_image}}" class="cover-wrap" src="{{product.cover_image}}" mode="aspectFill"></image>
+    <view wx:else class="cover-wrap placeholder">
       <view class="cover-tag">{{conditionText}}</view>
       <view class="cover-title">{{coverText}}</view>
     </view>

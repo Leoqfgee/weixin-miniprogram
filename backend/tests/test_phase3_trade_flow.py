@@ -84,10 +84,11 @@ def test_cart_order_payment_and_confirm_flow():
     )
     assert order_response.status_code == 201
     order = order_response.get_json()["data"]
-    assert order["status"] == "pending_payment"
+    assert order["status"] == "pending_seller_confirm"
     assert order["total_amount"] == 198.0
     assert order["items"][0]["product_snapshot"]["title"]
-    assert order["allowed_actions"]["can_pay"] is True
+    assert order["payment"] is None
+    assert order["allowed_actions"]["can_pay"] is False
     assert order["allowed_actions"]["can_cancel"] is True
 
     duplicated_response = client.post(
@@ -101,7 +102,16 @@ def test_cart_order_payment_and_confirm_flow():
     product_after_order = app.db.products.find_one({"_id": ObjectId(product_id)})
     assert product_after_order["stock"] == 1
 
-    payment_id = order["payment"]["id"]
+    seller_confirm_response = client.post(
+        f"/api/v1/orders/{order['id']}/seller-confirm",
+        headers=auth_headers(seller_token),
+    )
+    assert seller_confirm_response.status_code == 200
+    confirmed_order = seller_confirm_response.get_json()["data"]
+    assert confirmed_order["status"] == "pending_payment"
+    assert confirmed_order["payment"]["status"] == "pending"
+
+    payment_id = confirmed_order["payment"]["id"]
     pay_response = client.post(
         "/api/v1/payments/mock-confirm",
         headers=auth_headers(buyer_token, f"pay-{uuid4().hex}"),
@@ -121,14 +131,21 @@ def test_cart_order_payment_and_confirm_flow():
     detail_response = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token))
     detail = detail_response.get_json()["data"]
     assert detail["status"] == "paid"
-    assert detail["allowed_actions"]["can_confirm_receipt"] is True
+    assert detail["allowed_actions"]["can_confirm_receipt"] is False
 
     confirm_response = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(seller_token),
+    )
+    assert confirm_response.status_code == 200
+    assert confirm_response.get_json()["data"]["order"]["status"] == "delivering"
+
+    receipt_response = client.post(
         f"/api/v1/deliveries/{order['id']}/confirm",
         headers=auth_headers(buyer_token),
     )
-    assert confirm_response.status_code == 200
-    assert confirm_response.get_json()["data"]["order"]["status"] == "completed"
+    assert receipt_response.status_code == 200
+    assert receipt_response.get_json()["data"]["order"]["status"] == "completed"
 
 
 def test_cancel_order_releases_stock_and_self_purchase_is_blocked():
@@ -163,3 +180,17 @@ def test_cancel_order_releases_stock_and_self_purchase_is_blocked():
     assert cancel_response.status_code == 200
     assert cancel_response.get_json()["data"]["status"] == "closed"
     assert app.db.products.find_one({"_id": ObjectId(product_id)})["stock"] == 2
+
+    seller_cancel_order_response = client.post(
+        "/api/v1/orders",
+        headers=auth_headers(buyer_token, f"seller-cancel-{uuid4().hex}"),
+        json={"product_id": product_id, "quantity": 1},
+    )
+    seller_cancel_order = seller_cancel_order_response.get_json()["data"]
+    seller_cancel_response = client.post(
+        f"/api/v1/orders/{seller_cancel_order['id']}/seller-cancel",
+        headers=auth_headers(seller_token),
+        json={"reason": "商品已线下售出"},
+    )
+    assert seller_cancel_response.status_code == 200
+    assert seller_cancel_response.get_json()["data"]["status"] == "seller_cancelled"

@@ -39,10 +39,14 @@ const PRODUCT_STATUS_TEXT = {
 }
 
 const ORDER_STATUS_TEXT = {
+  pending_seller_confirm: '待卖家确认',
+  seller_cancelled: '卖家已取消',
   pending_payment: '待支付',
   paid: '已支付',
   delivering: '交付中',
   completed: '已完成',
+  refunding: '售后中',
+  refunded: '已退款',
   closed: '已关闭'
 }
 

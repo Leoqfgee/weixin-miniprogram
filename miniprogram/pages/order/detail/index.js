@@ -22,7 +22,25 @@ Page({
       payment_id: this.data.order.payment.id,
       mock_result: 'success'
     }, { loading: true }).then(() => {
-      wx.showToast({ title: '支付成功', icon: 'success' })
+      wx.showToast({ title: '模拟微信支付成功', icon: 'success' })
+      this.loadOrder()
+    })
+  },
+  sellerConfirm() {
+    api.post(`/orders/${this.data.id}/seller-confirm`, {}, { loading: true }).then(() => {
+      wx.showToast({ title: '已确认交易', icon: 'success' })
+      this.loadOrder()
+    })
+  },
+  sellerCancel() {
+    api.post(`/orders/${this.data.id}/seller-cancel`, { reason: '卖家取消交易' }, { loading: true }).then(() => {
+      wx.showToast({ title: '已取消交易', icon: 'success' })
+      this.loadOrder()
+    })
+  },
+  sellerDeliver() {
+    api.post(`/deliveries/${this.data.id}/seller-deliver`, {}, { loading: true }).then(() => {
+      wx.showToast({ title: '已确认交付', icon: 'success' })
       this.loadOrder()
     })
   },

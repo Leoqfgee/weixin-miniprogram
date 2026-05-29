@@ -12,11 +12,11 @@ class PaymentRepository:
     def __init__(self, db):
         self.db = db
 
-    def create_for_order(self, order_id, amount):
+    def create_for_order(self, order_id, amount, channel="mock"):
         doc = {
             "order_id": order_id,
             "amount": amount,
-            "channel": "mock",
+            "channel": channel,
             "status": "pending",
             "out_trade_no": f"MOCK{uuid4().hex}",
             "paid_at": None,

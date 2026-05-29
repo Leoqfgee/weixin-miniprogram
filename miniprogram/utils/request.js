@@ -77,8 +77,54 @@ function request(options) {
   })
 }
 
+function uploadFile(options) {
+  const token = getToken()
+  const header = Object.assign({ 'X-Trace-Id': buildTraceId() }, options.header || {})
+  if (token) {
+    header.Authorization = `Bearer ${token}`
+  }
+  if (options.loading) {
+    wx.showLoading({ title: options.loadingText || '上传中' })
+  }
+  return new Promise((resolve, reject) => {
+    wx.uploadFile({
+      url: `${API_BASE_URL}${options.url}`,
+      filePath: options.filePath,
+      name: options.name || 'file',
+      formData: options.formData || {},
+      header,
+      success(res) {
+        let payload = {}
+        try {
+          payload = JSON.parse(res.data || '{}')
+        } catch (err) {
+          wx.showToast({ title: '上传响应解析失败', icon: 'none' })
+          reject(err)
+          return
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
+          resolve(payload.data || {})
+          return
+        }
+        showError(res.statusCode, payload)
+        reject({ statusCode: res.statusCode, payload })
+      },
+      fail(err) {
+        wx.showToast({ title: '图片上传失败', icon: 'none' })
+        reject(err)
+      },
+      complete() {
+        if (options.loading) {
+          wx.hideLoading()
+        }
+      }
+    })
+  })
+}
+
 module.exports = {
   request,
+  uploadFile,
   get(url, data, options) {
     return request(Object.assign({}, options || {}, { url, data, method: 'GET' }))
   },

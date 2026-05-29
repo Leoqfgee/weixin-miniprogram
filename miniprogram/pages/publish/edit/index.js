@@ -50,10 +50,25 @@ Page({
       count: 9,
       mediaType: ['image'],
       success: (res) => {
-        const paths = res.tempFiles.map((item) => item.tempFilePath)
-        this.setData({ 'form.images': paths })
+        this.uploadImages(res.tempFiles || [])
       }
     })
+  },
+  uploadImages(files) {
+    if (!files.length) return
+    wx.showLoading({ title: '上传图片' })
+    const uploads = files.map((item) => api.uploadFile({
+      url: '/files/upload',
+      filePath: item.tempFilePath,
+      formData: { usage: 'product' }
+    }))
+    Promise.all(uploads)
+      .then((items) => {
+        const urls = items.map((item) => item.url)
+        this.setData({ 'form.images': urls })
+        wx.showToast({ title: '图片已上传', icon: 'success' })
+      })
+      .finally(() => wx.hideLoading())
   },
   useAiMock() {
     api.post('/ai/product-copy', {

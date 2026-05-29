@@ -47,10 +47,14 @@ def create_product_and_order(client, seller_token, admin_token, buyer_token):
         json={"product_id": product_id, "quantity": 1},
     )
     order = order_response.get_json()["data"]
+    confirmed = client.post(
+        f"/api/v1/orders/{order['id']}/seller-confirm",
+        headers=auth_headers(seller_token),
+    ).get_json()["data"]
     client.post(
         "/api/v1/payments/mock-confirm",
         headers=auth_headers(buyer_token),
-        json={"payment_id": order["payment"]["id"], "mock_result": "success"},
+        json={"payment_id": confirmed["payment"]["id"], "mock_result": "success"},
     )
     return product_id, order["id"]
 
@@ -89,6 +93,7 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
     assert ai_response.status_code == 200
     assert "description" in ai_response.get_json()["data"]
 
+    client.post(f"/api/v1/deliveries/{order_id}/seller-deliver", headers=auth_headers(seller["token"]))
     confirm_response = client.post(f"/api/v1/deliveries/{order_id}/confirm", headers=auth_headers(buyer["token"]))
     assert confirm_response.status_code == 200
 

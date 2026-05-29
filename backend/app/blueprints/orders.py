@@ -35,3 +35,17 @@ def get_order(order_id):
 def cancel_order(order_id):
     data = OrderService(current_app.db).cancel_order(order_id, g.current_user_id)
     return success_response(data)
+
+
+@orders_bp.post("/orders/<order_id>/seller-confirm")
+@auth_required
+def seller_confirm(order_id):
+    data = OrderService(current_app.db).seller_confirm(order_id, g.current_user_id)
+    return success_response(data)
+
+
+@orders_bp.post("/orders/<order_id>/seller-cancel")
+@auth_required
+def seller_cancel(order_id):
+    data = OrderService(current_app.db).seller_cancel(order_id, g.current_user_id, request.get_json(silent=True) or {})
+    return success_response(data)

@@ -11,8 +11,11 @@
       <view class="muted">数量 {{item.quantity}} · 快照价 ￥{{item.unit_price}}</view>
     </view>
     <view class="actions">
-      <button wx:if="{{order.allowed_actions.can_pay}}" class="primary-btn" bindtap="pay">模拟支付</button>
+      <button wx:if="{{order.allowed_actions.can_seller_confirm}}" class="primary-btn" bindtap="sellerConfirm">确认交易</button>
+      <button wx:if="{{order.allowed_actions.can_seller_cancel}}" class="ghost-btn" bindtap="sellerCancel">取消交易</button>
+      <button wx:if="{{order.allowed_actions.can_pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button>
       <button wx:if="{{order.allowed_actions.can_cancel}}" class="ghost-btn" bindtap="cancel">取消订单</button>
+      <button wx:if="{{order.allowed_actions.can_seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button>
       <button wx:if="{{order.allowed_actions.can_confirm_receipt}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
       <button wx:if="{{order.allowed_actions.can_review}}" class="ghost-btn" bindtap="review">评价</button>
       <button wx:if="{{order.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
