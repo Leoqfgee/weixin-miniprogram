@@ -98,6 +98,10 @@ def ensure_collections(db):
 
 
 def ensure_indexes(db):
+    # 旧版 sparse 唯一索引会把显式 null 纳入唯一约束；幂等键只在字符串存在时唯一。
+    _drop_index_if_exists(db.orders, "idempotency_key_1")
+    _drop_index_if_exists(db.payments, "idempotency_key_1")
+
     # 用户与资料
     db.users.create_index([("openid", ASCENDING)], unique=True, sparse=True)
     db.users.create_index([("phone", ASCENDING)], unique=True, sparse=True)
@@ -126,12 +130,20 @@ def ensure_indexes(db):
     db.orders.create_index([("product_id", ASCENDING)])
     db.orders.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
     db.orders.create_index([("order_no", ASCENDING)], unique=True, sparse=True)
-    db.orders.create_index([("idempotency_key", ASCENDING)], unique=True, sparse=True)
+    db.orders.create_index(
+        [("idempotency_key", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"idempotency_key": {"$type": "string"}},
+    )
     db.order_items.create_index([("order_id", ASCENDING)])
     _drop_index_if_exists(db.payments, "order_id_1")
     db.payments.create_index([("order_id", ASCENDING)], unique=True, name="uniq_payment_order_id")
     db.payments.create_index([("transaction_no", ASCENDING)], unique=True, sparse=True)
-    db.payments.create_index([("idempotency_key", ASCENDING)], unique=True, sparse=True)
+    db.payments.create_index(
+        [("idempotency_key", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"idempotency_key": {"$type": "string"}},
+    )
     db.escrow_records.create_index([("order_id", ASCENDING)], unique=True)
     db.escrow_records.create_index([("buyer_id", ASCENDING), ("status", ASCENDING)])
     db.escrow_records.create_index([("seller_id", ASCENDING), ("status", ASCENDING)])

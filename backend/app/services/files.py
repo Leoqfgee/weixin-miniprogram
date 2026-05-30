@@ -34,7 +34,7 @@ class FileService:
         if len(content) > MAX_IMAGE_SIZE:
             raise ValidationError("参数校验失败", [{"field": "file", "message": "单张图片不能超过 5MB"}])
 
-        safe_usage = usage if usage in {"product", "avatar", "refund", "appeal"} else "misc"
+        safe_usage = usage if usage in {"product", "avatar", "refund", "appeal", "delivery"} else "misc"
         filename = f"{uuid4().hex}.{suffix}"
         upload_root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
         target_dir = upload_root / safe_usage

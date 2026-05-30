@@ -12,16 +12,16 @@
       <view class="title small">{{item.reason || '平台介入申请'}}</view>
       <status-badge type="order" status="{{item.order.status}}"></status-badge>
     </view>
-    <view class="muted">申诉状态：{{item.status}} · 订单号：{{item.order.order_no}}</view>
+    <view class="muted">申诉状态：{{item.status_text}} · 订单号：{{item.order.order_no}}</view>
     <view class="section-title">商品快照</view>
-    <view>{{item.product_snapshot.title || '商品快照缺失'}}</view>
-    <view class="muted">价格 ￥{{item.product_snapshot.price || '-'}}</view>
+    <view>{{item.product_title}}</view>
+    <view class="muted">价格 ￥{{item.product_price}}</view>
 
     <view class="section-title">支付与担保</view>
     <view class="muted">支付：{{item.payment.status || '无'}} · 担保：{{item.escrow.status || '无'}}</view>
 
     <view class="section-title">交付记录</view>
-    <view class="muted">{{item.delivery.delivery_type || '暂无'}} · {{item.delivery.meet_location || item.delivery.pickup_location || item.delivery.campus_address || item.delivery.tracking_no || ''}}</view>
+    <view class="muted">{{item.delivery_text}} · {{item.delivery_location}}</view>
 
     <view class="section-title">退款信息</view>
     <view class="muted">原因：{{item.refund.reason}} · 状态：{{item.refund.status}}</view>

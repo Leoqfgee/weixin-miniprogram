@@ -24,12 +24,13 @@ class PaymentRepository:
             "channel": channel,
             "status": "pending",
             "transaction_no": f"MOCK{uuid4().hex}",
-            "idempotency_key": idempotency_key,
             "paid_at": None,
             "refunded_at": None,
             "created_at": utc_now(),
             "updated_at": utc_now(),
         }
+        if idempotency_key:
+            doc["idempotency_key"] = idempotency_key
         result = self.db.payments.insert_one(doc)
         return self.find_by_id(result.inserted_id)
 

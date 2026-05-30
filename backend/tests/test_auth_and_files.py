@@ -69,6 +69,26 @@ def test_upload_image_returns_static_url():
     assert "/uploads/product/" in file_doc["url"]
 
 
+def test_upload_delivery_image_uses_delivery_folder():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+    login = client.post(
+        "/api/v1/auth/mock-login",
+        json={"phone": "18800000001", "password": "seller123456"},
+    ).get_json()["data"]
+
+    response = client.post(
+        "/api/v1/files/upload",
+        headers=auth_headers(login["token"]),
+        data={"usage": "delivery", "file": (BytesIO(b"fake-delivery-image"), "proof.png")},
+        content_type="multipart/form-data",
+    )
+    assert response.status_code == 201
+    file_doc = response.get_json()["data"]
+    assert "/uploads/delivery/" in file_doc["url"]
+
+
 def test_wechat_login_default_role_is_buyer():
     init_db()
     app = create_app()

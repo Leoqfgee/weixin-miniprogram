@@ -1,6 +1,31 @@
 const { requireLogin } = require('../../../utils/auth')
 const api = require('../../../utils/request')
 
+const DELIVERY_TYPE_TEXT = {
+  offline_meetup: '校内面交',
+  campus_pickup: '校园自提',
+  campus_delivery: '校内送达',
+  express: '快递邮寄'
+}
+
+const REFUND_STATUS_TEXT = {
+  requested: '买家已申请',
+  seller_agreed: '卖家已同意',
+  seller_rejected: '卖家已拒绝',
+  waiting_return: '等待退回',
+  return_delivered: '买家已退回',
+  refunded: '已退款',
+  closed: '已关闭'
+}
+
+const APPEAL_STATUS_TEXT = {
+  pending: '平台介入中',
+  approved: '支持买家',
+  rejected: '支持卖家',
+  partial_refund: '部分退款',
+  closed: '已关闭'
+}
+
 Page({
   data: {
     id: '',
@@ -24,13 +49,28 @@ Page({
   loadOrder() {
     if (!this.data.id) return
     api.get(`/orders/${this.data.id}`, {}, { loading: true }).then((data) => {
+      const order = this.enrichOrder(data)
       this.setData({
-        order: data,
-        currentStep: this.getStepIndex(data.status),
-        fundText: this.getFundText(data),
-        actionMap: this.buildActionMap(data.allowed_actions)
+        order,
+        currentStep: this.getStepIndex(order.status),
+        fundText: this.getFundText(order),
+        actionMap: this.buildActionMap(order.allowed_actions)
       })
     })
+  },
+  enrichOrder(order) {
+    const delivery = order.delivery || null
+    if (delivery) {
+      delivery.delivery_type_text = DELIVERY_TYPE_TEXT[delivery.delivery_type] || delivery.delivery_type
+      delivery.location_text = delivery.meet_location || delivery.pickup_location || delivery.campus_address || delivery.tracking_no || delivery.delivery_note || '暂无'
+    }
+    if (order.refund) {
+      order.refund.status_text = REFUND_STATUS_TEXT[order.refund.status] || order.refund.status
+    }
+    if (order.appeal) {
+      order.appeal.status_text = APPEAL_STATUS_TEXT[order.appeal.status] || order.appeal.status
+    }
+    return order
   },
   buildActionMap(allowedActions) {
     const actions = (allowedActions && allowedActions.actions) || []
