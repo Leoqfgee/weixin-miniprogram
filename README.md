@@ -162,8 +162,10 @@ holding -> refunded
 - 购物车页：查看购物车、修改数量、删除商品、去结算
 - 订单确认页：展示商品与数量，提交订单，金额由后端重新计算
 - 订单详情页：展示订单快照、状态步骤、资金担保、交付信息、售后信息和按后端 `allowed_actions.actions` 控制的操作按钮
+- 交付表单页：卖家可选择校内面交、校园自提、校内送达、快递邮寄，并上传交付凭证
 - 我的页：显示登录态、购物车入口、管理员入口
 - 管理端商品审核页：查看待审核商品，审核通过或驳回
+- 管理端申诉仲裁页：查看平台介入详情并执行支持买家、支持卖家、部分退款或关闭申诉
 
 本阶段补充后端接口：
 
@@ -190,6 +192,7 @@ holding -> refunded
 - `POST /api/v1/refunds/{id}/seller-reject`：卖家拒绝退款
 - `POST /api/v1/appeals`：买家申请平台介入
 - `GET /api/v1/appeals/{id}`：申诉详情
+- `GET /api/v1/admin/appeals`：管理员查看平台介入列表
 - `POST /api/v1/admin/appeals/{id}/arbitrate`：管理员处理平台介入
 - `POST /api/v1/ai/product-copy`：AI 文案 mock
 - `GET /api/v1/admin/operation-logs`：操作日志
@@ -200,8 +203,10 @@ holding -> refunded
 - 商品详情页可联系卖家
 - 消息页展示会话
 - 订单详情页可评价、申请退款
-- 新增退款申请页
+- 新增退款申请页，支持上传最多 6 张售后证据图
+- 新增平台介入申请页，支持上传最多 6 张申诉证据图
 - 新增退款售后列表页，卖家可处理退款，管理员可仲裁
+- 新增申诉仲裁页，管理员可查看订单、支付、担保、交付、退款与申诉凭证
 - 发布页 AI 建议调用后端 mock 接口
 - 新增后台日志与统计页
 
@@ -211,6 +216,7 @@ holding -> refunded
 - 系统通知接口已预留，课程阶段可为空列表
 - 退款为流程状态模拟，不接入真实资金退款
 - 售后证据当前保存图片 URL 数组，可复用 `POST /api/v1/files/upload` 上传到本地 `uploads/`
+- 交付信息和凭证为课程阶段模拟记录，不接入真实物流 API；快递方式只保存快递公司和单号
 
 ## 第 7 阶段已实现
 
@@ -540,6 +546,7 @@ python .\scripts\init_db.py
 - 订单状态机：买家下单后直接进入 `pending_payment`，商品从 `on_sale` 锁定为 `locked`
 - 平台担保：支付成功后创建 `escrow_records.status=holding`，不把担保塞进订单状态
 - 卖家操作：新增卖家确认交付、卖家取消并进入退款处理
+- 交付方式：支持校内面交、自提、校内送达和快递；小程序端提供交付表单和凭证上传
 - 买家收货：卖家交付后订单进入 `pending_receive`，买家确认后进入 `pending_review`
 - 支付结构：新增 `PaymentAdapter`、`MockPaymentAdapter`、`WechatPayAdapter`，课程阶段仍使用 mock 支付
 - 退款/平台介入：订单只用 `refunding` 表示售后中，具体进度放在 `refunds` 和 `appeals`
@@ -566,6 +573,7 @@ POST /api/v1/refunds/{id}/seller-agree
 POST /api/v1/refunds/{id}/seller-reject
 POST /api/v1/appeals
 GET  /api/v1/appeals/{id}
+GET  /api/v1/admin/appeals
 POST /api/v1/admin/appeals/{id}/arbitrate
 ```
 

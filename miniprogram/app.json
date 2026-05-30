@@ -13,7 +13,9 @@
     "pages/refund/list/index",
     "pages/refund/apply/index",
     "pages/appeal/apply/index",
+    "pages/delivery/form/index",
     "pages/admin/products/index",
+    "pages/admin/appeals/index",
     "pages/admin/logs/index"
   ],
   "window": {

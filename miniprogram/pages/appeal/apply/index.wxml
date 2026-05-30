@@ -4,6 +4,17 @@
     <view class="muted">仅在卖家拒绝退款后可申请，平台会查看订单、交付、支付和双方凭证。</view>
     <input value="{{reason}}" bindinput="onReasonInput" placeholder="介入原因" />
     <textarea value="{{description}}" bindinput="onDescriptionInput" placeholder="补充说明"></textarea>
+    <view class="evidence-head">
+      <view class="text-strong">申诉凭证</view>
+      <button size="mini" class="ghost-btn mini-btn" bindtap="chooseEvidence">上传</button>
+    </view>
+    <view class="image-grid">
+      <view wx:for="{{evidenceImages}}" wx:key="*this" class="image-wrap">
+        <image src="{{item}}" mode="aspectFill"></image>
+        <view class="remove" data-index="{{index}}" bindtap="removeEvidence">删除</view>
+      </view>
+    </view>
+    <view class="muted">最多 6 张，可补充聊天、商品或交付凭证</view>
     <button class="primary-btn action" bindtap="submit">提交介入申请</button>
   </view>
 </view>

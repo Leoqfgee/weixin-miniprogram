@@ -51,6 +51,13 @@ def arbitrate_appeal(appeal_id):
     return success_response(data)
 
 
+@admin_bp.get("/admin/appeals")
+@roles_required("admin")
+def list_admin_appeals():
+    data = AppealService(current_app.db).list_appeals(g.current_user, request.args)
+    return success_response(data)
+
+
 @admin_bp.get("/admin/refunds")
 @roles_required("admin")
 def list_admin_refunds():

@@ -1,0 +1,48 @@
+.tabs,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.tabs button,
+.actions button {
+  width: 220rpx;
+  font-size: 24rpx;
+}
+
+.appeal {
+  margin-top: 24rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.small {
+  font-size: 30rpx;
+}
+
+.section-title {
+  margin-top: 20rpx;
+  color: #17202a;
+  font-weight: 800;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.image-grid image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8rpx;
+  background: #edf1f5;
+}

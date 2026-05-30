@@ -35,6 +35,25 @@ def test_refund_agree_sets_order_payment_and_escrow_refunded():
     assert detail["escrow"]["status"] == "refunded"
 
 
+def test_refund_apply_evidence_images_are_saved():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+    evidence = ["/uploads/refund/a.png", "/uploads/refund/b.png"]
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={
+            "order_id": order["id"],
+            "amount": 20,
+            "reason": "商品瑕疵",
+            "refund_type": "refund_only",
+            "evidence_images": evidence,
+        },
+    )
+    assert refund.status_code == 201
+    assert refund.get_json()["data"]["evidence_images"] == evidence
+
+
 def test_seller_cancel_and_refund_creates_refund_and_refunds_payment():
     app, client, seller_token, buyer_token, admin_token = setup_flow()
     product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
@@ -120,3 +139,57 @@ def test_seller_reject_refund_then_appeal_admin_paths():
     assert arbitrate.get_json()["data"]["status"] == "rejected"
     order_detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
     assert order_detail["status"] == "pending_receive"
+
+
+def test_appeal_evidence_images_are_saved_and_admin_list_returns_detail():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "amount": 20, "reason": "商品问题", "refund_type": "refund_only", "evidence_images": ["/uploads/refund/r.png"]},
+    )
+    refund_id = refund.get_json()["data"]["id"]
+    client.post(f"/api/v1/refunds/{refund_id}/seller-reject", headers=auth_headers(seller_token), json={"reason": "卖家不同意"})
+
+    evidence = ["/uploads/appeal/a.png"]
+    appeal = client.post(
+        "/api/v1/appeals",
+        headers=auth_headers(buyer_token),
+        json={"refund_id": refund_id, "reason": "申请平台介入", "evidence_images": evidence},
+    )
+    assert appeal.status_code == 201
+    assert appeal.get_json()["data"]["evidence_images"] == evidence
+
+    list_response = client.get("/api/v1/admin/appeals?status=pending", headers=auth_headers(admin_token))
+    assert list_response.status_code == 200
+    items = list_response.get_json()["data"]["items"]
+    first = next(item for item in items if item["id"] == appeal.get_json()["data"]["id"])
+    assert first["refund"]["evidence_images"] == ["/uploads/refund/r.png"]
+    assert first["payment"]["status"] == "paid"
+    assert first["escrow"]["status"] == "holding"
+    assert first["delivery"]["delivery_type"] == "offline_meetup"
+
+
+def test_admin_arbitrate_refund_updates_appeal_status_approved():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "amount": 20, "reason": "商品问题", "refund_type": "refund_only"},
+    )
+    refund_id = refund.get_json()["data"]["id"]
+    client.post(f"/api/v1/refunds/{refund_id}/seller-reject", headers=auth_headers(seller_token), json={"reason": "卖家不同意"})
+    appeal = client.post("/api/v1/appeals", headers=auth_headers(buyer_token), json={"refund_id": refund_id, "reason": "申请平台介入"})
+
+    arbitrate = client.post(
+        f"/api/v1/admin/appeals/{appeal.get_json()['data']['id']}/arbitrate",
+        headers=auth_headers(admin_token),
+        json={"force_action": "refund", "reason": "支持买家"},
+    )
+    assert arbitrate.status_code == 200
+    assert arbitrate.get_json()["data"]["status"] == "approved"
+    detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
+    assert detail["status"] == "refunded"
+    assert detail["payment"]["status"] == "refunded"

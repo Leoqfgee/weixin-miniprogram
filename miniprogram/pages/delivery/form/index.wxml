@@ -1,0 +1,45 @@
+<view class="page">
+  <view class="panel">
+    <view class="title">确认交付</view>
+    <view class="muted">按实际校园交易方式填写交付信息，买家确认收货前可查看。</view>
+
+    <picker mode="selector" range="{{types}}" range-key="label" bindchange="onTypeChange">
+      <view class="picker">{{types[typeIndex].label}}</view>
+    </picker>
+
+    <block wx:if="{{types[typeIndex].value === 'offline_meetup'}}">
+      <input data-field="meet_location" value="{{form.meet_location}}" bindinput="onInput" placeholder="面交地点，例如图书馆门口" />
+      <input data-field="meet_time" value="{{form.meet_time}}" bindinput="onInput" placeholder="面交时间，例如今天 18:30" />
+    </block>
+
+    <block wx:elif="{{types[typeIndex].value === 'campus_pickup'}}">
+      <input data-field="pickup_location" value="{{form.pickup_location}}" bindinput="onInput" placeholder="自提地点，例如宿舍楼下" />
+      <input data-field="pickup_time_range" value="{{form.pickup_time_range}}" bindinput="onInput" placeholder="自提时间段，例如工作日晚上" />
+    </block>
+
+    <block wx:elif="{{types[typeIndex].value === 'campus_delivery'}}">
+      <input data-field="campus_address" value="{{form.campus_address}}" bindinput="onInput" placeholder="校内送达地址" />
+      <textarea data-field="delivery_note" value="{{form.delivery_note}}" bindinput="onInput" placeholder="送达备注"></textarea>
+    </block>
+
+    <block wx:else>
+      <input data-field="express_company" value="{{form.express_company}}" bindinput="onInput" placeholder="快递公司" />
+      <input data-field="tracking_no" value="{{form.tracking_no}}" bindinput="onInput" placeholder="快递单号" />
+    </block>
+
+    <textarea data-field="delivery_note" value="{{form.delivery_note}}" bindinput="onInput" placeholder="补充交付说明"></textarea>
+
+    <view class="evidence-head">
+      <view class="text-strong">交付凭证</view>
+      <button size="mini" class="ghost-btn mini-btn" bindtap="chooseProof">上传</button>
+    </view>
+    <view class="image-grid">
+      <view wx:for="{{form.proof_images}}" wx:key="*this" class="image-wrap">
+        <image src="{{item}}" mode="aspectFill"></image>
+        <view class="remove" data-index="{{index}}" bindtap="removeProof">删除</view>
+      </view>
+    </view>
+
+    <button class="primary-btn action" bindtap="submit">提交交付信息</button>
+  </view>
+</view>

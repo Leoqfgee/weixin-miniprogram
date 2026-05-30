@@ -18,6 +18,9 @@ Page({
   goAdminLogs() {
     wx.navigateTo({ url: '/pages/admin/logs/index' })
   },
+  goAdminAppeals() {
+    wx.navigateTo({ url: '/pages/admin/appeals/index' })
+  },
   goCart() {
     wx.navigateTo({ url: '/pages/cart/index/index' })
   },

@@ -73,27 +73,7 @@ Page({
     })
   },
   sellerDeliver() {
-    wx.showModal({
-      title: '确认交付',
-      editable: true,
-      placeholderText: '填写面交地点或交付说明',
-      success: (res) => {
-        if (!res.confirm) return
-        const content = (res.content || '').trim()
-        if (!content) {
-          wx.showToast({ title: '请填写交付地点或说明', icon: 'none' })
-          return
-        }
-        api.post(`/deliveries/${this.data.id}/seller-deliver`, {
-          delivery_type: 'offline_meetup',
-          meet_location: content,
-          delivery_note: content
-        }, { loading: true }).then(() => {
-          wx.showToast({ title: '已确认交付', icon: 'success' })
-          this.loadOrder()
-        })
-      }
-    })
+    wx.navigateTo({ url: `/pages/delivery/form/index?order_id=${this.data.id}` })
   },
   cancel() {
     api.post(`/orders/${this.data.id}/buyer-cancel`, {}, { loading: true }).then(() => {

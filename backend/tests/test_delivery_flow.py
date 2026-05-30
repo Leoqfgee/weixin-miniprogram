@@ -26,3 +26,48 @@ def test_seller_deliver_and_buyer_confirm_receive_settle_escrow():
     assert receive.status_code == 200
     assert receive.get_json()["data"]["order"]["status"] == "pending_review"
     assert receive.get_json()["data"]["escrow"]["status"] == "settled"
+
+
+def test_express_delivery_requires_company_and_tracking_no():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
+    order = create_order(client, buyer_token, product_id)
+    pay_order(client, buyer_token, order["id"])
+
+    missing_tracking = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(seller_token),
+        json={"delivery_type": "express", "express_company": "顺丰"},
+    )
+    assert missing_tracking.status_code == 422
+
+    delivered = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(seller_token),
+        json={"delivery_type": "express", "express_company": "顺丰", "tracking_no": "SF123456", "proof_images": ["/uploads/delivery/p.png"]},
+    )
+    assert delivered.status_code == 200
+    assert delivered.get_json()["data"]["delivery"]["tracking_no"] == "SF123456"
+    assert delivered.get_json()["data"]["delivery"]["proof_images"] == ["/uploads/delivery/p.png"]
+
+
+def test_offline_meetup_requires_location_or_note():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
+    order = create_order(client, buyer_token, product_id)
+    pay_order(client, buyer_token, order["id"])
+
+    empty_meetup = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(seller_token),
+        json={"delivery_type": "offline_meetup"},
+    )
+    assert empty_meetup.status_code == 422
+
+    delivered = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(seller_token),
+        json={"delivery_type": "offline_meetup", "delivery_note": "图书馆门口当面交付"},
+    )
+    assert delivered.status_code == 200
+    assert delivered.get_json()["data"]["order"]["status"] == "pending_receive"

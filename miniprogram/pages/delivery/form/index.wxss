@@ -1,5 +1,6 @@
 input,
-textarea {
+textarea,
+.picker {
   width: 100%;
   box-sizing: border-box;
   margin-top: 24rpx;
@@ -9,11 +10,7 @@ textarea {
 }
 
 textarea {
-  height: 180rpx;
-}
-
-.action {
-  margin-top: 32rpx;
+  height: 160rpx;
 }
 
 .evidence-head {
@@ -55,4 +52,8 @@ textarea {
   color: #ffffff;
   background: rgba(0, 0, 0, 0.56);
   font-size: 22rpx;
+}
+
+.action {
+  margin-top: 32rpx;
 }

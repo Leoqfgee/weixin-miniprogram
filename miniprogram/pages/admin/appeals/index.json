@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "申诉仲裁",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index",
+    "status-badge": "/components/status-badge/index"
+  }
+}

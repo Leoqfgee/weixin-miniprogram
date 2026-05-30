@@ -19,6 +19,10 @@
     <view class="title small">管理员入口</view>
     <view class="muted">商品审核页面不放入普通用户 tabBar</view>
   </view>
+  <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminAppeals">
+    <view class="title small">申诉仲裁</view>
+    <view class="muted">查看平台介入申请并处理退款争议</view>
+  </view>
   <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminLogs">
     <view class="title small">后台日志与统计</view>
     <view class="muted">查看操作日志和基础统计</view>

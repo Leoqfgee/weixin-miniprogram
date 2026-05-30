@@ -353,7 +353,25 @@ class AppealService:
         appeal = self._get_appeal(appeal_id)
         if "admin" not in user.get("roles", []) and str(user["_id"]) not in {str(appeal["buyer_id"]), str(appeal["seller_id"])}:
             raise ForbiddenError("无权限查看该申诉")
-        return serialize_doc(appeal)
+        return self._present_appeal(appeal)
+
+    def list_appeals(self, admin_user, args):
+        page = max(int(args.get("page", 1)), 1)
+        page_size = min(max(int(args.get("page_size", 20)), 1), 50)
+        query = {}
+        if args.get("status"):
+            query["status"] = args.get("status")
+        total = self.db.appeals.count_documents(query)
+        items = list(
+            self.db.appeals.find(query)
+            .sort("created_at", DESCENDING)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return {
+            "items": [self._present_appeal(item) for item in items],
+            "pagination": {"page": page, "page_size": page_size, "total": total},
+        }
 
     def arbitrate(self, appeal_id, admin_user, payload):
         appeal = self._get_appeal(appeal_id)
@@ -400,6 +418,20 @@ class AppealService:
         if not appeal:
             raise NotFoundError("平台介入申请不存在")
         return appeal
+
+    def _present_appeal(self, appeal):
+        data = serialize_doc(appeal)
+        order = self.orders.find_by_id(appeal["order_id"])
+        refund = self.db.refunds.find_one({"_id": appeal["refund_id"]})
+        data["order"] = serialize_doc(order) if order else None
+        data["refund"] = serialize_doc(refund) if refund else None
+        data["payment"] = serialize_doc(self.payments.find_by_order(appeal["order_id"])) or {}
+        data["escrow"] = serialize_doc(self.escrows.find_by_order(appeal["order_id"])) or {}
+        data["delivery"] = serialize_doc(self.db.deliveries.find_one({"order_id": appeal["order_id"]})) or {}
+        data["order_items"] = [serialize_doc(item) for item in self.db.order_items.find({"order_id": appeal["order_id"]})]
+        if data["order_items"] and not data.get("product_snapshot"):
+            data["product_snapshot"] = data["order_items"][0].get("product_snapshot", {})
+        return data
 
 
 class AiService:

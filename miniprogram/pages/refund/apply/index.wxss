@@ -16,3 +16,44 @@ textarea {
 .action {
   margin-top: 32rpx;
 }
+
+.evidence-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24rpx;
+}
+
+.mini-btn {
+  margin: 0;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14rpx;
+  margin-top: 16rpx;
+}
+
+.image-wrap {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8rpx;
+  background: #edf1f5;
+}
+
+.image-wrap image {
+  width: 100%;
+  height: 100%;
+}
+
+.remove {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 4rpx 10rpx;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.56);
+  font-size: 22rpx;
+}

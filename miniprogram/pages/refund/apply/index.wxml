@@ -8,6 +8,17 @@
     <input value="{{amount}}" type="digit" bindinput="onAmountInput" placeholder="退款金额" />
     <textarea value="{{reason}}" bindinput="onReasonInput" placeholder="填写退款原因"></textarea>
     <textarea value="{{description}}" bindinput="onDescriptionInput" placeholder="补充说明，例如商品瑕疵、交付问题"></textarea>
+    <view class="evidence-head">
+      <view class="text-strong">凭证图片</view>
+      <button size="mini" class="ghost-btn mini-btn" bindtap="chooseEvidence">上传</button>
+    </view>
+    <view class="image-grid">
+      <view wx:for="{{evidenceImages}}" wx:key="*this" class="image-wrap">
+        <image src="{{item}}" mode="aspectFill"></image>
+        <view class="remove" data-index="{{index}}" bindtap="removeEvidence">删除</view>
+      </view>
+    </view>
+    <view class="muted">最多 6 张，可上传瑕疵、聊天或交付凭证</view>
     <button class="primary-btn action" bindtap="submit">提交申请</button>
   </view>
 </view>
