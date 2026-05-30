@@ -151,6 +151,10 @@ Page({
       wx.showToast({ title: '暂无可介入的退款', icon: 'none' })
       return
     }
+    if (this.data.order.refund.status !== 'seller_rejected') {
+      wx.showToast({ title: '卖家拒绝后才能介入', icon: 'none' })
+      return
+    }
     wx.navigateTo({ url: `/pages/appeal/apply/index?refund_id=${this.data.order.refund.id}` })
   }
 })

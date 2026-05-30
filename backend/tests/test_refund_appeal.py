@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from test_phase3_trade_flow import auth_headers, create_on_sale_product, create_order, pay_order, setup_flow
 
 
@@ -31,6 +33,57 @@ def test_refund_agree_sets_order_payment_and_escrow_refunded():
     assert detail["status"] == "refunded"
     assert detail["payment"]["status"] == "refunded"
     assert detail["escrow"]["status"] == "refunded"
+
+
+def test_seller_cancel_and_refund_creates_refund_and_refunds_payment():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
+    order = create_order(client, buyer_token, product_id)
+    pay_order(client, buyer_token, order["id"])
+
+    response = client.post(
+        f"/api/v1/orders/{order['id']}/seller-cancel",
+        headers=auth_headers(seller_token),
+        json={"reason": "卖家临时无法交付"},
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["status"] == "refunded"
+    assert data["refund"]["status"] == "refunded"
+    assert data["refund"]["reason"] == "卖家取消交易"
+    assert data["payment"]["status"] == "refunded"
+    assert data["escrow"]["status"] == "refunded"
+    assert app.db.products.find_one({"_id": ObjectId(product_id)})["status"] == "on_sale"
+
+    order_object_id = ObjectId(order["id"])
+    for action in ["seller_cancel_and_refund", "refund_success"]:
+        assert app.db.business_logs.count_documents({"target_type": "order", "target_id": order_object_id, "action": action}) >= 1
+    assert app.db.business_logs.count_documents({"target_type": "product", "target_id": ObjectId(product_id), "action": "product_reopen"}) >= 1
+
+
+def test_buyer_reject_creates_refund_record_and_order_detail_contains_refund():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+
+    reject = client.post(
+        f"/api/v1/deliveries/{order['id']}/buyer-reject",
+        headers=auth_headers(buyer_token),
+        json={"reason": "买家拒绝收货"},
+    )
+    assert reject.status_code == 200
+    assert reject.get_json()["data"]["status"] == "refunding"
+
+    detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
+    assert detail["status"] == "refunding"
+    assert detail["refund"]["status"] == "requested"
+    assert detail["refund"]["reason"] == "买家拒绝收货"
+    assert detail["refund"]["amount"] == detail["pay_amount"]
+    assert "view_refund" in detail["allowed_actions"]["actions"]
+    assert "apply_appeal" not in detail["allowed_actions"]["actions"]
+
+    order_object_id = ObjectId(order["id"])
+    assert app.db.business_logs.count_documents({"target_type": "order", "target_id": order_object_id, "action": "buyer_reject_receive"}) >= 1
+    assert app.db.business_logs.count_documents({"target_type": "order", "target_id": order_object_id, "action": "apply_refund"}) >= 1
 
 
 def test_seller_reject_refund_then_appeal_admin_paths():

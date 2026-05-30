@@ -184,8 +184,20 @@ class OrderService:
             raise ForbiddenError("只有卖家可以取消交易")
         if order["status"] != "pending_delivery":
             raise ConflictError("当前订单状态不允许卖家取消")
-        updated = self._transition(order, "refunding", ObjectId(str(seller_id)), "seller", "seller_cancel_and_refund", reason)
-        return self._present_order(updated, ObjectId(str(seller_id)))
+        operator_id = ObjectId(str(seller_id))
+        refund = self._ensure_refund(
+            order,
+            operator_id,
+            "seller",
+            "卖家取消交易",
+            refund_type="refund_only",
+            status="seller_agreed",
+            seller_result="agreed",
+            seller_reason=reason,
+        )
+        refunding_order = self._transition(order, "refunding", operator_id, "seller", "seller_cancel_and_refund", reason)
+        refunded_order = self._execute_refund(refunding_order, refund, operator_id, "seller", "seller_cancel_and_refund", reason)
+        return self._present_order(refunded_order, operator_id)
 
     def _get_visible_order(self, order_id, user_id):
         order = self.orders.find_by_id(to_object_id(order_id, "order_id"))
@@ -199,6 +211,68 @@ class OrderService:
         for item in self.order_items.list_by_order(order_id):
             self.products.release_stock(item["product_id"], item["quantity"])
             self._log("product_reopen", "product", item["product_id"], operator_id, operator_role, "locked", "on_sale")
+
+    def _ensure_refund(
+        self,
+        order,
+        operator_id,
+        operator_role,
+        reason,
+        refund_type="refund_only",
+        status="requested",
+        seller_result="",
+        seller_reason="",
+    ):
+        existing = self.db.refunds.find_one({"order_id": order["_id"], "status": {"$nin": ["refunded", "closed"]}})
+        if existing:
+            return existing
+        now = utc_now()
+        doc = {
+            "order_id": order["_id"],
+            "buyer_id": order["buyer_id"],
+            "seller_id": order["seller_id"],
+            "refund_type": refund_type,
+            "amount": order["pay_amount"],
+            "reason": reason,
+            "description": reason,
+            "evidence_images": [],
+            "status": status,
+            "seller_result": seller_result,
+            "seller_reason": seller_reason,
+            "seller_handled_at": now if seller_result else None,
+            "admin_result": "",
+            "admin_reason": "",
+            "admin_handled_at": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+        result = self.db.refunds.insert_one(doc)
+        self._log("apply_refund", "order", order["_id"], operator_id, operator_role, order["status"], "refunding", reason)
+        return self.db.refunds.find_one({"_id": result.inserted_id})
+
+    def _execute_refund(self, order, refund, operator_id, operator_role, action, reason):
+        payment = self.payments.find_by_order(order["_id"])
+        if payment and payment.get("status") != "refunded":
+            self.payments.update_fields(payment["_id"], {"status": "refunded", "refunded_at": utc_now()})
+        escrow = self.escrows.find_by_order(order["_id"])
+        if escrow and escrow.get("status") != "refunded":
+            self.escrows.update_status(order["_id"], "refunded")
+        self.db.refunds.update_one(
+            {"_id": refund["_id"]},
+            {
+                "$set": {
+                    "status": "refunded",
+                    "seller_result": refund.get("seller_result") or "agreed",
+                    "seller_handled_at": refund.get("seller_handled_at") or utc_now(),
+                    "updated_at": utc_now(),
+                }
+            },
+        )
+        self._release_order_stock(order["_id"], operator_id, operator_role)
+        updated_order = self.orders.update_fields(order["_id"], {"status": "refunded", "pre_refund_status": ""})
+        self._log(action, "refund", refund["_id"], operator_id, operator_role, refund.get("status"), "refunded", reason)
+        self._log("refund_success", "order", order["_id"], operator_id, operator_role, order["status"], "refunded", reason)
+        return updated_order
 
     def _mark_products_sold(self, order_id, operator_id):
         for item in self.order_items.list_by_order(order_id):
@@ -382,14 +456,46 @@ class DeliveryService:
         return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery), "escrow": serialize_doc(escrow)}
 
     def buyer_reject(self, order_id, user_id, payload=None):
+        payload = payload or {}
         order = self._get_visible_order(order_id, user_id)
         if str(order["buyer_id"]) != str(user_id):
             raise ForbiddenError("只有买家可以拒绝收货")
         if order["status"] != "pending_receive":
             raise ConflictError("当前订单状态不允许拒绝收货")
         updated_order = self.orders.update_fields(order["_id"], {"status": "refunding", "pre_refund_status": "pending_receive"})
-        self.logs.create("buyer_reject_receive", "order", order["_id"], ObjectId(str(user_id)), "buyer", "pending_receive", "refunding", (payload or {}).get("reason") or "")
+        operator_id = ObjectId(str(user_id))
+        reason = (payload.get("reason") or "买家拒绝收货").strip()
+        self._ensure_reject_refund(order, operator_id, reason, payload)
+        self.logs.create("buyer_reject_receive", "order", order["_id"], operator_id, "buyer", "pending_receive", "refunding", reason)
         return serialize_doc(updated_order)
+
+    def _ensure_reject_refund(self, order, buyer_id, reason, payload):
+        existing = self.db.refunds.find_one({"order_id": order["_id"], "status": {"$nin": ["refunded", "closed"]}})
+        if existing:
+            return existing
+        now = utc_now()
+        doc = {
+            "order_id": order["_id"],
+            "buyer_id": buyer_id,
+            "seller_id": order["seller_id"],
+            "refund_type": payload.get("refund_type") or "refund_only",
+            "amount": order["pay_amount"],
+            "reason": reason,
+            "description": (payload.get("description") or reason).strip(),
+            "evidence_images": payload.get("evidence_images") or [],
+            "status": "requested",
+            "seller_result": "",
+            "seller_reason": "",
+            "seller_handled_at": None,
+            "admin_result": "",
+            "admin_reason": "",
+            "admin_handled_at": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+        result = self.db.refunds.insert_one(doc)
+        self.logs.create("apply_refund", "order", order["_id"], buyer_id, "buyer", "pending_receive", "refunding", reason)
+        return self.db.refunds.find_one({"_id": result.inserted_id})
 
     def _get_visible_order(self, order_id, user_id):
         order = self.orders.find_by_id(to_object_id(order_id, "order_id"))
@@ -451,11 +557,13 @@ def _order_allowed_actions(order, current_user_id, payment=None, refund=None):
             "pending_receive": ["confirm_receive", "reject_receive", "apply_refund", "contact_seller"],
             "pending_review": ["create_review", "view_after_sale"],
             "completed": ["view_review", "apply_after_sale"],
-            "refunding": ["view_refund", "apply_appeal"],
+            "refunding": ["view_refund"],
             "refunded": ["view_refund_result"],
             "closed": ["view_close_reason"],
         }
         actions.extend(actions_by_status.get(status, []))
+        if status == "refunding" and refund and refund.get("status") == "seller_rejected":
+            actions.append("apply_appeal")
     if is_seller:
         actions_by_status = {
             "pending_delivery": ["seller_deliver", "seller_cancel_and_refund", "contact_buyer"],

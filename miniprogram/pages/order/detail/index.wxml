@@ -25,6 +25,10 @@
       <view class="muted">原因：{{order.refund.reason}}</view>
       <view class="muted">卖家处理：{{order.refund.seller_result || '待处理'}}</view>
     </view>
+    <view wx:elif="{{order.status === 'refunding'}}" class="info-block">
+      <view class="block-title">售后信息</view>
+      <view class="muted">售后记录生成中/暂无退款单</view>
+    </view>
     <view wx:if="{{order.appeal}}" class="info-block">
       <view class="block-title">平台介入</view>
       <view class="muted">处理状态：{{order.appeal.status}}</view>

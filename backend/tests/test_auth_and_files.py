@@ -23,6 +23,8 @@ def test_wechat_login_register_bind_phone_and_change_password():
     assert response.status_code == 200
     data = response.get_json()["data"]
     assert data["need_bind_phone"] is True
+    assert "buyer" in data["user"]["roles"]
+    assert "user" not in data["user"]["roles"]
 
     bind_response = client.post(
         "/api/v1/auth/bind-phone",
@@ -65,3 +67,20 @@ def test_upload_image_returns_static_url():
     file_doc = response.get_json()["data"]
     assert file_doc["url"].endswith(".png")
     assert "/uploads/product/" in file_doc["url"]
+
+
+def test_wechat_login_default_role_is_buyer():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    openid = "pytest_wechat_buyer_role"
+    app.db.users.delete_many({"openid": openid})
+    response = client.post(
+        "/api/v1/auth/wechat-login",
+        json={"code": "pytest-role-code", "mock_openid": openid, "nickname": "默认买家"},
+    )
+    assert response.status_code == 200
+    roles = response.get_json()["data"]["user"]["roles"]
+    assert "buyer" in roles
+    assert "user" not in roles
