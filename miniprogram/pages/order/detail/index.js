@@ -13,7 +13,8 @@ Page({
       { key: 'completed', text: '完成' }
     ],
     currentStep: 0,
-    fundText: '未付款'
+    fundText: '未付款',
+    actionMap: {}
   },
   onLoad(options) {
     requireLogin()
@@ -26,9 +27,17 @@ Page({
       this.setData({
         order: data,
         currentStep: this.getStepIndex(data.status),
-        fundText: this.getFundText(data)
+        fundText: this.getFundText(data),
+        actionMap: this.buildActionMap(data.allowed_actions)
       })
     })
+  },
+  buildActionMap(allowedActions) {
+    const actions = (allowedActions && allowedActions.actions) || []
+    return actions.reduce((map, action) => {
+      map[action] = true
+      return map
+    }, {})
   },
   getStepIndex(status) {
     const map = {
@@ -64,17 +73,30 @@ Page({
     })
   },
   sellerDeliver() {
-    api.post(`/deliveries/${this.data.id}/seller-deliver`, {
-      delivery_type: 'offline_meetup',
-      meet_location: this.data.order.meet_location || '校内约定地点',
-      delivery_note: '卖家已确认交付'
-    }, { loading: true }).then(() => {
-      wx.showToast({ title: '已确认交付', icon: 'success' })
-      this.loadOrder()
+    wx.showModal({
+      title: '确认交付',
+      editable: true,
+      placeholderText: '填写面交地点或交付说明',
+      success: (res) => {
+        if (!res.confirm) return
+        const content = (res.content || '').trim()
+        if (!content) {
+          wx.showToast({ title: '请填写交付地点或说明', icon: 'none' })
+          return
+        }
+        api.post(`/deliveries/${this.data.id}/seller-deliver`, {
+          delivery_type: 'offline_meetup',
+          meet_location: content,
+          delivery_note: content
+        }, { loading: true }).then(() => {
+          wx.showToast({ title: '已确认交付', icon: 'success' })
+          this.loadOrder()
+        })
+      }
     })
   },
   cancel() {
-    api.post(`/orders/${this.data.id}/cancel`, {}, { loading: true }).then(() => {
+    api.post(`/orders/${this.data.id}/buyer-cancel`, {}, { loading: true }).then(() => {
       wx.showToast({ title: '已取消', icon: 'success' })
       this.loadOrder()
     })
@@ -111,6 +133,18 @@ Page({
   },
   applyRefund() {
     wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount}` })
+  },
+  viewRefund() {
+    const refund = this.data.order && this.data.order.refund
+    if (!refund) {
+      wx.showToast({ title: '暂无售后记录', icon: 'none' })
+      return
+    }
+    wx.showModal({
+      title: '售后进度',
+      content: `退款状态：${refund.status || '待处理'}\n原因：${refund.reason || '无'}\n卖家处理：${refund.seller_result || '待处理'}`,
+      showCancel: false
+    })
   },
   applyAppeal() {
     if (!this.data.order.refund || !this.data.order.refund.id) {

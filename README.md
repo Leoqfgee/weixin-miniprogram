@@ -109,6 +109,13 @@ pending -> failed
 paid -> refunded
 ```
 
+平台担保状态：
+
+```text
+holding -> settled
+holding -> refunded
+```
+
 ## 第 4 阶段已实现
 
 微信小程序原生项目骨架已创建在 `miniprogram/`：
@@ -151,10 +158,10 @@ paid -> refunded
 - 首页：展示 `on_sale` 商品列表，支持跳转搜索和购物车
 - 分类/搜索页：支持关键词、分类、成色筛选
 - 商品详情页：展示商品详情，按后端 `allowed_actions` 显示加入购物车、立即购买、下架按钮
-- 发布页：支持基础信息、价格库存、分类、成色、图片路径 mock、AI 文案 mock、保存草稿、提交审核
+- 发布页：支持基础信息、价格库存、分类、成色、图片上传、AI 文案 mock、保存草稿、提交审核
 - 购物车页：查看购物车、修改数量、删除商品、去结算
 - 订单确认页：展示商品与数量，提交订单，金额由后端重新计算
-- 订单详情页：展示订单快照、模拟支付、取消订单、确认收货
+- 订单详情页：展示订单快照、状态步骤、资金担保、交付信息、售后信息和按后端 `allowed_actions.actions` 控制的操作按钮
 - 我的页：显示登录态、购物车入口、管理员入口
 - 管理端商品审核页：查看待审核商品，审核通过或驳回
 
@@ -164,7 +171,7 @@ paid -> refunded
 
 图片上传和 AI 功能说明：
 
-- 图片上传本阶段为小程序本地路径 mock，后续可接入后端 `uploads/` 文件接口
+- 图片上传已通过 `wx.chooseMedia` + `wx.uploadFile` 接入后端 `POST /api/v1/files/upload`，课程阶段文件保存在本地 `uploads/` 目录
 - AI 文案建议为后端 mock，不接入真实大模型，不会直接发布商品
 
 ## 第 6 阶段已实现
@@ -179,9 +186,11 @@ paid -> refunded
 - `POST /api/v1/refunds`：买家申请退款
 - `GET /api/v1/refunds`：买家/卖家退款列表
 - `GET /api/v1/refunds/{id}`：退款详情
-- `POST /api/v1/refunds/{id}/seller-handle`：卖家处理退款
-- `POST /api/v1/admin/refunds/{id}/arbitrate`：管理员仲裁
-- `GET /api/v1/admin/refunds`：管理员查看退款
+- `POST /api/v1/refunds/{id}/seller-agree`：卖家同意退款
+- `POST /api/v1/refunds/{id}/seller-reject`：卖家拒绝退款
+- `POST /api/v1/appeals`：买家申请平台介入
+- `GET /api/v1/appeals/{id}`：申诉详情
+- `POST /api/v1/admin/appeals/{id}/arbitrate`：管理员处理平台介入
 - `POST /api/v1/ai/product-copy`：AI 文案 mock
 - `GET /api/v1/admin/operation-logs`：操作日志
 - `GET /api/v1/admin/stats`：后台基础统计
@@ -201,7 +210,7 @@ paid -> refunded
 - AI 文案生成仍为后端 mock，不接入真实大模型
 - 系统通知接口已预留，课程阶段可为空列表
 - 退款为流程状态模拟，不接入真实资金退款
-- 图片证据仍以路径数组形式保存，真实上传接口留到后续完善
+- 售后证据当前保存图片 URL 数组，可复用 `POST /api/v1/files/upload` 上传到本地 `uploads/`
 
 ## 第 7 阶段已实现
 
@@ -349,27 +358,34 @@ $order = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/order
 模拟支付：
 
 ```powershell
-$paymentId = $order.data.payment.id
+$orderId = $order.data.id
+$prepay = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/payments/prepay" -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body "{`"order_id`":`"$orderId`"}"
+$paymentId = $prepay.data.payment.id
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/payments/mock-confirm" -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body "{`"payment_id`":`"$paymentId`",`"mock_result`":`"success`"}"
+```
+
+卖家确认交付：
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$orderId/seller-deliver" -Headers @{ Authorization = "Bearer $sellerToken" } -ContentType "application/json" -Body '{"delivery_type":"offline_meetup","meet_location":"图书馆门口","delivery_note":"已当面交付"}'
 ```
 
 确认收货：
 
 ```powershell
-$orderId = $order.data.id
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$orderId/confirm" -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$orderId/buyer-confirm" -Headers @{ Authorization = "Bearer $token" }
 ```
 
 ## 当前 mock 说明
 
 - 支付模式：`PAYMENT_MODE=mock`
 - AI 模式：`AI_MODE=mock`
-- 微信登录、真实支付、真实 AI 调用、对象存储暂未接入
-- 微信登录：使用手机号和密码 mock 登录，不调用微信真实登录接口
+- 微信登录本地默认使用 mock code2Session，也保留手机号密码测试登录
+- 真实支付、真实 AI 调用、对象存储暂未接入
 - 模拟支付：只改变本地支付单和订单状态，不接入真实资金
 - 退款流程：只做状态流转和金额校验，不接入真实退款渠道
 - AI 文案：后端生成 mock 建议，用户仍需手动确认后发布
-- 图片上传：当前小程序保存本地路径/示例路径，后续可扩展为后端 `uploads/` 文件接口
+- 图片上传：当前上传到后端本地 `uploads/` 目录，后续可替换为对象存储
 
 ## 小程序环境与接口地址
 
@@ -571,7 +587,7 @@ refunding         退款/售后中
 refunded          已退款
 ```
 
-订单状态不再使用 `pending_seller_confirm`、`paid_escrow`、`refund_requested`、`dispute`。支付状态放在 `payments.status`，平台担保状态放在 `escrow_records.status`，退款进度放在 `refunds.status`，平台介入进度放在 `appeals.status`。
+订单状态只表示交易主链路，旧的卖家确认、担保、退款请求、争议类节点已从 `orders.status` 中清理。支付状态放在 `payments.status`，平台担保状态放在 `escrow_records.status`，退款进度放在 `refunds.status`，平台介入进度放在 `appeals.status`。
 
 超时任务可手动运行：
 
@@ -596,7 +612,7 @@ refunding 超过 48 小时卖家未处理 -> 写入业务提醒日志
 - 将 Flask 后端部署到 HTTPS 服务
 - 在微信公众平台配置合法服务器域名
 - 将 `miniprogram/utils/constants.js` 中 `trial`、`release` 的 `API_BASE_URL` 改为线上 HTTPS API 地址
-- 接入真实图片上传接口后，再替换当前图片路径 mock
+- 如需上线高并发或长期保存图片，建议把本地 `uploads/` 替换为对象存储
 - 如果要接入真实微信登录、支付或 AI，需要把对应 Adapter 从 mock 实现替换为真实服务封装
 
 真实小程序上线检查清单：

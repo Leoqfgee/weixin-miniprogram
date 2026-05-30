@@ -31,15 +31,16 @@
       <view class="muted">处理结果：{{order.appeal.admin_result || '待平台处理'}}</view>
     </view>
     <view class="actions">
-      <button wx:if="{{order.allowed_actions.can_pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button>
-      <button wx:if="{{order.allowed_actions.can_cancel}}" class="ghost-btn" bindtap="cancel">取消订单</button>
-      <button wx:if="{{order.allowed_actions.can_seller_cancel_and_refund}}" class="ghost-btn" bindtap="sellerCancel">取消并退款</button>
-      <button wx:if="{{order.allowed_actions.can_seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button>
-      <button wx:if="{{order.allowed_actions.can_confirm_receipt}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
-      <button wx:if="{{order.allowed_actions.can_reject_receive}}" class="ghost-btn" bindtap="rejectReceive">拒绝收货</button>
-      <button wx:if="{{order.allowed_actions.can_review}}" class="ghost-btn" bindtap="review">评价</button>
-      <button wx:if="{{order.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
-      <button wx:if="{{order.allowed_actions.can_apply_appeal}}" class="ghost-btn" bindtap="applyAppeal">平台介入</button>
+      <button wx:if="{{actionMap.pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button>
+      <button wx:if="{{actionMap.cancel_order}}" class="ghost-btn" bindtap="cancel">取消订单</button>
+      <button wx:if="{{actionMap.seller_cancel_and_refund}}" class="ghost-btn" bindtap="sellerCancel">取消并退款</button>
+      <button wx:if="{{actionMap.seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button>
+      <button wx:if="{{actionMap.confirm_receive}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
+      <button wx:if="{{actionMap.reject_receive}}" class="ghost-btn" bindtap="rejectReceive">拒绝收货</button>
+      <button wx:if="{{actionMap.create_review}}" class="ghost-btn" bindtap="review">评价</button>
+      <button wx:if="{{actionMap.apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
+      <button wx:if="{{actionMap.apply_appeal}}" class="ghost-btn" bindtap="applyAppeal">平台介入</button>
+      <button wx:if="{{actionMap.view_refund || actionMap.view_refund_result}}" class="ghost-btn" bindtap="viewRefund">查看售后</button>
     </view>
   </view>
   <view wx:else class="panel muted">正在加载订单...</view>

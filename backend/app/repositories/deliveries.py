@@ -17,7 +17,7 @@ class DeliveryRepository:
             "seller_id": seller_id,
             "buyer_id": order["buyer_id"],
             "delivery_type": delivery_type,
-            "status": "delivering",
+            "status": "delivered",
             "meet_location": payload.get("meet_location") or order.get("meet_location", ""),
             "meet_time": payload.get("meet_time") or "",
             "pickup_location": payload.get("pickup_location") or "",
