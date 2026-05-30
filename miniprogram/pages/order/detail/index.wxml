@@ -1,24 +1,45 @@
 <view class="page">
   <view wx:if="{{order}}" class="panel">
     <view class="title">订单详情</view>
+    <view class="steps">
+      <view wx:for="{{steps}}" wx:key="key" class="step {{index <= currentStep ? 'active' : ''}}">{{item.text}}</view>
+    </view>
     <view class="row">
       <text>状态</text>
       <status-badge type="order" status="{{order.status}}"></status-badge>
     </view>
+    <view class="fund">{{fundText}}</view>
     <view class="amount">￥{{order.total_amount}}</view>
     <view wx:for="{{order.items}}" wx:key="id" class="item">
       <view>{{item.product_snapshot.title}}</view>
-      <view class="muted">数量 {{item.quantity}} · 快照价 ￥{{item.unit_price}}</view>
+      <view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.condition}} · 快照价 ￥{{item.unit_price}}</view>
+    </view>
+    <view wx:if="{{order.delivery}}" class="info-block">
+      <view class="block-title">交付信息</view>
+      <view class="muted">{{order.delivery.delivery_type}} · {{order.delivery.meet_location || order.delivery.pickup_location || order.delivery.campus_address || order.delivery.tracking_no}}</view>
+      <view class="muted">{{order.delivery.delivery_note}}</view>
+    </view>
+    <view wx:if="{{order.refund}}" class="info-block">
+      <view class="block-title">售后信息</view>
+      <view class="muted">退款状态：{{order.refund.status}}</view>
+      <view class="muted">原因：{{order.refund.reason}}</view>
+      <view class="muted">卖家处理：{{order.refund.seller_result || '待处理'}}</view>
+    </view>
+    <view wx:if="{{order.appeal}}" class="info-block">
+      <view class="block-title">平台介入</view>
+      <view class="muted">处理状态：{{order.appeal.status}}</view>
+      <view class="muted">处理结果：{{order.appeal.admin_result || '待平台处理'}}</view>
     </view>
     <view class="actions">
-      <button wx:if="{{order.allowed_actions.can_seller_confirm}}" class="primary-btn" bindtap="sellerConfirm">确认交易</button>
-      <button wx:if="{{order.allowed_actions.can_seller_cancel}}" class="ghost-btn" bindtap="sellerCancel">取消交易</button>
       <button wx:if="{{order.allowed_actions.can_pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button>
       <button wx:if="{{order.allowed_actions.can_cancel}}" class="ghost-btn" bindtap="cancel">取消订单</button>
+      <button wx:if="{{order.allowed_actions.can_seller_cancel_and_refund}}" class="ghost-btn" bindtap="sellerCancel">取消并退款</button>
       <button wx:if="{{order.allowed_actions.can_seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button>
       <button wx:if="{{order.allowed_actions.can_confirm_receipt}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
+      <button wx:if="{{order.allowed_actions.can_reject_receive}}" class="ghost-btn" bindtap="rejectReceive">拒绝收货</button>
       <button wx:if="{{order.allowed_actions.can_review}}" class="ghost-btn" bindtap="review">评价</button>
       <button wx:if="{{order.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
+      <button wx:if="{{order.allowed_actions.can_apply_appeal}}" class="ghost-btn" bindtap="applyAppeal">平台介入</button>
     </view>
   </view>
   <view wx:else class="panel muted">正在加载订单...</view>

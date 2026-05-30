@@ -9,7 +9,7 @@ from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, Validat
 from ..utils.serializers import serialize_doc, to_object_id
 
 
-PRODUCT_STATUSES = {"draft", "pending_review", "on_sale", "rejected", "off_shelf", "deleted"}
+PRODUCT_STATUSES = {"draft", "pending_review", "rejected", "on_sale", "locked", "sold", "off_shelf"}
 EDITABLE_STATUSES = {"draft", "rejected", "off_shelf"}
 CONDITIONS = {"new", "like_new", "good", "fair"}
 

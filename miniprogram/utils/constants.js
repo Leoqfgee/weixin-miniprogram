@@ -33,21 +33,21 @@ const PRODUCT_STATUS_TEXT = {
   draft: '草稿',
   pending_review: '待审核',
   on_sale: '在售',
+  locked: '交易锁定中',
+  sold: '已售出',
   rejected: '已驳回',
-  off_shelf: '已下架',
-  deleted: '已删除'
+  off_shelf: '已下架'
 }
 
 const ORDER_STATUS_TEXT = {
-  pending_seller_confirm: '待卖家确认',
-  seller_cancelled: '卖家已取消',
-  pending_payment: '待支付',
-  paid: '已支付',
-  delivering: '交付中',
-  completed: '已完成',
-  refunding: '售后中',
+  pending_payment: '待付款',
+  pending_delivery: '待交付',
+  pending_receive: '待收货',
+  pending_review: '待评价',
+  completed: '交易完成',
+  closed: '已关闭',
+  refunding: '退款/售后中',
   refunded: '已退款',
-  closed: '已关闭'
 }
 
 const CONDITION_OPTIONS = [

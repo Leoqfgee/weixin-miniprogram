@@ -11,20 +11,36 @@ class DeliveryRepository:
     def __init__(self, db):
         self.db = db
 
-    def mark_delivering(self, order_id, seller_id):
+    def mark_delivering(self, order, seller_id, payload, delivery_type):
         doc = {
-            "order_id": order_id,
+            "order_id": order["_id"],
             "seller_id": seller_id,
+            "buyer_id": order["buyer_id"],
+            "delivery_type": delivery_type,
             "status": "delivering",
+            "meet_location": payload.get("meet_location") or order.get("meet_location", ""),
+            "meet_time": payload.get("meet_time") or "",
+            "pickup_location": payload.get("pickup_location") or "",
+            "pickup_time_range": payload.get("pickup_time_range") or "",
+            "pickup_code": payload.get("pickup_code") or "",
+            "campus_address": payload.get("campus_address") or "",
+            "delivery_note": payload.get("delivery_note") or "",
+            "express_company": payload.get("express_company") or "",
+            "tracking_no": payload.get("tracking_no") or "",
+            "receiver_name": payload.get("receiver_name") or "",
+            "receiver_phone": payload.get("receiver_phone") or "",
+            "receiver_address": payload.get("receiver_address") or "",
+            "proof_images": payload.get("proof_images") or [],
             "delivered_at": utc_now(),
+            "confirmed_at": None,
             "updated_at": utc_now(),
         }
         self.db.deliveries.update_one(
-            {"order_id": order_id},
+            {"order_id": order["_id"]},
             {"$set": doc, "$setOnInsert": {"created_at": utc_now()}},
             upsert=True,
         )
-        return self.find_by_order(order_id)
+        return self.find_by_order(order["_id"])
 
     def confirm_receipt(self, order_id, buyer_id):
         self.db.deliveries.update_one(

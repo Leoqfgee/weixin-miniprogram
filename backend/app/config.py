@@ -43,3 +43,6 @@ class Config:
     FLASK_HOST = os.getenv("FLASK_HOST", "0.0.0.0")
     FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
     DEBUG = os.getenv("FLASK_DEBUG", "1") == "1"
+    ORDER_PAYMENT_TIMEOUT_MINUTES = int(os.getenv("ORDER_PAYMENT_TIMEOUT_MINUTES", "30"))
+    ORDER_AUTO_RECEIVE_DAYS = int(os.getenv("ORDER_AUTO_RECEIVE_DAYS", "7"))
+    REFUND_SELLER_TIMEOUT_HOURS = int(os.getenv("REFUND_SELLER_TIMEOUT_HOURS", "48"))

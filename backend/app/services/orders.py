@@ -1,9 +1,13 @@
+from uuid import uuid4
+
 from bson import ObjectId
 from flask import current_app
 
 from ..adapters.payment import get_payment_adapter
 from ..repositories.carts import CartRepository
 from ..repositories.deliveries import DeliveryRepository
+from ..repositories.escrows import EscrowRepository
+from ..repositories.logs import BusinessLogRepository
 from ..repositories.orders import OrderItemRepository, OrderRepository, utc_now
 from ..repositories.payments import PaymentRepository
 from ..repositories.products import ProductRepository
@@ -13,17 +17,17 @@ from ..utils.serializers import serialize_doc, to_object_id
 
 
 ORDER_STATUSES = {
-    "pending_seller_confirm",
-    "seller_cancelled",
     "pending_payment",
-    "paid",
-    "delivering",
+    "pending_delivery",
+    "pending_receive",
+    "pending_review",
     "completed",
+    "closed",
     "refunding",
     "refunded",
-    "closed",
 }
-PAYMENT_STATUSES = {"pending", "paid", "failed", "closed"}
+PAYMENT_STATUSES = {"pending", "paid", "failed", "refunded"}
+DELIVERY_TYPES = {"offline_meetup", "campus_pickup", "campus_delivery", "express"}
 
 
 class OrderService:
@@ -32,10 +36,12 @@ class OrderService:
         self.orders = OrderRepository(db)
         self.order_items = OrderItemRepository(db)
         self.payments = PaymentRepository(db)
+        self.escrows = EscrowRepository(db)
         self.products = ProductRepository(db)
         self.carts = CartRepository(db)
         self.users = UserRepository(db)
         self.deliveries = DeliveryRepository(db)
+        self.logs = BusinessLogRepository(db)
 
     def create_order(self, buyer_id, payload, idempotency_key=None):
         buyer_id = ObjectId(str(buyer_id))
@@ -75,26 +81,30 @@ class OrderService:
                 if not self.products.lock_stock(product["_id"], quantity):
                     raise ConflictError("商品库存不足或已下架")
                 locked.append((product["_id"], quantity))
+                self._log("product_locked", "product", product["_id"], buyer_id, "buyer", "on_sale", "locked")
 
             order_doc = {
+                "order_no": f"ORD{utc_now().strftime('%Y%m%d%H%M%S')}{uuid4().hex[:8].upper()}",
                 "buyer_id": buyer_id,
                 "seller_id": product_docs[0][0]["seller_id"],
-                "status": "pending_seller_confirm",
+                "product_id": product_docs[0][0]["_id"],
+                "status": "pending_payment",
+                "pre_refund_status": "",
                 "total_amount": total_amount,
                 "pay_amount": total_amount,
-                "delivery_type": payload.get("delivery_type", "meetup"),
+                "delivery_type": _normalize_delivery_type(payload.get("delivery_type", "offline_meetup")),
                 "meet_location": (payload.get("meet_location") or "").strip(),
                 "remark": (payload.get("remark") or "").strip(),
                 "closed_reason": "",
-                "seller_confirmed_at": None,
-                "seller_cancelled_at": None,
-                "delivered_at": None,
                 "paid_at": None,
+                "delivered_at": None,
+                "received_at": None,
                 "completed_at": None,
             }
             if idempotency_key:
                 order_doc["idempotency_key"] = idempotency_key
             order = self.orders.create(order_doc)
+            self._log("create_order", "order", order["_id"], buyer_id, "buyer", None, "pending_payment")
             order_items = []
             for product, quantity in product_docs:
                 order_items.append(
@@ -110,12 +120,14 @@ class OrderService:
                     }
                 )
             self.order_items.create_many(order_items)
+
             if payload.get("clear_cart", True):
                 self.carts.clear_products(buyer_id, [product["_id"] for product, _ in product_docs])
             return self._present_order(order, buyer_id)
         except Exception:
             for product_id, quantity in locked:
                 self.products.release_stock(product_id, quantity)
+                self._log("product_reopen", "product", product_id, buyer_id, "buyer", "locked", "on_sale", "create_order_failed")
             raise
 
     def list_orders(self, user_id, args):
@@ -123,9 +135,12 @@ class OrderService:
         page = max(int(args.get("page", 1)), 1)
         page_size = min(max(int(args.get("page_size", 20)), 1), 50)
         status = args.get("status")
+        role = args.get("role")
         if status and status not in ORDER_STATUSES:
             raise ValidationError("参数校验失败", [{"field": "status", "message": "订单状态不合法"}])
-        items, total = self.orders.list_for_user(user_id, status=status, page=page, page_size=page_size)
+        if role and role not in {"buyer", "seller"}:
+            raise ValidationError("参数校验失败", [{"field": "role", "message": "角色筛选不合法"}])
+        items, total = self.orders.list_for_user(user_id, status=status, page=page, page_size=page_size, role=role)
         return {
             "items": [self._present_order(item, user_id, compact=True) for item in items],
             "pagination": {
@@ -140,48 +155,36 @@ class OrderService:
         order = self._get_visible_order(order_id, user_id)
         return self._present_order(order, ObjectId(str(user_id)))
 
-    def cancel_order(self, order_id, user_id):
+    def buyer_cancel(self, order_id, user_id, reason="buyer_cancel"):
         order = self._get_visible_order(order_id, user_id)
         if str(order["buyer_id"]) != str(user_id):
-            raise ForbiddenError("只有买家可以取消订单")
-        if order["status"] not in {"pending_seller_confirm", "pending_payment"}:
+            raise ForbiddenError("只有买家可以取消自己的订单")
+        if order["status"] != "pending_payment":
             raise ConflictError("当前订单状态不允许取消")
-        self._release_order_stock(order["_id"])
-        updated = self.orders.update_fields(order["_id"], {"status": "closed", "closed_reason": "buyer_cancel"})
+        self._release_order_stock(order["_id"], ObjectId(str(user_id)), "buyer")
         payment = self.payments.find_by_order(order["_id"])
         if payment and payment.get("status") == "pending":
-            self.payments.update_fields(payment["_id"], {"status": "closed"})
+            self.payments.update_fields(payment["_id"], {"status": "failed"})
+        updated = self._transition(order, "closed", ObjectId(str(user_id)), "buyer", "cancel_order", reason)
         return self._present_order(updated, ObjectId(str(user_id)))
 
-    def seller_confirm(self, order_id, seller_id):
-        order = self._get_visible_order(order_id, seller_id)
-        if str(order["seller_id"]) != str(seller_id):
-            raise ForbiddenError("只有卖家可以确认交易")
-        if order["status"] != "pending_seller_confirm":
-            raise ConflictError("当前订单状态不允许卖家确认")
-        adapter = get_payment_adapter(current_app.config.get("PAYMENT_MODE", "mock"))
-        payment_meta = adapter.create_payment(order, order["pay_amount"])
-        payment = self.payments.find_by_order(order["_id"])
-        if not payment:
-            payment = self.payments.create_for_order(order["_id"], order["pay_amount"], channel=payment_meta["channel"])
-        updated = self.orders.update_fields(
-            order["_id"],
-            {"status": "pending_payment", "seller_confirmed_at": utc_now()},
-        )
-        return self._present_order(updated, ObjectId(str(seller_id)), payment=payment)
+    def close_timeout(self, order_id, reason="payment_timeout"):
+        order = self.orders.find_by_id(to_object_id(order_id, "order_id"))
+        if not order:
+            raise NotFoundError("订单不存在")
+        if order["status"] != "pending_payment":
+            return self._present_order(order, order["buyer_id"])
+        self._release_order_stock(order["_id"], None, "system")
+        updated = self._transition(order, "closed", None, "system", "timeout_close_order", reason)
+        return self._present_order(updated, order["buyer_id"])
 
-    def seller_cancel(self, order_id, seller_id, payload=None):
+    def seller_cancel_and_refund(self, order_id, seller_id, reason="seller_cancel"):
         order = self._get_visible_order(order_id, seller_id)
         if str(order["seller_id"]) != str(seller_id):
             raise ForbiddenError("只有卖家可以取消交易")
-        if order["status"] != "pending_seller_confirm":
+        if order["status"] != "pending_delivery":
             raise ConflictError("当前订单状态不允许卖家取消")
-        self._release_order_stock(order["_id"])
-        reason = ((payload or {}).get("reason") or "seller_cancel").strip()
-        updated = self.orders.update_fields(
-            order["_id"],
-            {"status": "seller_cancelled", "closed_reason": reason, "seller_cancelled_at": utc_now()},
-        )
+        updated = self._transition(order, "refunding", ObjectId(str(seller_id)), "seller", "seller_cancel_and_refund", reason)
         return self._present_order(updated, ObjectId(str(seller_id)))
 
     def _get_visible_order(self, order_id, user_id):
@@ -192,9 +195,24 @@ class OrderService:
             raise ForbiddenError("无权限查看该订单")
         return order
 
-    def _release_order_stock(self, order_id):
+    def _release_order_stock(self, order_id, operator_id=None, operator_role="system"):
         for item in self.order_items.list_by_order(order_id):
             self.products.release_stock(item["product_id"], item["quantity"])
+            self._log("product_reopen", "product", item["product_id"], operator_id, operator_role, "locked", "on_sale")
+
+    def _mark_products_sold(self, order_id, operator_id):
+        for item in self.order_items.list_by_order(order_id):
+            self.products.mark_sold(item["product_id"])
+            self._log("product_sold", "product", item["product_id"], operator_id, "buyer", "locked", "sold")
+
+    def _transition(self, order, to_status, operator_id, operator_role, action, reason="", extra=None):
+        from_status = order["status"]
+        updated = self.orders.update_fields(order["_id"], {"status": to_status, "closed_reason": reason if to_status == "closed" else order.get("closed_reason", "")})
+        self._log(action, "order", order["_id"], operator_id, operator_role, from_status, to_status, reason, extra)
+        return updated
+
+    def _log(self, action, target_type, target_id, operator_id, operator_role, from_status=None, to_status=None, reason="", extra=None):
+        self.logs.create(action, target_type, target_id, operator_id, operator_role, from_status, to_status, reason, extra)
 
     def _resolve_order_lines(self, payload):
         if payload.get("items"):
@@ -219,17 +237,28 @@ class OrderService:
         data = serialize_doc(order)
         items = [serialize_doc(item) for item in self.order_items.list_by_order(order["_id"])]
         data["items"] = items
+        data["product_snapshot"] = items[0]["product_snapshot"] if items else {}
         if payment is None:
             payment = self.payments.find_by_order(order["_id"])
         data["payment"] = serialize_doc(payment) if payment else None
-        data["allowed_actions"] = _order_allowed_actions(order, current_user_id)
+        escrow = self.escrows.find_by_order(order["_id"])
+        data["escrow"] = serialize_doc(escrow) if escrow else None
+        delivery = self.deliveries.find_by_order(order["_id"])
+        data["delivery"] = serialize_doc(delivery) if delivery else None
+        refund = self.db.refunds.find_one({"order_id": order["_id"]}, sort=[("created_at", -1)])
+        data["refund"] = serialize_doc(refund) if refund else None
+        appeal = self.db.appeals.find_one({"order_id": order["_id"]}, sort=[("created_at", -1)])
+        data["appeal"] = serialize_doc(appeal) if appeal else None
+        data["allowed_actions"] = _order_allowed_actions(order, current_user_id, payment, refund)
         if compact:
             return {
                 "id": data["id"],
+                "order_no": data.get("order_no"),
                 "status": data["status"],
                 "total_amount": data["total_amount"],
                 "items": data["items"],
                 "payment": data["payment"],
+                "escrow": data["escrow"],
                 "allowed_actions": data["allowed_actions"],
                 "created_at": data["created_at"],
             }
@@ -240,6 +269,21 @@ class PaymentService:
     def __init__(self, db):
         self.orders = OrderRepository(db)
         self.payments = PaymentRepository(db)
+        self.escrows = EscrowRepository(db)
+        self.logs = BusinessLogRepository(db)
+
+    def prepay(self, user_id, payload, idempotency_key=None):
+        order = self.orders.find_by_id(to_object_id(payload.get("order_id"), "order_id"))
+        if not order:
+            raise NotFoundError("订单不存在")
+        if str(order["buyer_id"]) != str(user_id):
+            raise ForbiddenError("只有买家可以发起支付")
+        if order["status"] != "pending_payment":
+            raise ConflictError("当前订单状态不允许支付")
+        adapter = get_payment_adapter(current_app.config.get("PAYMENT_MODE", "mock"))
+        payment_meta = adapter.create_payment(order, order["pay_amount"])
+        payment = self.payments.create_for_order(order, order["pay_amount"], channel=payment_meta["channel"], idempotency_key=idempotency_key)
+        return {"payment": serialize_doc(payment), "mock_pay_params": {"order_id": str(order["_id"]), "amount": order["pay_amount"]}}
 
     def mock_confirm(self, user_id, payload, idempotency_key=None):
         payment = self._find_payment(payload)
@@ -248,8 +292,9 @@ class PaymentService:
             raise NotFoundError("订单不存在")
         if str(order["buyer_id"]) != str(user_id):
             raise ForbiddenError("只有买家可以确认支付")
-        if payment["status"] == "paid" and order["status"] == "paid":
-            return {"payment": serialize_doc(payment), "order_status": order["status"]}
+        if payment["status"] == "paid" and order["status"] in {"pending_delivery", "pending_receive", "pending_review", "completed"}:
+            escrow = self.escrows.create_holding(order)
+            return {"payment": serialize_doc(payment), "escrow": serialize_doc(escrow), "order_status": order["status"]}
         if order["status"] != "pending_payment" or payment["status"] != "pending":
             raise ConflictError("当前订单或支付单状态不允许支付")
 
@@ -267,8 +312,20 @@ class PaymentService:
 
         paid_at = utc_now()
         updated_payment = self.payments.update_fields(payment["_id"], {"status": "paid", "paid_at": paid_at})
-        updated_order = self.orders.update_fields(order["_id"], {"status": "paid", "paid_at": paid_at})
-        return {"payment": serialize_doc(updated_payment), "order_status": updated_order["status"]}
+        updated_order = self.orders.update_fields(order["_id"], {"status": "pending_delivery", "paid_at": paid_at})
+        self.logs.create("pay_success", "order", order["_id"], order["buyer_id"], "buyer", "pending_payment", "pending_delivery")
+        escrow = self.escrows.create_holding(updated_order)
+        self.logs.create("create_escrow", "escrow", escrow["_id"], order["buyer_id"], "buyer", None, "holding", extra={"order_id": order["_id"]})
+        return {"payment": serialize_doc(updated_payment), "escrow": serialize_doc(escrow), "order_status": updated_order["status"]}
+
+    def refund_payment(self, order, operator_id, operator_role, reason="refund_success"):
+        payment = self.payments.find_by_order(order["_id"])
+        if payment and payment["status"] != "refunded":
+            self.payments.update_fields(payment["_id"], {"status": "refunded", "refunded_at": utc_now()})
+        escrow = self.escrows.find_by_order(order["_id"])
+        if escrow and escrow["status"] != "refunded":
+            self.escrows.update_status(order["_id"], "refunded")
+        self.logs.create("refund_success", "order", order["_id"], operator_id, operator_role, order["status"], "refunded", reason)
 
     def _find_payment(self, payload):
         if payload.get("payment_id"):
@@ -284,36 +341,63 @@ class PaymentService:
 
 class DeliveryService:
     def __init__(self, db):
+        self.db = db
         self.orders = OrderRepository(db)
         self.deliveries = DeliveryRepository(db)
+        self.escrows = EscrowRepository(db)
+        self.logs = BusinessLogRepository(db)
 
-    def seller_deliver(self, order_id, seller_id):
-        order = self.orders.find_by_id(to_object_id(order_id, "order_id"))
-        if not order:
-            raise NotFoundError("订单不存在")
+    def get_delivery(self, order_id, user_id):
+        order = self._get_visible_order(order_id, user_id)
+        delivery = self.deliveries.find_by_order(order["_id"])
+        if not delivery:
+            raise NotFoundError("交付信息不存在")
+        return serialize_doc(delivery)
+
+    def seller_deliver(self, order_id, seller_id, payload=None):
+        payload = payload or {}
+        order = self._get_visible_order(order_id, seller_id)
         if str(order["seller_id"]) != str(seller_id):
             raise ForbiddenError("只有卖家可以确认交付")
-        if order["status"] != "paid":
+        if order["status"] != "pending_delivery":
             raise ConflictError("当前订单状态不允许确认交付")
-        delivery = self.deliveries.mark_delivering(order["_id"], ObjectId(str(seller_id)))
-        updated_order = self.orders.update_fields(order["_id"], {"status": "delivering", "delivered_at": utc_now()})
+        delivery_type = _normalize_delivery_type(payload.get("delivery_type") or order.get("delivery_type") or "offline_meetup")
+        _validate_delivery_payload(delivery_type, payload)
+        delivery = self.deliveries.mark_delivering(order, ObjectId(str(seller_id)), payload, delivery_type)
+        updated_order = self.orders.update_fields(order["_id"], {"status": "pending_receive", "delivered_at": utc_now()})
+        self.logs.create("seller_deliver", "order", order["_id"], ObjectId(str(seller_id)), "seller", "pending_delivery", "pending_receive", payload.get("delivery_note") or "")
         return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery)}
 
-    def confirm_receipt(self, order_id, user_id):
+    def buyer_confirm(self, order_id, user_id):
+        order = self._get_visible_order(order_id, user_id)
+        if str(order["buyer_id"]) != str(user_id):
+            raise ForbiddenError("只有买家可以确认收货")
+        if order["status"] != "pending_receive":
+            raise ConflictError("当前订单状态不允许确认收货")
+        delivery = self.deliveries.confirm_receipt(order["_id"], ObjectId(str(user_id)))
+        escrow = self.escrows.update_status(order["_id"], "settled")
+        self.logs.create("escrow_settle", "escrow", escrow["_id"], ObjectId(str(user_id)), "buyer", "holding", "settled", extra={"order_id": order["_id"]})
+        updated_order = self.orders.update_fields(order["_id"], {"status": "pending_review", "received_at": utc_now()})
+        self.logs.create("buyer_confirm_receive", "order", order["_id"], ObjectId(str(user_id)), "buyer", "pending_receive", "pending_review")
+        return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery), "escrow": serialize_doc(escrow)}
+
+    def buyer_reject(self, order_id, user_id, payload=None):
+        order = self._get_visible_order(order_id, user_id)
+        if str(order["buyer_id"]) != str(user_id):
+            raise ForbiddenError("只有买家可以拒绝收货")
+        if order["status"] != "pending_receive":
+            raise ConflictError("当前订单状态不允许拒绝收货")
+        updated_order = self.orders.update_fields(order["_id"], {"status": "refunding", "pre_refund_status": "pending_receive"})
+        self.logs.create("buyer_reject_receive", "order", order["_id"], ObjectId(str(user_id)), "buyer", "pending_receive", "refunding", (payload or {}).get("reason") or "")
+        return serialize_doc(updated_order)
+
+    def _get_visible_order(self, order_id, user_id):
         order = self.orders.find_by_id(to_object_id(order_id, "order_id"))
         if not order:
             raise NotFoundError("订单不存在")
-        if str(order["buyer_id"]) != str(user_id):
-            raise ForbiddenError("只有买家可以确认收货")
-        if order["status"] != "delivering":
-            raise ConflictError("当前订单状态不允许确认收货")
-        completed_at = utc_now()
-        delivery = self.deliveries.confirm_receipt(order["_id"], ObjectId(str(user_id)))
-        updated_order = self.orders.update_fields(
-            order["_id"],
-            {"status": "completed", "completed_at": completed_at},
-        )
-        return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery)}
+        if str(order["buyer_id"]) != str(user_id) and str(order["seller_id"]) != str(user_id):
+            raise ForbiddenError("无权限查看该订单")
+        return order
 
 
 def _validate_quantity(value):
@@ -332,20 +416,65 @@ def _product_snapshot(product):
         "cover_image": product.get("cover_image"),
         "condition": product.get("condition"),
         "category_id": product.get("category_id"),
+        "defect_note": product.get("defect_note", ""),
     }
 
 
-def _order_allowed_actions(order, current_user_id):
+def _normalize_delivery_type(value):
+    aliases = {"meetup": "offline_meetup"}
+    delivery_type = aliases.get(value, value)
+    if delivery_type not in DELIVERY_TYPES:
+        raise ValidationError("参数校验失败", [{"field": "delivery_type", "message": "交付方式不合法"}])
+    return delivery_type
+
+
+def _validate_delivery_payload(delivery_type, payload):
+    if delivery_type == "offline_meetup" and not (payload.get("meet_location") or payload.get("delivery_note")):
+        raise ValidationError("参数校验失败", [{"field": "meet_location", "message": "校内面交需填写地点或说明"}])
+    if delivery_type == "campus_pickup" and not (payload.get("pickup_location") or payload.get("delivery_note")):
+        raise ValidationError("参数校验失败", [{"field": "pickup_location", "message": "校园自提需填写地点或说明"}])
+    if delivery_type == "campus_delivery" and not (payload.get("campus_address") or payload.get("delivery_note")):
+        raise ValidationError("参数校验失败", [{"field": "campus_address", "message": "校内送达需填写地址或说明"}])
+    if delivery_type == "express" and (not payload.get("express_company") or not payload.get("tracking_no")):
+        raise ValidationError("参数校验失败", [{"field": "tracking_no", "message": "快递方式需填写快递公司和单号"}])
+
+
+def _order_allowed_actions(order, current_user_id, payment=None, refund=None):
     is_buyer = str(order["buyer_id"]) == str(current_user_id)
     is_seller = str(order["seller_id"]) == str(current_user_id)
     status = order["status"]
+    actions = []
+    if is_buyer:
+        actions_by_status = {
+            "pending_payment": ["pay", "cancel_order"],
+            "pending_delivery": ["contact_seller", "apply_refund"],
+            "pending_receive": ["confirm_receive", "reject_receive", "apply_refund", "contact_seller"],
+            "pending_review": ["create_review", "view_after_sale"],
+            "completed": ["view_review", "apply_after_sale"],
+            "refunding": ["view_refund", "apply_appeal"],
+            "refunded": ["view_refund_result"],
+            "closed": ["view_close_reason"],
+        }
+        actions.extend(actions_by_status.get(status, []))
+    if is_seller:
+        actions_by_status = {
+            "pending_delivery": ["seller_deliver", "seller_cancel_and_refund", "contact_buyer"],
+            "pending_receive": ["view_delivery", "contact_buyer"],
+            "refunding": ["agree_refund", "reject_refund", "upload_evidence"],
+            "completed": ["view_review"],
+        }
+        actions.extend(actions_by_status.get(status, []))
     return {
-        "can_seller_confirm": is_seller and status == "pending_seller_confirm",
-        "can_seller_cancel": is_seller and status == "pending_seller_confirm",
-        "can_seller_deliver": is_seller and status == "paid",
-        "can_pay": is_buyer and status == "pending_payment",
-        "can_cancel": is_buyer and status in {"pending_seller_confirm", "pending_payment"},
-        "can_confirm_receipt": is_buyer and status == "delivering",
-        "can_review": is_buyer and status == "completed",
-        "can_apply_refund": is_buyer and status in {"paid", "delivering", "completed", "refunding"},
+        "actions": actions,
+        "can_pay": "pay" in actions,
+        "can_cancel": "cancel_order" in actions,
+        "can_seller_deliver": "seller_deliver" in actions,
+        "can_seller_cancel_and_refund": "seller_cancel_and_refund" in actions,
+        "can_confirm_receipt": "confirm_receive" in actions,
+        "can_reject_receive": "reject_receive" in actions,
+        "can_review": "create_review" in actions,
+        "can_apply_refund": "apply_refund" in actions or "apply_after_sale" in actions,
+        "can_apply_appeal": "apply_appeal" in actions and refund and refund.get("status") == "seller_rejected",
+        "can_agree_refund": "agree_refund" in actions,
+        "can_reject_refund": "reject_refund" in actions,
     }

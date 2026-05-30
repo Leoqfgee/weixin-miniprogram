@@ -12,14 +12,21 @@ class PaymentRepository:
     def __init__(self, db):
         self.db = db
 
-    def create_for_order(self, order_id, amount, channel="mock"):
+    def create_for_order(self, order, amount, channel="mock_wechat", idempotency_key=None):
+        existing = self.find_by_order(order["_id"])
+        if existing:
+            return existing
         doc = {
-            "order_id": order_id,
+            "order_id": order["_id"],
+            "buyer_id": order["buyer_id"],
+            "seller_id": order["seller_id"],
             "amount": amount,
             "channel": channel,
             "status": "pending",
-            "out_trade_no": f"MOCK{uuid4().hex}",
+            "transaction_no": f"MOCK{uuid4().hex}",
+            "idempotency_key": idempotency_key,
             "paid_at": None,
+            "refunded_at": None,
             "created_at": utc_now(),
             "updated_at": utc_now(),
         }

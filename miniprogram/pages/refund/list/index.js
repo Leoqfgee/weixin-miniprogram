@@ -19,9 +19,9 @@ Page({
   sellerHandle(event) {
     const id = event.currentTarget.dataset.id
     const result = event.currentTarget.dataset.result
-    api.post(`/refunds/${id}/seller-handle`, {
-      result,
-      reason: result === 'approved' ? '卖家同意退款' : '卖家拒绝，申请平台仲裁'
+    const url = result === 'approved' ? `/refunds/${id}/seller-agree` : `/refunds/${id}/seller-reject`
+    api.post(url, {
+      reason: result === 'approved' ? '卖家同意退款' : '卖家拒绝退款'
     }, { loading: true }).then(() => this.loadRefunds())
   },
   arbitrate(event) {

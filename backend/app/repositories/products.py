@@ -20,7 +20,7 @@ class ProductRepository:
 
     def find_by_id(self, product_id):
         object_id = product_id if isinstance(product_id, ObjectId) else ObjectId(str(product_id))
-        return self.db.products.find_one({"_id": object_id, "status": {"$ne": "deleted"}})
+        return self.db.products.find_one({"_id": object_id})
 
     def update_fields(self, product_id, fields):
         fields["updated_at"] = utc_now()
@@ -30,15 +30,22 @@ class ProductRepository:
     def lock_stock(self, product_id, quantity):
         result = self.db.products.update_one(
             {"_id": product_id, "status": "on_sale", "stock": {"$gte": quantity}},
-            {"$inc": {"stock": -quantity}, "$set": {"updated_at": utc_now()}},
+            {"$inc": {"stock": -quantity}, "$set": {"status": "locked", "updated_at": utc_now()}},
         )
         return result.modified_count == 1
 
     def release_stock(self, product_id, quantity):
         self.db.products.update_one(
-            {"_id": product_id},
-            {"$inc": {"stock": quantity}, "$set": {"updated_at": utc_now()}},
+            {"_id": product_id, "status": "locked"},
+            {"$inc": {"stock": quantity}, "$set": {"status": "on_sale", "updated_at": utc_now()}},
         )
+
+    def mark_sold(self, product_id):
+        self.db.products.update_one(
+            {"_id": product_id, "status": "locked"},
+            {"$set": {"status": "sold", "updated_at": utc_now()}},
+        )
+        return self.find_by_id(product_id)
 
     def list_public(self, filters, page, page_size):
         query = {"status": "on_sale"}
@@ -66,7 +73,7 @@ class ProductRepository:
         return items, total
 
     def list_admin(self, status=None, page=1, page_size=20):
-        query = {"status": status} if status else {"status": {"$ne": "deleted"}}
+        query = {"status": status} if status else {}
         total = self.db.products.count_documents(query)
         items = list(
             self.db.products.find(query)

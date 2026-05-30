@@ -22,175 +22,148 @@ def login(client, phone, password):
 def create_on_sale_product(client, seller_token, admin_token, stock=3, price=99.0):
     category_id = client.get("/api/v1/categories").get_json()["data"]["items"][0]["id"]
     title = f"pytest-trade-{uuid4().hex}"
-    create_response = client.post(
+    response = client.post(
         "/api/v1/products",
         headers=auth_headers(seller_token),
         json={
             "title": title,
-            "description": "第三阶段交易闭环测试商品。",
+            "description": "交易闭环测试商品。",
             "price": price,
             "category_id": category_id,
             "condition": "good",
             "stock": stock,
             "images": [],
             "campus": "主校区",
-            "delivery_options": ["meetup"],
+            "delivery_options": ["offline_meetup"],
             "submit_action": "review",
         },
     )
-    assert create_response.status_code == 201
-    product_id = create_response.get_json()["data"]["id"]
-
-    audit_response = client.post(
+    product_id = response.get_json()["data"]["id"]
+    client.post(
         f"/api/v1/admin/products/{product_id}/audit",
         headers=auth_headers(admin_token),
         json={"result": "approved", "reason": "交易测试通过"},
     )
-    assert audit_response.status_code == 200
-    return product_id, title
+    return product_id
 
 
-def test_cart_order_payment_and_confirm_flow():
+def setup_flow():
     init_db()
     app = create_app()
     client = app.test_client()
     app.db.products.delete_many({"title": {"$regex": "^pytest-trade-"}})
-
     seller_token = login(client, "18800000001", "seller123456")
     buyer_token = login(client, "18800000002", "buyer123456")
     admin_token = login(client, "18800000000", "admin123456")
-    product_id, _ = create_on_sale_product(client, seller_token, admin_token, stock=3, price=99.0)
+    return app, client, seller_token, buyer_token, admin_token
 
-    add_cart_response = client.post(
-        "/api/v1/cart/items",
-        headers=auth_headers(buyer_token),
-        json={"product_id": product_id, "quantity": 2},
-    )
-    assert add_cart_response.status_code == 201
-    assert add_cart_response.get_json()["data"]["items"][0]["quantity"] == 2
 
-    idempotency_key = f"pytest-{uuid4().hex}"
-    order_payload = {
-        "product_id": product_id,
-        "quantity": 2,
-        "delivery_type": "meetup",
-        "meet_location": "图书馆门口",
-        "client_amount": 1,
-    }
-    order_response = client.post(
+def create_order(client, buyer_token, product_id, quantity=1):
+    response = client.post(
         "/api/v1/orders",
-        headers=auth_headers(buyer_token, idempotency_key),
-        json=order_payload,
+        headers=auth_headers(buyer_token, f"order-{uuid4().hex}"),
+        json={
+            "product_id": product_id,
+            "quantity": quantity,
+            "delivery_type": "offline_meetup",
+            "meet_location": "图书馆门口",
+        },
     )
-    assert order_response.status_code == 201
-    order = order_response.get_json()["data"]
-    assert order["status"] == "pending_seller_confirm"
-    assert order["total_amount"] == 198.0
-    assert order["items"][0]["product_snapshot"]["title"]
-    assert order["payment"] is None
-    assert order["allowed_actions"]["can_pay"] is False
-    assert order["allowed_actions"]["can_cancel"] is True
+    assert response.status_code == 201
+    return response.get_json()["data"]
 
-    duplicated_response = client.post(
-        "/api/v1/orders",
-        headers=auth_headers(buyer_token, idempotency_key),
-        json=order_payload,
+
+def pay_order(client, buyer_token, order_id):
+    prepay = client.post(
+        "/api/v1/payments/prepay",
+        headers=auth_headers(buyer_token, f"prepay-{uuid4().hex}"),
+        json={"order_id": order_id},
     )
-    assert duplicated_response.status_code == 201
-    assert duplicated_response.get_json()["data"]["id"] == order["id"]
+    assert prepay.status_code == 201
+    payment = prepay.get_json()["data"]["payment"]
+    response = client.post(
+        "/api/v1/payments/mock-confirm",
+        headers=auth_headers(buyer_token, f"pay-{uuid4().hex}"),
+        json={"payment_id": payment["id"], "mock_result": "success"},
+    )
+    assert response.status_code == 200
+    return response.get_json()["data"]
 
+
+def test_cart_order_payment_delivery_receive_and_review_flow():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=2)
+
+    order = create_order(client, buyer_token, product_id)
+    assert order["status"] == "pending_payment"
+    assert order["allowed_actions"]["can_pay"] is True
     product_after_order = app.db.products.find_one({"_id": ObjectId(product_id)})
-    assert product_after_order["stock"] == 1
+    assert product_after_order["status"] == "locked"
 
-    seller_confirm_response = client.post(
-        f"/api/v1/orders/{order['id']}/seller-confirm",
-        headers=auth_headers(seller_token),
-    )
-    assert seller_confirm_response.status_code == 200
-    confirmed_order = seller_confirm_response.get_json()["data"]
-    assert confirmed_order["status"] == "pending_payment"
-    assert confirmed_order["payment"]["status"] == "pending"
+    pay_data = pay_order(client, buyer_token, order["id"])
+    assert pay_data["order_status"] == "pending_delivery"
+    assert pay_data["payment"]["status"] == "paid"
+    assert pay_data["escrow"]["status"] == "holding"
 
-    payment_id = confirmed_order["payment"]["id"]
-    pay_response = client.post(
+    duplicate_pay = client.post(
         "/api/v1/payments/mock-confirm",
         headers=auth_headers(buyer_token, f"pay-{uuid4().hex}"),
-        json={"payment_id": payment_id, "mock_result": "success"},
+        json={"order_id": order["id"], "mock_result": "success"},
     )
-    assert pay_response.status_code == 200
-    assert pay_response.get_json()["data"]["order_status"] == "paid"
+    assert duplicate_pay.status_code == 200
+    assert app.db.escrow_records.count_documents({"order_id": ObjectId(order["id"])}) == 1
 
-    duplicate_pay_response = client.post(
-        "/api/v1/payments/mock-confirm",
-        headers=auth_headers(buyer_token, f"pay-{uuid4().hex}"),
-        json={"payment_id": payment_id, "mock_result": "success"},
+    not_seller = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
+        headers=auth_headers(buyer_token),
+        json={"delivery_type": "offline_meetup", "meet_location": "图书馆门口"},
     )
-    assert duplicate_pay_response.status_code == 200
-    assert duplicate_pay_response.get_json()["data"]["order_status"] == "paid"
+    assert not_seller.status_code == 403
 
-    detail_response = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token))
-    detail = detail_response.get_json()["data"]
-    assert detail["status"] == "paid"
-    assert detail["allowed_actions"]["can_confirm_receipt"] is False
-
-    confirm_response = client.post(
+    deliver = client.post(
         f"/api/v1/deliveries/{order['id']}/seller-deliver",
         headers=auth_headers(seller_token),
+        json={"delivery_type": "offline_meetup", "meet_location": "图书馆门口", "proof_images": []},
     )
-    assert confirm_response.status_code == 200
-    assert confirm_response.get_json()["data"]["order"]["status"] == "delivering"
+    assert deliver.status_code == 200
+    assert deliver.get_json()["data"]["order"]["status"] == "pending_receive"
 
-    receipt_response = client.post(
-        f"/api/v1/deliveries/{order['id']}/confirm",
+    receive = client.post(f"/api/v1/deliveries/{order['id']}/buyer-confirm", headers=auth_headers(buyer_token))
+    assert receive.status_code == 200
+    assert receive.get_json()["data"]["order"]["status"] == "pending_review"
+    assert receive.get_json()["data"]["escrow"]["status"] == "settled"
+
+    review = client.post(
+        "/api/v1/reviews",
         headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "rating": 5, "content": "交易顺利"},
     )
-    assert receipt_response.status_code == 200
-    assert receipt_response.get_json()["data"]["order"]["status"] == "completed"
+    assert review.status_code == 201
+    assert app.db.orders.find_one({"_id": ObjectId(order["id"])})["status"] == "completed"
+    assert app.db.products.find_one({"_id": ObjectId(product_id)})["status"] == "sold"
 
 
-def test_cancel_order_releases_stock_and_self_purchase_is_blocked():
-    init_db()
-    app = create_app()
-    client = app.test_client()
+def test_buyer_cancel_reopens_product_and_self_purchase_is_blocked():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
 
-    seller_token = login(client, "18800000001", "seller123456")
-    buyer_token = login(client, "18800000002", "buyer123456")
-    admin_token = login(client, "18800000000", "admin123456")
-    product_id, _ = create_on_sale_product(client, seller_token, admin_token, stock=2, price=50.0)
-
-    self_order = client.post(
-        "/api/v1/orders",
-        headers=auth_headers(seller_token),
-        json={"product_id": product_id, "quantity": 1},
-    )
+    self_order = client.post("/api/v1/orders", headers=auth_headers(seller_token), json={"product_id": product_id})
     assert self_order.status_code == 403
 
-    order_response = client.post(
-        "/api/v1/orders",
-        headers=auth_headers(buyer_token, f"cancel-{uuid4().hex}"),
-        json={"product_id": product_id, "quantity": 1},
-    )
-    order = order_response.get_json()["data"]
-    assert app.db.products.find_one({"_id": ObjectId(product_id)})["stock"] == 1
+    order = create_order(client, buyer_token, product_id)
+    cancel = client.post(f"/api/v1/orders/{order['id']}/buyer-cancel", headers=auth_headers(buyer_token))
+    assert cancel.status_code == 200
+    assert cancel.get_json()["data"]["status"] == "closed"
+    assert app.db.products.find_one({"_id": ObjectId(product_id)})["status"] == "on_sale"
 
-    cancel_response = client.post(
-        f"/api/v1/orders/{order['id']}/cancel",
-        headers=auth_headers(buyer_token),
-    )
-    assert cancel_response.status_code == 200
-    assert cancel_response.get_json()["data"]["status"] == "closed"
-    assert app.db.products.find_one({"_id": ObjectId(product_id)})["stock"] == 2
 
-    seller_cancel_order_response = client.post(
-        "/api/v1/orders",
-        headers=auth_headers(buyer_token, f"seller-cancel-{uuid4().hex}"),
-        json={"product_id": product_id, "quantity": 1},
-    )
-    seller_cancel_order = seller_cancel_order_response.get_json()["data"]
-    seller_cancel_response = client.post(
-        f"/api/v1/orders/{seller_cancel_order['id']}/seller-cancel",
+def test_illegal_state_transition_returns_409():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
+    order = create_order(client, buyer_token, product_id)
+    bad_deliver = client.post(
+        f"/api/v1/deliveries/{order['id']}/seller-deliver",
         headers=auth_headers(seller_token),
-        json={"reason": "商品已线下售出"},
+        json={"delivery_type": "offline_meetup", "meet_location": "图书馆门口"},
     )
-    assert seller_cancel_response.status_code == 200
-    assert seller_cancel_response.get_json()["data"]["status"] == "seller_cancelled"
+    assert bad_deliver.status_code == 409

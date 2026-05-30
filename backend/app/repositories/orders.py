@@ -30,8 +30,13 @@ class OrderRepository:
         self.db.orders.update_one({"_id": order_id}, {"$set": fields})
         return self.find_by_id(order_id)
 
-    def list_for_user(self, user_id, status=None, page=1, page_size=20):
-        query = {"$or": [{"buyer_id": user_id}, {"seller_id": user_id}]}
+    def list_for_user(self, user_id, status=None, page=1, page_size=20, role=None):
+        if role == "buyer":
+            query = {"buyer_id": user_id}
+        elif role == "seller":
+            query = {"seller_id": user_id}
+        else:
+            query = {"$or": [{"buyer_id": user_id}, {"seller_id": user_id}]}
         if status:
             query["status"] = status
         total = self.db.orders.count_documents(query)

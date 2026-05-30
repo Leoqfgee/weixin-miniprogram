@@ -23,6 +23,7 @@ COLLECTIONS = [
     "orders",
     "order_items",
     "payments",
+    "escrow_records",
     "deliveries",
     "messages",
     "reviews",
@@ -122,24 +123,44 @@ def ensure_indexes(db):
     # 订单、支付、交付
     db.orders.create_index([("buyer_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.orders.create_index([("seller_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
+    db.orders.create_index([("product_id", ASCENDING)])
+    db.orders.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
+    db.orders.create_index([("order_no", ASCENDING)], unique=True, sparse=True)
     db.orders.create_index([("idempotency_key", ASCENDING)], unique=True, sparse=True)
     db.order_items.create_index([("order_id", ASCENDING)])
-    db.payments.create_index([("order_id", ASCENDING)])
-    db.payments.create_index([("out_trade_no", ASCENDING)], unique=True, sparse=True)
-    db.deliveries.create_index([("order_id", ASCENDING)], unique=True)
+    _drop_index_if_exists(db.payments, "order_id_1")
+    db.payments.create_index([("order_id", ASCENDING)], unique=True, name="uniq_payment_order_id")
+    db.payments.create_index([("transaction_no", ASCENDING)], unique=True, sparse=True)
+    db.payments.create_index([("idempotency_key", ASCENDING)], unique=True, sparse=True)
+    db.escrow_records.create_index([("order_id", ASCENDING)], unique=True)
+    db.escrow_records.create_index([("buyer_id", ASCENDING), ("status", ASCENDING)])
+    db.escrow_records.create_index([("seller_id", ASCENDING), ("status", ASCENDING)])
+    _drop_index_if_exists(db.deliveries, "order_id_1")
+    db.deliveries.create_index([("order_id", ASCENDING)], unique=True, name="uniq_delivery_order_id")
 
     # 消息、评价、退款、申诉、日志
     db.messages.create_index([("conversation_id", ASCENDING), ("created_at", ASCENDING)])
     db.messages.create_index([("receiver_id", ASCENDING), ("read_at", ASCENDING)])
     db.reviews.create_index([("order_id", ASCENDING), ("reviewer_id", ASCENDING)], unique=True)
     db.refunds.create_index([("order_id", ASCENDING), ("status", ASCENDING)])
+    db.refunds.create_index([("buyer_id", ASCENDING), ("status", ASCENDING)])
+    db.refunds.create_index([("seller_id", ASCENDING), ("status", ASCENDING)])
+    db.appeals.create_index([("order_id", ASCENDING)])
     db.appeals.create_index([("refund_id", ASCENDING)])
+    db.appeals.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
     db.operation_logs.create_index([("target_type", ASCENDING), ("target_id", ASCENDING)])
     db.operation_logs.create_index([("trace_id", ASCENDING)])
     db.business_logs.create_index([("biz_type", ASCENDING), ("biz_id", ASCENDING)])
+    db.business_logs.create_index([("target_type", ASCENDING), ("target_id", ASCENDING)])
+    db.business_logs.create_index([("operator_id", ASCENDING), ("created_at", DESCENDING)])
     db.ai_generation_logs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     db.files.create_index([("owner_id", ASCENDING), ("created_at", DESCENDING)])
     db.idempotency_keys.create_index([("key", ASCENDING)], unique=True)
+
+
+def _drop_index_if_exists(collection, name):
+    if name in collection.index_information():
+        collection.drop_index(name)
 
 
 def seed_categories(db):

@@ -37,13 +37,13 @@ Component({
       return map[this.data.status] || this.data.status || '未知'
     },
     getClassName() {
-      if (this.data.status === 'on_sale' || this.data.status === 'paid' || this.data.status === 'completed') {
+      if (this.data.status === 'on_sale' || this.data.status === 'completed' || this.data.status === 'sold') {
         return 'success'
       }
-      if (this.data.status === 'pending_review' || this.data.status === 'pending_payment') {
+      if (['pending_review', 'pending_payment', 'pending_delivery', 'pending_receive', 'locked', 'refunding'].indexOf(this.data.status) >= 0) {
         return 'warning'
       }
-      if (this.data.status === 'rejected' || this.data.status === 'closed') {
+      if (this.data.status === 'rejected' || this.data.status === 'closed' || this.data.status === 'refunded') {
         return 'danger'
       }
       return 'neutral'

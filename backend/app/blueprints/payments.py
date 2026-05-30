@@ -14,3 +14,12 @@ def mock_confirm():
     idempotency_key = request.headers.get("X-Idempotency-Key") or payload.get("idempotency_key")
     data = PaymentService(current_app.db).mock_confirm(g.current_user_id, payload, idempotency_key)
     return success_response(data)
+
+
+@payments_bp.post("/payments/prepay")
+@auth_required
+def prepay():
+    payload = request.get_json(silent=True) or {}
+    idempotency_key = request.headers.get("X-Idempotency-Key") or payload.get("idempotency_key")
+    data = PaymentService(current_app.db).prepay(g.current_user_id, payload, idempotency_key)
+    return success_response(data, http_status=201)

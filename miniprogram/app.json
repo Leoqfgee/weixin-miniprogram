@@ -12,6 +12,7 @@
     "pages/order/detail/index",
     "pages/refund/list/index",
     "pages/refund/apply/index",
+    "pages/appeal/apply/index",
     "pages/admin/products/index",
     "pages/admin/logs/index"
   ],

@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="panel">
+    <view class="title">申请平台介入</view>
+    <view class="muted">仅在卖家拒绝退款后可申请，平台会查看订单、交付、支付和双方凭证。</view>
+    <input value="{{reason}}" bindinput="onReasonInput" placeholder="介入原因" />
+    <textarea value="{{description}}" bindinput="onDescriptionInput" placeholder="补充说明"></textarea>
+    <button class="primary-btn action" bindtap="submit">提交介入申请</button>
+  </view>
+</view>

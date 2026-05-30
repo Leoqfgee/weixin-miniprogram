@@ -1,8 +1,39 @@
+.steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 8rpx;
+  margin-top: 24rpx;
+}
+
+.step {
+  flex: 1;
+  padding: 10rpx 6rpx;
+  color: #8a94a3;
+  background: #f7f4ee;
+  border-radius: 8rpx;
+  font-size: 21rpx;
+  text-align: center;
+}
+
+.step.active {
+  color: #ffffff;
+  background: #1f7a68;
+}
+
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 20rpx;
+}
+
+.fund {
+  margin-top: 18rpx;
+  padding: 14rpx 18rpx;
+  color: #8a4b14;
+  background: #fff3df;
+  border-radius: 8rpx;
+  font-size: 25rpx;
 }
 
 .amount {
@@ -19,13 +50,27 @@
   border-radius: 8rpx;
 }
 
+.info-block {
+  margin-top: 22rpx;
+  padding: 20rpx;
+  background: #f8faf8;
+  border-radius: 8rpx;
+}
+
+.block-title {
+  margin-bottom: 10rpx;
+  color: #17202a;
+  font-weight: 800;
+}
+
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   margin-top: 32rpx;
 }
 
 .actions button {
-  flex: 1;
+  width: 210rpx;
   font-size: 26rpx;
 }

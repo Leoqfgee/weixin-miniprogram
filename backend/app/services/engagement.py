@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo import DESCENDING
 
-from ..repositories.logs import OperationLogRepository
+from ..repositories.escrows import EscrowRepository
+from ..repositories.logs import BusinessLogRepository, OperationLogRepository
 from ..repositories.orders import OrderRepository
 from ..repositories.payments import PaymentRepository
 from ..repositories.products import ProductRepository
@@ -105,6 +106,8 @@ class ReviewService:
     def __init__(self, db):
         self.db = db
         self.orders = OrderRepository(db)
+        self.products = ProductRepository(db)
+        self.logs = BusinessLogRepository(db)
 
     def create_review(self, reviewer_id, payload):
         order_id = to_object_id(payload.get("order_id"), "order_id")
@@ -113,8 +116,8 @@ class ReviewService:
             raise NotFoundError("订单不存在")
         if str(order["buyer_id"]) != str(reviewer_id):
             raise ForbiddenError("只有买家可以评价订单")
-        if order["status"] != "completed":
-            raise ConflictError("只有已完成订单可以评价")
+        if order["status"] != "pending_review":
+            raise ConflictError("只有待评价订单可以评价")
         rating = payload.get("rating")
         if not isinstance(rating, int) or rating < 1 or rating > 5:
             raise ValidationError("参数校验失败", [{"field": "rating", "message": "评分必须为 1-5"}])
@@ -132,7 +135,13 @@ class ReviewService:
             {"$set": doc},
             upsert=True,
         )
-        return serialize_doc(self.db.reviews.find_one({"order_id": order_id, "reviewer_id": ObjectId(str(reviewer_id))}))
+        review = self.db.reviews.find_one({"order_id": order_id, "reviewer_id": ObjectId(str(reviewer_id))})
+        updated_order = self.orders.update_fields(order_id, {"status": "completed", "completed_at": utc_now()})
+        for item in self.db.order_items.find({"order_id": order_id}):
+            self.products.mark_sold(item["product_id"])
+            self.logs.create("product_sold", "product", item["product_id"], ObjectId(str(reviewer_id)), "buyer", "locked", "sold")
+        self.logs.create("create_review", "order", order_id, ObjectId(str(reviewer_id)), "buyer", order["status"], updated_order["status"])
+        return serialize_doc(review)
 
 
 class RefundService:
@@ -140,7 +149,9 @@ class RefundService:
         self.db = db
         self.orders = OrderRepository(db)
         self.payments = PaymentRepository(db)
-        self.logs = OperationLogRepository(db)
+        self.escrows = EscrowRepository(db)
+        self.products = ProductRepository(db)
+        self.logs = BusinessLogRepository(db)
 
     def create_refund(self, buyer_id, payload):
         order_id = to_object_id(payload.get("order_id"), "order_id")
@@ -149,7 +160,7 @@ class RefundService:
             raise NotFoundError("订单不存在")
         if str(order["buyer_id"]) != str(buyer_id):
             raise ForbiddenError("只有买家可以申请退款")
-        if order["status"] not in {"paid", "delivering", "completed"}:
+        if order["status"] not in {"pending_delivery", "pending_receive"}:
             raise ConflictError("当前订单状态不允许申请退款")
         amount = _amount(payload.get("amount"), "amount")
         if amount > float(order["pay_amount"]):
@@ -157,23 +168,31 @@ class RefundService:
         reason = (payload.get("reason") or "").strip()
         if not reason:
             raise ValidationError("参数校验失败", [{"field": "reason", "message": "退款原因不能为空"}])
-        existing = self.db.refunds.find_one({"order_id": order_id, "status": {"$nin": ["rejected", "closed"]}})
+        existing = self.db.refunds.find_one({"order_id": order_id, "status": {"$nin": ["refunded", "closed"]}})
         if existing:
             return serialize_doc(existing)
+        self.orders.update_fields(order_id, {"status": "refunding", "pre_refund_status": order["status"]})
         doc = {
             "order_id": order_id,
             "buyer_id": ObjectId(str(buyer_id)),
             "seller_id": order["seller_id"],
+            "refund_type": payload.get("refund_type") or "refund_only",
             "amount": amount,
             "reason": reason,
+            "description": (payload.get("description") or "").strip(),
             "evidence_images": payload.get("evidence_images") or [],
             "status": "requested",
+            "seller_result": "",
             "seller_reason": "",
+            "seller_handled_at": None,
+            "admin_result": "",
             "admin_reason": "",
+            "admin_handled_at": None,
             "created_at": utc_now(),
             "updated_at": utc_now(),
         }
         result = self.db.refunds.insert_one(doc)
+        self.logs.create("apply_refund", "order", order_id, ObjectId(str(buyer_id)), "buyer", order["status"], "refunding", reason)
         return serialize_doc(self.db.refunds.find_one({"_id": result.inserted_id}))
 
     def list_refunds(self, user, args):
@@ -192,49 +211,195 @@ class RefundService:
             raise ForbiddenError("无权限查看该退款")
         return serialize_doc(refund)
 
-    def seller_handle(self, refund_id, seller_id, payload):
+    def seller_agree(self, refund_id, seller_id, payload=None):
         refund = self._get_refund(refund_id)
         if str(refund["seller_id"]) != str(seller_id):
             raise ForbiddenError("只有卖家可以处理退款")
         if refund["status"] != "requested":
             raise ConflictError("当前退款状态不允许卖家处理")
-        result = payload.get("result")
-        if result not in {"approved", "rejected"}:
-            raise ValidationError("参数校验失败", [{"field": "result", "message": "处理结果不合法"}])
-        new_status = "approved" if result == "approved" else "arbitration"
+        order = self.orders.find_by_id(refund["order_id"])
         self.db.refunds.update_one(
             {"_id": refund["_id"]},
-            {"$set": {"status": new_status, "seller_reason": (payload.get("reason") or "").strip(), "updated_at": utc_now()}},
+            {
+                "$set": {
+                    "status": "seller_agreed",
+                    "seller_result": "agreed",
+                    "seller_reason": ((payload or {}).get("reason") or "").strip(),
+                    "seller_handled_at": utc_now(),
+                    "updated_at": utc_now(),
+                }
+            },
         )
+        self._execute_refund(order, refund, ObjectId(str(seller_id)), "seller", "seller_agree_refund")
         return serialize_doc(self._get_refund(refund["_id"]))
+
+    def seller_reject(self, refund_id, seller_id, payload=None):
+        refund = self._get_refund(refund_id)
+        if str(refund["seller_id"]) != str(seller_id):
+            raise ForbiddenError("只有卖家可以处理退款")
+        if refund["status"] != "requested":
+            raise ConflictError("当前退款状态不允许卖家处理")
+        self.db.refunds.update_one(
+            {"_id": refund["_id"]},
+            {
+                "$set": {
+                    "status": "seller_rejected",
+                    "seller_result": "rejected",
+                    "seller_reason": ((payload or {}).get("reason") or "").strip(),
+                    "seller_handled_at": utc_now(),
+                    "updated_at": utc_now(),
+                }
+            },
+        )
+        self.logs.create("seller_reject_refund", "refund", refund["_id"], ObjectId(str(seller_id)), "seller", "requested", "seller_rejected", ((payload or {}).get("reason") or ""))
+        return serialize_doc(self._get_refund(refund["_id"]))
+
+    def seller_handle(self, refund_id, seller_id, payload):
+        result = payload.get("result")
+        if result == "approved":
+            return self.seller_agree(refund_id, seller_id, payload)
+        if result == "rejected":
+            return self.seller_reject(refund_id, seller_id, payload)
+        raise ValidationError("参数校验失败", [{"field": "result", "message": "处理结果不合法"}])
 
     def admin_arbitrate(self, refund_id, admin_user, payload, trace_id=None):
         refund = self._get_refund(refund_id)
-        if refund["status"] not in {"requested", "arbitration"}:
-            raise ConflictError("当前退款状态不允许仲裁")
+        order = self.orders.find_by_id(refund["order_id"])
         result = payload.get("result")
         if result not in {"approved", "rejected"}:
             raise ValidationError("参数校验失败", [{"field": "result", "message": "仲裁结果不合法"}])
-        new_status = "approved" if result == "approved" else "rejected"
+        if result == "approved":
+            self._execute_refund(order, refund, admin_user["_id"], "admin", "admin_arbitrate")
+            return serialize_doc(self._get_refund(refund["_id"]))
+        restore_status = order.get("pre_refund_status") or "pending_delivery"
         self.db.refunds.update_one(
             {"_id": refund["_id"]},
-            {"$set": {"status": new_status, "admin_reason": (payload.get("reason") or "").strip(), "updated_at": utc_now()}},
+            {"$set": {"status": "closed", "admin_result": "rejected", "admin_reason": (payload.get("reason") or "").strip(), "admin_handled_at": utc_now(), "updated_at": utc_now()}},
         )
-        self.logs.create(
-            actor_id=admin_user["_id"],
-            action="refund_arbitrate",
-            target_type="refund",
-            target_id=refund["_id"],
-            detail={"result": result, "reason": payload.get("reason") or ""},
-            trace_id=trace_id,
-        )
+        self.orders.update_fields(order["_id"], {"status": restore_status, "pre_refund_status": ""})
+        self.logs.create("admin_arbitrate", "refund", refund["_id"], admin_user["_id"], "admin", refund["status"], "closed", payload.get("reason") or "", {"result": result})
         return serialize_doc(self._get_refund(refund["_id"]))
+
+    def _execute_refund(self, order, refund, operator_id, operator_role, action):
+        payment = self.payments.find_by_order(order["_id"])
+        if payment and payment.get("status") != "refunded":
+            self.payments.update_fields(payment["_id"], {"status": "refunded", "refunded_at": utc_now()})
+        escrow = self.escrows.find_by_order(order["_id"])
+        if escrow and escrow.get("status") != "refunded":
+            self.escrows.update_status(order["_id"], "refunded")
+        self.orders.update_fields(order["_id"], {"status": "refunded", "pre_refund_status": ""})
+        self.db.refunds.update_one({"_id": refund["_id"]}, {"$set": {"status": "refunded", "updated_at": utc_now()}})
+        for item in self.db.order_items.find({"order_id": order["_id"]}):
+            self.products.release_stock(item["product_id"], item["quantity"])
+            self.logs.create("product_reopen", "product", item["product_id"], operator_id, operator_role, "locked", "on_sale")
+        self.logs.create(action, "refund", refund["_id"], operator_id, operator_role, refund["status"], "refunded")
+        self.logs.create("refund_success", "order", order["_id"], operator_id, operator_role, order["status"], "refunded")
 
     def _get_refund(self, refund_id):
         refund = self.db.refunds.find_one({"_id": to_object_id(refund_id, "refund_id")})
         if not refund:
             raise NotFoundError("退款申请不存在")
         return refund
+
+
+class AppealService:
+    def __init__(self, db):
+        self.db = db
+        self.orders = OrderRepository(db)
+        self.payments = PaymentRepository(db)
+        self.escrows = EscrowRepository(db)
+        self.products = ProductRepository(db)
+        self.logs = BusinessLogRepository(db)
+
+    def create_appeal(self, user_id, payload):
+        refund = self.db.refunds.find_one({"_id": to_object_id(payload.get("refund_id"), "refund_id")})
+        if not refund:
+            raise NotFoundError("退款申请不存在")
+        if str(refund["buyer_id"]) != str(user_id):
+            raise ForbiddenError("只有买家可以申请平台介入")
+        if refund["status"] != "seller_rejected":
+            raise ConflictError("只有卖家拒绝退款后才能申请平台介入")
+        existing = self.db.appeals.find_one({"refund_id": refund["_id"], "status": "pending"})
+        if existing:
+            return serialize_doc(existing)
+        order = self.orders.find_by_id(refund["order_id"])
+        doc = {
+            "order_id": order["_id"],
+            "refund_id": refund["_id"],
+            "buyer_id": refund["buyer_id"],
+            "seller_id": refund["seller_id"],
+            "applicant_id": ObjectId(str(user_id)),
+            "reason": (payload.get("reason") or "").strip(),
+            "description": (payload.get("description") or "").strip(),
+            "evidence_images": payload.get("evidence_images") or [],
+            "chat_snapshot_ids": [],
+            "delivery_snapshot": serialize_doc(self.db.deliveries.find_one({"order_id": order["_id"]})) or {},
+            "payment_snapshot": serialize_doc(self.payments.find_by_order(order["_id"])) or {},
+            "product_snapshot": (self.db.order_items.find_one({"order_id": order["_id"]}) or {}).get("product_snapshot", {}),
+            "status": "pending",
+            "admin_id": None,
+            "admin_result": "",
+            "admin_reason": "",
+            "force_action": "",
+            "created_at": utc_now(),
+            "updated_at": utc_now(),
+            "handled_at": None,
+        }
+        result = self.db.appeals.insert_one(doc)
+        self.logs.create("apply_appeal", "appeal", result.inserted_id, ObjectId(str(user_id)), "buyer", None, "pending")
+        return serialize_doc(self.db.appeals.find_one({"_id": result.inserted_id}))
+
+    def get_appeal(self, appeal_id, user):
+        appeal = self._get_appeal(appeal_id)
+        if "admin" not in user.get("roles", []) and str(user["_id"]) not in {str(appeal["buyer_id"]), str(appeal["seller_id"])}:
+            raise ForbiddenError("无权限查看该申诉")
+        return serialize_doc(appeal)
+
+    def arbitrate(self, appeal_id, admin_user, payload):
+        appeal = self._get_appeal(appeal_id)
+        if appeal["status"] != "pending":
+            raise ConflictError("当前申诉状态不允许仲裁")
+        force_action = payload.get("force_action") or payload.get("result")
+        if force_action not in {"refund", "reject_refund", "partial_refund", "close"}:
+            raise ValidationError("参数校验失败", [{"field": "force_action", "message": "仲裁动作不合法"}])
+        refund = self.db.refunds.find_one({"_id": appeal["refund_id"]})
+        order = self.orders.find_by_id(appeal["order_id"])
+        if force_action in {"refund", "partial_refund"}:
+            status = "approved" if force_action == "refund" else "partial_refund"
+            self._refund_by_admin(order, refund, admin_user["_id"])
+            appeal_status = status
+        elif force_action == "reject_refund":
+            restore_status = order.get("pre_refund_status") or "pending_delivery"
+            self.db.refunds.update_one({"_id": refund["_id"]}, {"$set": {"status": "closed", "admin_result": "rejected", "admin_reason": payload.get("reason") or "", "updated_at": utc_now()}})
+            self.orders.update_fields(order["_id"], {"status": restore_status, "pre_refund_status": ""})
+            appeal_status = "rejected"
+        else:
+            appeal_status = "closed"
+        self.db.appeals.update_one(
+            {"_id": appeal["_id"]},
+            {"$set": {"status": appeal_status, "admin_id": admin_user["_id"], "admin_result": force_action, "admin_reason": payload.get("reason") or "", "force_action": force_action, "handled_at": utc_now(), "updated_at": utc_now()}},
+        )
+        self.logs.create("admin_arbitrate", "appeal", appeal["_id"], admin_user["_id"], "admin", "pending", appeal_status, payload.get("reason") or "", {"force_action": force_action})
+        return serialize_doc(self._get_appeal(appeal["_id"]))
+
+    def _refund_by_admin(self, order, refund, admin_id):
+        payment = self.payments.find_by_order(order["_id"])
+        if payment and payment.get("status") != "refunded":
+            self.payments.update_fields(payment["_id"], {"status": "refunded", "refunded_at": utc_now()})
+        escrow = self.escrows.find_by_order(order["_id"])
+        if escrow and escrow.get("status") != "refunded":
+            self.escrows.update_status(order["_id"], "refunded")
+        self.orders.update_fields(order["_id"], {"status": "refunded", "pre_refund_status": ""})
+        self.db.refunds.update_one({"_id": refund["_id"]}, {"$set": {"status": "refunded", "admin_result": "approved", "admin_handled_at": utc_now(), "updated_at": utc_now()}})
+        for item in self.db.order_items.find({"order_id": order["_id"]}):
+            self.products.release_stock(item["product_id"], item["quantity"])
+        self.logs.create("refund_success", "order", order["_id"], admin_id, "admin", order["status"], "refunded")
+
+    def _get_appeal(self, appeal_id):
+        appeal = self.db.appeals.find_one({"_id": to_object_id(appeal_id, "appeal_id")})
+        if not appeal:
+            raise NotFoundError("平台介入申请不存在")
+        return appeal
 
 
 class AiService:
@@ -279,7 +444,7 @@ class AdminReportService:
             "products_pending_review": self.db.products.count_documents({"status": "pending_review"}),
             "orders": self.db.orders.count_documents({}),
             "orders_completed": self.db.orders.count_documents({"status": "completed"}),
-            "refunds_pending": self.db.refunds.count_documents({"status": {"$in": ["requested", "arbitration"]}}),
+            "refunds_pending": self.db.refunds.count_documents({"status": {"$in": ["requested", "seller_rejected"]}}),
         }
 
 

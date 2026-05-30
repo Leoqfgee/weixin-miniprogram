@@ -37,3 +37,25 @@ def seller_handle(refund_id):
         request.get_json(silent=True) or {},
     )
     return success_response(data)
+
+
+@refunds_bp.post("/refunds/<refund_id>/seller-agree")
+@auth_required
+def seller_agree(refund_id):
+    data = RefundService(current_app.db).seller_agree(
+        refund_id,
+        g.current_user_id,
+        request.get_json(silent=True) or {},
+    )
+    return success_response(data)
+
+
+@refunds_bp.post("/refunds/<refund_id>/seller-reject")
+@auth_required
+def seller_reject(refund_id):
+    data = RefundService(current_app.db).seller_reject(
+        refund_id,
+        g.current_user_id,
+        request.get_json(silent=True) or {},
+    )
+    return success_response(data)

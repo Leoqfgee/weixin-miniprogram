@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, g, request
 
-from ..services.engagement import AdminReportService, RefundService
+from ..services.engagement import AdminReportService, AppealService, RefundService
 from ..services.products import ProductService
 from ..utils.jwt import roles_required
 from ..utils.response import success_response
@@ -36,6 +36,17 @@ def arbitrate_refund(refund_id):
         g.current_user,
         request.get_json(silent=True) or {},
         trace_id=getattr(g, "trace_id", None),
+    )
+    return success_response(data)
+
+
+@admin_bp.post("/admin/appeals/<appeal_id>/arbitrate")
+@roles_required("admin")
+def arbitrate_appeal(appeal_id):
+    data = AppealService(current_app.db).arbitrate(
+        appeal_id,
+        g.current_user,
+        request.get_json(silent=True) or {},
     )
     return success_response(data)
 

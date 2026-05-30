@@ -2,6 +2,7 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from .blueprints.admin import admin_bp
+from .blueprints.appeals import appeals_bp
 from .blueprints.ai import ai_bp
 from .blueprints.auth import auth_bp
 from .blueprints.cart import cart_bp
@@ -53,6 +54,7 @@ def create_app(config_class=Config):
     app.register_blueprint(refunds_bp, url_prefix=api_prefix)
     app.register_blueprint(ai_bp, url_prefix=api_prefix)
     app.register_blueprint(files_bp, url_prefix=api_prefix)
+    app.register_blueprint(appeals_bp, url_prefix=api_prefix)
 
     @app.get("/uploads/<path:filename>")
     def uploaded_file(filename):

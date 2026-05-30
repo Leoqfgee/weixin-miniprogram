@@ -47,14 +47,15 @@ def create_product_and_order(client, seller_token, admin_token, buyer_token):
         json={"product_id": product_id, "quantity": 1},
     )
     order = order_response.get_json()["data"]
-    confirmed = client.post(
-        f"/api/v1/orders/{order['id']}/seller-confirm",
-        headers=auth_headers(seller_token),
+    prepay = client.post(
+        "/api/v1/payments/prepay",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"]},
     ).get_json()["data"]
     client.post(
         "/api/v1/payments/mock-confirm",
         headers=auth_headers(buyer_token),
-        json={"payment_id": confirmed["payment"]["id"], "mock_result": "success"},
+        json={"payment_id": prepay["payment"]["id"], "mock_result": "success"},
     )
     return product_id, order["id"]
 
@@ -69,7 +70,7 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
     admin = login(client, "18800000000", "admin123456")
 
     product_id, order_id = create_product_and_order(client, seller["token"], admin["token"], buyer["token"])
-    product_detail = client.get(f"/api/v1/products/{product_id}", headers=auth_headers(buyer["token"])).get_json()["data"]
+    product_detail = client.get(f"/api/v1/products/{product_id}", headers=auth_headers(seller["token"])).get_json()["data"]
 
     message_response = client.post(
         "/api/v1/messages",
@@ -93,16 +94,12 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
     assert ai_response.status_code == 200
     assert "description" in ai_response.get_json()["data"]
 
-    client.post(f"/api/v1/deliveries/{order_id}/seller-deliver", headers=auth_headers(seller["token"]))
-    confirm_response = client.post(f"/api/v1/deliveries/{order_id}/confirm", headers=auth_headers(buyer["token"]))
-    assert confirm_response.status_code == 200
-
-    review_response = client.post(
-        "/api/v1/reviews",
-        headers=auth_headers(buyer["token"]),
-        json={"order_id": order_id, "rating": 5, "content": "交易顺利"},
+    deliver_response = client.post(
+        f"/api/v1/deliveries/{order_id}/seller-deliver",
+        headers=auth_headers(seller["token"]),
+        json={"delivery_type": "offline_meetup", "meet_location": "图书馆门口"},
     )
-    assert review_response.status_code == 201
+    assert deliver_response.status_code == 200
 
     refund_response = client.post(
         "/api/v1/refunds",
@@ -118,12 +115,19 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
         json={"result": "rejected", "reason": "需要平台介入"},
     )
     assert seller_handle.status_code == 200
-    assert seller_handle.get_json()["data"]["status"] == "arbitration"
+    assert seller_handle.get_json()["data"]["status"] == "seller_rejected"
+
+    appeal = client.post(
+        "/api/v1/appeals",
+        headers=auth_headers(buyer["token"]),
+        json={"refund_id": refund_id, "reason": "卖家拒绝后申请平台介入"},
+    )
+    assert appeal.status_code == 201
 
     arbitrate = client.post(
-        f"/api/v1/admin/refunds/{refund_id}/arbitrate",
+        f"/api/v1/admin/appeals/{appeal.get_json()['data']['id']}/arbitrate",
         headers=auth_headers(admin["token"]),
-        json={"result": "approved", "reason": "管理员仲裁通过"},
+        json={"force_action": "refund", "reason": "管理员仲裁通过"},
     )
     assert arbitrate.status_code == 200
     assert arbitrate.get_json()["data"]["status"] == "approved"

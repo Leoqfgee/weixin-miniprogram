@@ -75,9 +75,11 @@ on_sale -> off_shelf
 - `POST /api/v1/orders`：创建订单
 - `GET /api/v1/orders`：查看当前用户相关订单
 - `GET /api/v1/orders/{id}`：查看订单详情
-- `POST /api/v1/orders/{id}/cancel`：取消待支付订单
+- `POST /api/v1/orders/{id}/buyer-cancel`：买家取消待付款订单
+- `POST /api/v1/payments/prepay`：创建支付单
 - `POST /api/v1/payments/mock-confirm`：模拟支付确认
-- `POST /api/v1/deliveries/{order_id}/confirm`：买家确认收货
+- `POST /api/v1/deliveries/{order_id}/seller-deliver`：卖家确认交付
+- `POST /api/v1/deliveries/{order_id}/buyer-confirm`：买家确认收货
 
 交易规则：
 
@@ -86,15 +88,16 @@ on_sale -> off_shelf
 - 创建订单时写入 `order_items.product_snapshot`
 - 创建订单时锁定库存
 - 重复下单支持 `X-Idempotency-Key`
-- 模拟支付成功后订单进入 `paid`
-- 买家确认收货后订单进入 `completed`
+- 模拟支付成功后订单进入 `pending_delivery`
+- 卖家确认交付后订单进入 `pending_receive`
+- 买家确认收货后订单进入 `pending_review`
 - 取消待支付订单会关闭支付单并释放库存
 - 订单详情返回 `allowed_actions`
 
 订单状态：
 
 ```text
-pending_payment -> paid -> completed
+pending_payment -> pending_delivery -> pending_receive -> pending_review -> completed
 pending_payment -> closed
 ```
 
@@ -103,7 +106,7 @@ pending_payment -> closed
 ```text
 pending -> paid
 pending -> failed
-pending -> closed
+paid -> refunded
 ```
 
 ## 第 4 阶段已实现
@@ -503,7 +506,7 @@ python .\scripts\init_db.py
 - `miniprogram/` 可被微信开发者工具导入
 - MongoDB 可自动初始化集合、索引、分类、账号和演示商品
 - 首页可展示在售商品
-- 可完成 mock 登录、发布商品、管理员审核、购物车、订单、模拟支付、确认收货
+- 可完成微信登录 mock、发布商品、管理员审核、购物车、订单、模拟支付、平台担保、交付、确认收货
 - 可演示消息、评价、退款、AI mock、后台日志和统计
 - 前端请求统一走 `miniprogram/utils/request.js`
 - 商品、订单、支付、退款状态由后端 Service 层控制
@@ -515,10 +518,12 @@ python .\scripts\init_db.py
 - 微信登录适配器：新增 `POST /api/v1/auth/wechat-login`，本地开发默认 mock，生产可切换真实 code2Session
 - 账号体系：新增注册、绑定手机号、修改密码、退出登录接口
 - 图片上传：新增 `POST /api/v1/files/upload`，小程序使用 `wx.chooseMedia` + `wx.uploadFile` 上传到后端 `uploads/`
-- 订单状态机：买家下单后进入 `pending_seller_confirm`，卖家确认后进入 `pending_payment`
-- 卖家操作：新增卖家确认交易、卖家取消交易、卖家确认交付
-- 买家收货：买家只能在卖家确认交付后确认收货
+- 订单状态机：买家下单后直接进入 `pending_payment`，商品从 `on_sale` 锁定为 `locked`
+- 平台担保：支付成功后创建 `escrow_records.status=holding`，不把担保塞进订单状态
+- 卖家操作：新增卖家确认交付、卖家取消并进入退款处理
+- 买家收货：卖家交付后订单进入 `pending_receive`，买家确认后进入 `pending_review`
 - 支付结构：新增 `PaymentAdapter`、`MockPaymentAdapter`、`WechatPayAdapter`，课程阶段仍使用 mock 支付
+- 退款/平台介入：订单只用 `refunding` 表示售后中，具体进度放在 `refunds` 和 `appeals`
 
 新增接口：
 
@@ -529,17 +534,59 @@ POST /api/v1/auth/bind-phone
 POST /api/v1/auth/change-password
 POST /api/v1/auth/logout
 POST /api/v1/files/upload
-POST /api/v1/orders/{id}/seller-confirm
+POST /api/v1/payments/prepay
+POST /api/v1/payments/mock-confirm
+POST /api/v1/orders/{id}/buyer-cancel
+POST /api/v1/orders/{id}/close-timeout
 POST /api/v1/orders/{id}/seller-cancel
 POST /api/v1/deliveries/{order_id}/seller-deliver
+GET  /api/v1/deliveries/{order_id}
+POST /api/v1/deliveries/{order_id}/buyer-confirm
+POST /api/v1/deliveries/{order_id}/buyer-reject
+POST /api/v1/refunds/{id}/seller-agree
+POST /api/v1/refunds/{id}/seller-reject
+POST /api/v1/appeals
+GET  /api/v1/appeals/{id}
+POST /api/v1/admin/appeals/{id}/arbitrate
 ```
 
 新的订单主流程：
 
 ```text
-pending_seller_confirm -> pending_payment -> paid -> delivering -> completed
-pending_seller_confirm -> seller_cancelled
-pending_seller_confirm/pending_payment -> closed
+pending_payment -> pending_delivery -> pending_receive -> pending_review -> completed
+pending_payment -> closed
+pending_delivery/pending_receive -> refunding -> refunded
+```
+
+状态说明：
+
+```text
+pending_payment   待付款
+pending_delivery  待交付
+pending_receive   待收货
+pending_review    待评价
+completed         交易完成
+closed            已关闭
+refunding         退款/售后中
+refunded          已退款
+```
+
+订单状态不再使用 `pending_seller_confirm`、`paid_escrow`、`refund_requested`、`dispute`。支付状态放在 `payments.status`，平台担保状态放在 `escrow_records.status`，退款进度放在 `refunds.status`，平台介入进度放在 `appeals.status`。
+
+超时任务可手动运行：
+
+```powershell
+cd "F:\A 软件工程\campus_secondhand_platform\backend"
+conda activate weixin-app
+python .\scripts\run_order_timeout.py
+```
+
+当前超时规则：
+
+```text
+pending_payment 超过 30 分钟未支付 -> closed，商品恢复 on_sale
+pending_receive 超过 7 天未确认 -> 自动确认收货，担保 settled
+refunding 超过 48 小时卖家未处理 -> 写入业务提醒日志
 ```
 
 ## 小程序上传注意事项

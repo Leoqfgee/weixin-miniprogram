@@ -13,7 +13,7 @@ class PaymentAdapter(ABC):
 
 class MockPaymentAdapter(PaymentAdapter):
     def create_payment(self, order, amount):
-        return {"channel": "mock", "amount": amount}
+        return {"channel": "mock_wechat", "amount": amount}
 
     def confirm_payment(self, payment, payload):
         mock_result = payload.get("mock_result", "success")
