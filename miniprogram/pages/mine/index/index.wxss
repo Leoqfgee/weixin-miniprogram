@@ -1,26 +1,31 @@
-.profile,
-.admin-entry {
-  margin-bottom: 24rpx;
+.mine-page {
+  padding-bottom: 48rpx;
 }
 
-.profile {
+.profile-card {
   display: flex;
   align-items: center;
   gap: 18rpx;
+  padding: 28rpx;
+  color: #fff;
+  background: #1f7a68;
+  border-radius: 8rpx;
+  box-shadow: 0 14rpx 34rpx rgba(31, 122, 104, 0.18);
 }
 
 .avatar {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 8rpx;
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
   flex: none;
+  background: #dfe5ea;
 }
 
 .avatar.placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1f7a68;
+  background: rgba(255, 255, 255, 0.18);
   color: #fff;
   font-size: 42rpx;
   font-weight: 800;
@@ -31,15 +36,70 @@
   min-width: 0;
 }
 
+.profile-card .title {
+  color: #fff;
+}
+
+.profile-card .muted {
+  margin-top: 8rpx;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 24rpx;
+}
+
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.profile-tags text {
+  padding: 6rpx 12rpx;
+  color: #ffe0b5;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8rpx;
+  font-size: 21rpx;
+}
+
+.action {
+  flex: none;
+  width: 142rpx;
+  height: 66rpx;
+  line-height: 66rpx;
+  margin: 0;
+  font-size: 24rpx;
+}
+
+.profile-card .ghost-btn {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.section-title {
+  margin: 28rpx 0 14rpx;
+  color: #17202a;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
 .quick-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18rpx;
-  margin-bottom: 20rpx;
+  gap: 14rpx;
+}
+
+.quick,
+.admin-entry {
+  padding: 22rpx;
+  background: #fff;
+  border: 1rpx solid #ebe2d6;
+  border-radius: 8rpx;
+  box-shadow: 0 8rpx 22rpx rgba(80, 65, 47, 0.05);
 }
 
 .quick {
-  min-height: 128rpx;
+  min-height: 126rpx;
 }
 
 .subtle {
@@ -47,13 +107,23 @@
 }
 
 .small {
-  font-size: 30rpx;
+  font-size: 29rpx;
 }
 
-.action {
-  margin-top: 28rpx;
+.quick .muted,
+.admin-entry .muted {
+  margin-top: 8rpx;
+  line-height: 1.4;
+  font-size: 23rpx;
+}
+
+.admin-entry {
+  margin-bottom: 14rpx;
 }
 
 .logout {
-  margin-top: 24rpx;
+  margin-top: 28rpx;
+  height: 78rpx;
+  line-height: 78rpx;
+  font-size: 27rpx;
 }
