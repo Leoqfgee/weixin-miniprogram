@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="panel controls">
+    <picker mode="selector" range="{{rangeOptions}}" range-key="label" bindchange="onRangeChange">
+      <view class="filter">周期：{{rangeOptions[rangeIndex].label}}</view>
+    </picker>
+    <picker mode="date" bindchange="onStartChange">
+      <view class="filter">{{startDate || '开始日期'}}</view>
+    </picker>
+    <picker mode="date" bindchange="onEndChange">
+      <view class="filter">{{endDate || '结束日期'}}</view>
+    </picker>
+  </view>
+
+  <view class="grid">
+    <view class="panel metric"><view class="num">{{summary.products_published || 0}}</view><view class="muted">发布量</view></view>
+    <view class="panel metric"><view class="num">{{summary.orders_completed || 0}}</view><view class="muted">成交量</view></view>
+    <view class="panel metric"><view class="num">{{summary.users_new || 0}}</view><view class="muted">新增用户</view></view>
+    <view class="panel metric"><view class="num">{{summary.active_users || 0}}</view><view class="muted">活跃用户</view></view>
+  </view>
+
+  <view class="panel">
+    <view class="title small">热门类别</view>
+    <view wx:for="{{categories}}" wx:key="category_id" class="row-line">
+      <text>{{item.name}}</text><text>{{item.count}}</text>
+    </view>
+  </view>
+  <view class="panel">
+    <view class="title small">用户活跃</view>
+    <view wx:for="{{users}}" wx:key="label" class="row-line">
+      <text>{{item.label}}</text><text>{{item.count}}</text>
+    </view>
+  </view>
+</view>

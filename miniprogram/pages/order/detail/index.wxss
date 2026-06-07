@@ -106,3 +106,4 @@
   width: 210rpx;
   font-size: 26rpx;
 }
+.review-line{display:flex;align-items:center;justify-content:space-between;padding:16rpx 0;border-bottom:1rpx solid #e7ecef}.review-line:last-child{border-bottom:0}

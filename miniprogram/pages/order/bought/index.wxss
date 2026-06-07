@@ -1,0 +1,48 @@
+.filter {
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 20rpx;
+  margin-bottom: 20rpx;
+  background: #fff;
+  border: 1rpx solid #e6ebf1;
+  border-radius: 8rpx;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.item-main {
+  display: flex;
+  gap: 18rpx;
+}
+
+.thumb {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 8rpx;
+  flex: none;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f7a68;
+  color: #fff;
+  font-weight: 800;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+.tabs{margin-bottom:20rpx;white-space:nowrap;background:#fff;border-bottom:1rpx solid #e6ebf1}.tabs-inner{display:inline-flex;gap:30rpx;padding:0 8rpx}.tab{position:relative;padding:22rpx 4rpx;color:#7a869a}.tab.active{color:#17202a;font-weight:800}.tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:5rpx;background:#1f7a68;border-radius:4rpx}.party{display:flex;align-items:center;gap:8rpx;margin:8rpx 0;color:#586474;font-size:24rpx}.party image{width:38rpx;height:38rpx;border-radius:50%}

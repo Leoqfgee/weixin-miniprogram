@@ -11,10 +11,26 @@
     <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
       <view class="filter">{{conditionIndex >= 0 ? conditionOptions[conditionIndex].label : '全部成色'}}</view>
     </picker>
+    <picker mode="selector" range="{{sortOptions}}" range-key="label" bindchange="onSortChange">
+      <view class="filter">{{sortOptions[sortIndex].label}}</view>
+    </picker>
+  </view>
+
+  <view class="panel more-filters">
+    <input value="{{campus}}" bindinput="onCampusInput" bindconfirm="onSearch" placeholder="校区" />
+    <input value="{{minPrice}}" type="digit" bindinput="onMinPriceInput" bindconfirm="onSearch" placeholder="最低价" />
+    <input value="{{maxPrice}}" type="digit" bindinput="onMaxPriceInput" bindconfirm="onSearch" placeholder="最高价" />
+    <picker mode="date" bindchange="onDateFromChange">
+      <view class="date-filter">{{dateFrom || '开始日期'}}</view>
+    </picker>
+    <picker mode="date" bindchange="onDateToChange">
+      <view class="date-filter">{{dateTo || '结束日期'}}</view>
+    </picker>
+    <button class="ghost-btn" bindtap="onSearch">应用筛选</button>
   </view>
 
   <view wx:if="{{products.length}}" class="list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
   </view>
-  <empty-state wx:else title="没有匹配商品" description="换个关键词或筛选条件试试"></empty-state>
+  <empty-state wx:else title="暂无符合条件的商品" description="换个关键词或筛选条件试试"></empty-state>
 </view>

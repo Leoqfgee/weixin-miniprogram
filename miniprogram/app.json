@@ -3,11 +3,22 @@
     "pages/index/index",
     "pages/category/index",
     "pages/publish/edit/index",
+    "pages/publish/product-edit/index",
     "pages/message/index/index",
+    "pages/message/chat/index",
     "pages/mine/index/index",
+    "pages/mine/published/index",
+    "pages/profile/edit/index",
+    "pages/profile/home/index",
+    "pages/address/index",
+    "pages/customer-service/index",
+    "pages/review/apply/index",
+    "pages/review/detail/index",
+    "pages/order/bought/index",
+    "pages/order/sold/index",
+    "pages/favorite/index",
     "pages/login/index",
     "pages/product/detail/index",
-    "pages/cart/index/index",
     "pages/order/confirm/index",
     "pages/order/detail/index",
     "pages/refund/list/index",
@@ -16,6 +27,7 @@
     "pages/delivery/form/index",
     "pages/admin/products/index",
     "pages/admin/appeals/index",
+    "pages/admin/reports/index",
     "pages/admin/logs/index"
   ],
   "window": {
@@ -33,19 +45,27 @@
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页"
+        "text": "首页",
+        "iconPath": "assets/tabbar/home.png",
+        "selectedIconPath": "assets/tabbar/home-active.png"
       },
       {
         "pagePath": "pages/publish/edit/index",
-        "text": "发布"
+        "text": "发布",
+        "iconPath": "assets/tabbar/publish.png",
+        "selectedIconPath": "assets/tabbar/publish-active.png"
       },
       {
         "pagePath": "pages/message/index/index",
-        "text": "消息"
+        "text": "消息",
+        "iconPath": "assets/tabbar/message.png",
+        "selectedIconPath": "assets/tabbar/message-active.png"
       },
       {
         "pagePath": "pages/mine/index/index",
-        "text": "我的"
+        "text": "我的",
+        "iconPath": "assets/tabbar/mine.png",
+        "selectedIconPath": "assets/tabbar/mine-active.png"
       }
     ]
   },

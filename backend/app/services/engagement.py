@@ -1,15 +1,17 @@
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
+from time import perf_counter
 
 from bson import ObjectId
 from pymongo import DESCENDING
 
+from ..adapters.ai import DashScopeTextClient
 from ..repositories.escrows import EscrowRepository
 from ..repositories.logs import BusinessLogRepository, OperationLogRepository
 from ..repositories.orders import OrderRepository
 from ..repositories.payments import PaymentRepository
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
-from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from ..utils.errors import AppError, ConflictError, ForbiddenError, NotFoundError, ValidationError
 from ..utils.serializers import serialize_doc, to_object_id
 
 
@@ -26,8 +28,14 @@ class MessageService:
     def send_message(self, sender_id, payload):
         receiver_id = to_object_id(payload.get("receiver_id"), "receiver_id")
         product_id = payload.get("product_id")
+        message_type = (payload.get("message_type") or "text").strip()
         content = (payload.get("content") or "").strip()
-        if not content:
+        image_url = (payload.get("image_url") or "").strip()
+        if message_type not in {"text", "image", "video", "voice", "product", "review", "system"}:
+            raise ValidationError("参数校验失败", [{"field": "message_type", "message": "消息类型不合法"}])
+        if message_type in {"image", "video", "voice"} and not image_url:
+            raise ValidationError("参数校验失败", [{"field": "image_url", "message": "媒体消息不能为空"}])
+        if message_type not in {"image", "video", "voice"} and not content:
             raise ValidationError("参数校验失败", [{"field": "content", "message": "消息内容不能为空"}])
         if str(receiver_id) == str(sender_id):
             raise ConflictError("不能给自己发送消息")
@@ -43,12 +51,26 @@ class MessageService:
             "sender_id": ObjectId(str(sender_id)),
             "receiver_id": receiver_id,
             "product_id": product_object_id,
+            "message_type": message_type,
             "content": content,
+            "image_url": image_url,
+            "review_id": to_object_id(payload.get("review_id"), "review_id") if payload.get("review_id") else None,
             "read_at": None,
             "created_at": utc_now(),
         }
         result = self.db.messages.insert_one(doc)
         return serialize_doc(self.db.messages.find_one({"_id": result.inserted_id}))
+
+    def get_support_contact(self, user_id):
+        admin = self.db.users.find_one({"roles": "admin", "status": "active", "_id": {"$ne": ObjectId(str(user_id))}})
+        if not admin:
+            raise NotFoundError("暂未配置可用的管理员客服")
+        profile = self.users.find_profile(admin["_id"]) or {}
+        return {
+            "id": str(admin["_id"]),
+            "nickname": "平台客服",
+            "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
+        }
 
     def list_conversations(self, user_id):
         user_object_id = ObjectId(str(user_id))
@@ -77,7 +99,7 @@ class MessageService:
             },
             {"$sort": {"last_message.created_at": -1}},
         ]
-        return {"items": [serialize_doc(item) for item in self.db.messages.aggregate(pipeline)]}
+        return {"items": [self._present_conversation(item, user_object_id) for item in self.db.messages.aggregate(pipeline)]}
 
     def list_messages(self, user_id, conversation_id):
         user_object_id = ObjectId(str(user_id))
@@ -90,7 +112,7 @@ class MessageService:
             {"$set": {"read_at": utc_now()}},
         )
         items = list(self.db.messages.find(query).sort("created_at", 1))
-        return {"items": [serialize_doc(item) for item in items]}
+        return {"items": [self._present_message(item, user_object_id) for item in items]}
 
     def list_notifications(self, user_id):
         user_object_id = ObjectId(str(user_id))
@@ -100,6 +122,41 @@ class MessageService:
             .limit(50)
         )
         return {"items": [serialize_doc(item) for item in items]}
+
+    def _present_conversation(self, row, user_id):
+        data = serialize_doc(row)
+        last = row.get("last_message", {})
+        other_id = last.get("receiver_id") if str(last.get("sender_id")) == str(user_id) else last.get("sender_id")
+        other_user = self.users.find_by_id(other_id) if other_id else None
+        other_profile = self.users.find_profile(other_id) if other_id else None
+        product = self.products.find_by_id(last.get("product_id")) if last.get("product_id") else None
+        data["conversation_id"] = data.get("id")
+        data["other_user"] = {
+            "id": str(other_id) if other_id else "",
+            "nickname": "平台客服" if "admin" in other_user.get("roles", []) else (other_profile or {}).get("nickname", "校园用户"),
+            "avatar": (other_profile or {}).get("avatar") or (other_profile or {}).get("avatar_url", ""),
+            "campus": (other_profile or {}).get("campus", ""),
+        } if other_user else None
+        data["product"] = {
+            "id": str(product["_id"]),
+            "title": product.get("title", ""),
+            "cover_image": product.get("cover_image", ""),
+            "price": product.get("price", 0),
+        } if product else None
+        data["updated_at"] = data.get("last_message", {}).get("created_at")
+        return data
+
+    def _present_message(self, message, user_id):
+        data = serialize_doc(message)
+        sender = self.users.find_by_id(message.get("sender_id"))
+        sender_profile = self.users.find_profile(message.get("sender_id")) or {}
+        data["is_mine"] = str(message.get("sender_id")) == str(user_id)
+        data["sender"] = {
+            "id": str(message.get("sender_id")),
+            "nickname": "平台客服" if sender and "admin" in sender.get("roles", []) else sender_profile.get("nickname", "校园用户"),
+            "avatar": sender_profile.get("avatar") or sender_profile.get("avatar_url", ""),
+        }
+        return data
 
 
 class ReviewService:
@@ -114,34 +171,94 @@ class ReviewService:
         order = self.orders.find_by_id(order_id)
         if not order:
             raise NotFoundError("订单不存在")
-        if str(order["buyer_id"]) != str(reviewer_id):
-            raise ForbiddenError("只有买家可以评价订单")
-        if order["status"] != "pending_review":
-            raise ConflictError("只有待评价订单可以评价")
+        is_buyer = str(order["buyer_id"]) == str(reviewer_id)
+        is_seller = str(order["seller_id"]) == str(reviewer_id)
+        if not is_buyer and not is_seller:
+            raise ForbiddenError("只有交易双方可以评价订单")
+        if order["status"] not in {"pending_review", "completed"}:
+            raise ConflictError("确认收货后才可以评价")
         rating = payload.get("rating")
         if not isinstance(rating, int) or rating < 1 or rating > 5:
             raise ValidationError("参数校验失败", [{"field": "rating", "message": "评分必须为 1-5"}])
         content = (payload.get("content") or "").strip()
+        reviewer_object_id = ObjectId(str(reviewer_id))
+        reviewee_id = order["seller_id"] if is_buyer else order["buyer_id"]
+        reviewer_role = "buyer" if is_buyer else "seller"
         doc = {
             "order_id": order_id,
-            "reviewer_id": ObjectId(str(reviewer_id)),
-            "seller_id": order["seller_id"],
+            "reviewer_id": reviewer_object_id,
+            "reviewee_id": reviewee_id,
+            "reviewer_role": reviewer_role,
+            "anonymous": bool(payload.get("anonymous")),
             "rating": rating,
             "content": content,
+            "updated_at": utc_now(),
             "created_at": utc_now(),
         }
         self.db.reviews.update_one(
-            {"order_id": order_id, "reviewer_id": ObjectId(str(reviewer_id))},
+            {"order_id": order_id, "reviewer_id": reviewer_object_id},
             {"$set": doc},
             upsert=True,
         )
-        review = self.db.reviews.find_one({"order_id": order_id, "reviewer_id": ObjectId(str(reviewer_id))})
-        updated_order = self.orders.update_fields(order_id, {"status": "completed", "completed_at": utc_now()})
-        for item in self.db.order_items.find({"order_id": order_id}):
-            self.products.mark_sold(item["product_id"])
-            self.logs.create("product_sold", "product", item["product_id"], ObjectId(str(reviewer_id)), "buyer", "locked", "sold")
-        self.logs.create("create_review", "order", order_id, ObjectId(str(reviewer_id)), "buyer", order["status"], updated_order["status"])
-        return serialize_doc(review)
+        review = self.db.reviews.find_one({"order_id": order_id, "reviewer_id": reviewer_object_id})
+        to_status = order["status"]
+        if is_buyer and order["status"] == "pending_review":
+            updated_order = self.orders.update_fields(order_id, {"status": "completed", "completed_at": utc_now()})
+            to_status = updated_order["status"]
+            for item in self.db.order_items.find({"order_id": order_id}):
+                self.products.mark_sold(item["product_id"])
+                self.logs.create("product_sold", "product", item["product_id"], reviewer_object_id, "buyer", "locked", "sold")
+        self.logs.create("create_review", "order", order_id, reviewer_object_id, reviewer_role, order["status"], to_status)
+        self._append_review_message(order, review, reviewee_id)
+        return self._present_review(review)
+
+    def get_review(self, review_id):
+        review = self.db.reviews.find_one({"_id": to_object_id(review_id, "review_id")})
+        if not review:
+            raise NotFoundError("评价不存在")
+        return self._present_review(review)
+
+    def list_user_reviews(self, user_id):
+        items = list(
+            self.db.reviews.find({"reviewee_id": to_object_id(user_id, "user_id")})
+            .sort("created_at", DESCENDING)
+            .limit(50)
+        )
+        good_count = sum(1 for item in items if item.get("rating", 0) >= 4)
+        return {
+            "items": [self._present_review(item) for item in items],
+            "total": len(items),
+            "good_rate": round(good_count * 100 / len(items), 1) if items else 100.0,
+        }
+
+    def _append_review_message(self, order, review, receiver_id):
+        user_pair = sorted([str(review["reviewer_id"]), str(receiver_id)])
+        conversation_id = "_".join(user_pair + [str(order["product_id"])])
+        self.db.messages.insert_one(
+            {
+                "conversation_id": conversation_id,
+                "type": "private",
+                "sender_id": review["reviewer_id"],
+                "receiver_id": receiver_id,
+                "product_id": order["product_id"],
+                "message_type": "review",
+                "content": "对方完成了评价，点击查看详情",
+                "review_id": review["_id"],
+                "image_url": "",
+                "read_at": None,
+                "created_at": utc_now(),
+            }
+        )
+
+    def _present_review(self, review):
+        data = serialize_doc(review)
+        profile = self.db.user_profiles.find_one({"user_id": review["reviewer_id"]}) or {}
+        data["reviewer"] = {
+            "id": "" if review.get("anonymous") else str(review["reviewer_id"]),
+            "nickname": "匿名用户" if review.get("anonymous") else profile.get("nickname", "校园用户"),
+            "avatar": "" if review.get("anonymous") else profile.get("avatar") or profile.get("avatar_url", ""),
+        }
+        return data
 
 
 class RefundService:
@@ -435,22 +552,70 @@ class AppealService:
 
 
 class AiService:
-    def __init__(self, db):
+    def __init__(self, db, config=None):
         self.db = db
+        self.config = config or {}
 
     def product_copy(self, user_id, payload):
-        keywords = (payload.get("keywords") or payload.get("title") or "校园闲置").strip()
-        title = f"{keywords} 转让"
-        description = f"AI mock 建议：{keywords} 成色良好，适合校内自提，可现场验货。"
+        action = (payload.get("action") or "both").strip()
+        return self.generate(user_id, payload, action)
+
+    def generate(self, user_id, payload, feature_type):
+        action_map = {
+            "title": "title",
+            "polish": "description",
+            "description": "description",
+            "both": "both",
+        }
+        action = action_map.get(feature_type)
+        if not action:
+            raise ValidationError("参数校验失败", [{"field": "feature_type", "message": "AI 功能类型不合法"}])
+
+        mode = self.config.get("AI_MODE", "qwen")
+        model = self.config.get("QWEN_MODEL") or "qwen-plus"
+        started = perf_counter()
+        result_data = None
+        error_message = ""
+        success = False
+        try:
+            if mode not in {"qwen", "dashscope"}:
+                raise AppError(50302, "AI_MODE 必须配置为 qwen 才能调用正式千问 API", 503)
+            api_key = self.config.get("DASHSCOPE_API_KEY", "")
+            if not api_key:
+                raise AppError(50301, "AI 服务未配置 DASHSCOPE_API_KEY", 503)
+            client = DashScopeTextClient(
+                api_key=api_key,
+                base_url=self.config.get("AI_BASE_URL"),
+                model=model,
+                timeout_seconds=self.config.get("AI_TIMEOUT_SECONDS", 30),
+            )
+            result_data = client.generate_product_copy(payload, action)
+            success = True
+            return self._store_log(user_id, feature_type, model, payload, result_data, success, error_message, started)
+        except Exception as exc:
+            error_message = getattr(exc, "message", str(exc))
+            self._store_log(user_id, feature_type, model, payload, result_data or {}, success, error_message, started)
+            raise
+
+    def _store_log(self, user_id, feature_type, model, payload, result_data, success, error_message, started):
+        latency_ms = int((perf_counter() - started) * 1000)
         doc = {
             "user_id": ObjectId(str(user_id)),
-            "mode": "mock",
-            "prompt": payload,
-            "result": {"title": title, "description": description, "tags": ["校内自提", "闲置转让"]},
+            "feature_type": feature_type,
+            "model": model,
+            "input_summary": _summary_text(payload),
+            "output_summary": _summary_text(result_data),
+            "success": bool(success),
+            "error_message": error_message or "",
+            "latency_ms": latency_ms,
+            "payload": payload,
+            "result": result_data,
             "created_at": utc_now(),
         }
         result = self.db.ai_generation_logs.insert_one(doc)
-        return {"ai_draft_id": str(result.inserted_id), **doc["result"]}
+        if success:
+            return {"ai_draft_id": str(result.inserted_id), **result_data}
+        return {"ai_draft_id": str(result.inserted_id), "success": False}
 
 
 class AdminReportService:
@@ -479,6 +644,52 @@ class AdminReportService:
             "refunds_pending": self.db.refunds.count_documents({"status": {"$in": ["requested", "seller_rejected"]}}),
         }
 
+    def summary(self, args):
+        query = _date_query(args)
+        return {
+            "products_published": self.db.products.count_documents(query),
+            "orders_completed": self.db.orders.count_documents({"status": "completed", **query}),
+            "users_new": self.db.users.count_documents(query),
+            "active_users": self._active_user_count(query),
+            "refunds": self.db.refunds.count_documents(query),
+        }
+
+    def products(self, args):
+        return {"items": _group_by_date(self.db.products, _date_query(args))}
+
+    def orders(self, args):
+        return {"items": _group_by_date(self.db.orders, {"status": "completed", **_date_query(args)}, sum_field="pay_amount")}
+
+    def categories(self, args):
+        pipeline = [
+            {"$match": _date_query(args)},
+            {"$group": {"_id": "$category_id", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 10},
+        ]
+        rows = []
+        for row in self.db.products.aggregate(pipeline):
+            category = self.db.categories.find_one({"_id": row["_id"]})
+            rows.append({"category_id": str(row["_id"]), "name": (category or {}).get("name", "未分类"), "count": row["count"]})
+        return {"items": rows}
+
+    def users(self, args):
+        query = _date_query(args)
+        return {
+            "items": [
+                {"label": "新增用户", "count": self.db.users.count_documents(query)},
+                {"label": "发布商品用户", "count": len(self.db.products.distinct("seller_id", query))},
+                {"label": "下单用户", "count": len(self.db.orders.distinct("buyer_id", query))},
+                {"label": "发消息用户", "count": len(self.db.messages.distinct("sender_id", query))},
+            ]
+        }
+
+    def _active_user_count(self, query):
+        user_ids = set()
+        for collection, field in [(self.db.products, "seller_id"), (self.db.orders, "buyer_id"), (self.db.messages, "sender_id")]:
+            user_ids.update(str(item) for item in collection.distinct(field, query))
+        return len(user_ids)
+
 
 def _amount(value, field):
     try:
@@ -488,3 +699,37 @@ def _amount(value, field):
     if amount <= 0:
         raise ValidationError("参数校验失败", [{"field": field, "message": "金额必须大于 0"}])
     return amount
+
+
+def _summary_text(value, limit=240):
+    text = str(serialize_doc(value) if isinstance(value, dict) else value)
+    text = " ".join(text.split())
+    return text[:limit]
+
+
+def _date_query(args):
+    start = args.get("start_date")
+    end = args.get("end_date")
+    if not start and not end:
+        range_name = args.get("range") or "month"
+        days = {"day": 1, "week": 7, "month": 30}.get(range_name, 30)
+        start_dt = datetime.now(timezone.utc) - timedelta(days=days)
+        return {"created_at": {"$gte": start_dt}}
+    date_query = {}
+    if start:
+        date_query["$gte"] = datetime.combine(datetime.fromisoformat(start).date(), time.min, tzinfo=timezone.utc)
+    if end:
+        date_query["$lte"] = datetime.combine(datetime.fromisoformat(end).date(), time.max, tzinfo=timezone.utc)
+    return {"created_at": date_query}
+
+
+def _group_by_date(collection, query, sum_field=None):
+    group = {"count": {"$sum": 1}}
+    if sum_field:
+        group["amount"] = {"$sum": f"${sum_field}"}
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}, **group}},
+        {"$sort": {"_id": 1}},
+    ]
+    return [{"date": row["_id"], "count": row.get("count", 0), "amount": round(row.get("amount", 0), 2)} for row in collection.aggregate(pipeline)]

@@ -1,0 +1,36 @@
+<view class="page chat-page">
+  <view wx:if="{{product.title}}" class="product-head">
+    <image wx:if="{{product.cover_image}}" class="product-cover" src="{{product.cover_image}}" mode="aspectFill"></image>
+    <view class="product-main"><view class="text-strong">{{product.title}}</view><view wx:if="{{product.price}}" class="price">¥{{product.price}}</view></view>
+  </view>
+
+  <scroll-view scroll-y class="messages" scroll-into-view="{{scrollIntoView}}">
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}">
+      <view wx:if="{{item.show_time}}" class="time-separator">{{item.time_text}}</view>
+      <view wx:if="{{item.message_type === 'system'}}" class="system-message">{{item.content}}</view>
+      <view wx:else class="message-row {{item.mine ? 'mine' : 'other'}}">
+        <image class="avatar" src="{{item.sender.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+        <view class="message-main">
+          <view class="sender-name">{{item.sender.nickname}}</view>
+          <view class="bubble">
+            <image wx:if="{{item.message_type === 'image'}}" class="chat-image" src="{{item.image_url}}" mode="widthFix" data-url="{{item.image_url}}" bindtap="previewImage"></image>
+            <video wx:elif="{{item.message_type === 'video'}}" class="chat-video" src="{{item.image_url}}"></video>
+            <view wx:elif="{{item.message_type === 'voice'}}" class="voice">▶ 语音消息</view>
+            <view wx:elif="{{item.message_type === 'review'}}" class="review-card" data-id="{{item.review_id}}" bindtap="viewReview"><view class="text-strong">交易评价已发布</view><view class="muted">点击查看评价详情 ›</view></view>
+            <text wx:else>{{item.content}}</text>
+          </view>
+          <view wx:if="{{item.mine}}" class="read-state">{{item.read_at ? '已读' : '未读'}}</view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="composer">
+    <button class="icon-btn" bindtap="toggleVoice">{{voiceMode ? '⌨' : '🎙'}}</button>
+    <button wx:if="{{voiceMode}}" class="voice-btn" bindtouchstart="startVoice" bindtouchend="stopVoice">{{recording ? '松开发送' : '按住说话'}}</button>
+    <input wx:else class="message-input" value="{{content}}" bindinput="onInput" confirm-type="send" bindconfirm="sendText" placeholder="输入消息" />
+    <button wx:if="{{content}}" class="send-btn" bindtap="sendText">发送</button>
+    <button wx:else class="icon-btn" bindtap="toggleEmoji">☺</button>
+  </view>
+  <view wx:if="{{showEmoji}}" class="tray emoji-tray"><view wx:for="{{emojis}}" wx:key="*this" data-value="{{item}}" bindtap="addEmoji">{{item}}</view></view>
+</view>

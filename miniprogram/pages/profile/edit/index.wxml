@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="panel form">
+    <view class="avatar-row" bindtap="chooseAvatar">
+      <image wx:if="{{form.avatar}}" class="avatar" src="{{form.avatar}}" mode="aspectFill"></image>
+      <view wx:else class="avatar placeholder">头像</view>
+      <view class="muted">点击更换头像</view>
+    </view>
+    <view class="field">
+      <text>昵称</text>
+      <input value="{{form.nickname}}" data-field="nickname" bindinput="onInput" placeholder="昵称" />
+    </view>
+    <view class="field">
+      <text>校区</text>
+      <input value="{{form.campus}}" data-field="campus" bindinput="onInput" placeholder="例如 主校区" />
+    </view>
+    <view class="field">
+      <text>简介</text>
+      <textarea value="{{form.bio}}" data-field="bio" bindinput="onInput" maxlength="120" placeholder="一句话介绍自己"></textarea>
+    </view>
+    <button class="primary-btn" bindtap="saveProfile">保存</button>
+  </view>
+</view>

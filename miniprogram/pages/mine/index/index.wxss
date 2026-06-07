@@ -3,10 +3,57 @@
   margin-bottom: 24rpx;
 }
 
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.avatar {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 8rpx;
+  flex: none;
+}
+
+.avatar.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f7a68;
+  color: #fff;
+  font-size: 42rpx;
+  font-weight: 800;
+}
+
+.profile-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18rpx;
+  margin-bottom: 20rpx;
+}
+
+.quick {
+  min-height: 128rpx;
+}
+
+.subtle {
+  background: #fbfaf7;
+}
+
 .small {
   font-size: 30rpx;
 }
 
 .action {
   margin-top: 28rpx;
+}
+
+.logout {
+  margin-top: 24rpx;
 }

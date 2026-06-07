@@ -1,0 +1,39 @@
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.filter {
+  height: 64rpx;
+  line-height: 64rpx;
+  padding: 0 14rpx;
+  background: #f5f7fa;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.metric {
+  text-align: center;
+}
+
+.num {
+  color: #1f7a68;
+  font-size: 44rpx;
+  font-weight: 900;
+}
+
+.row-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 18rpx 0;
+  border-top: 1rpx solid #edf0f3;
+}

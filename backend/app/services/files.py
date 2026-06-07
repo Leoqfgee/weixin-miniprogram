@@ -9,8 +9,8 @@ from ..utils.errors import ValidationError
 from ..utils.serializers import serialize_doc
 
 
-ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif", "mp4", "mov", "m4v", "mp3", "aac", "wav"}
+MAX_FILE_SIZE = 20 * 1024 * 1024
 
 
 def utc_now():
@@ -21,20 +21,20 @@ class FileService:
     def __init__(self, db):
         self.db = db
 
-    def upload_image(self, owner_id, file_storage, usage="product"):
+    def upload_file(self, owner_id, file_storage, usage="product"):
         if not file_storage or not file_storage.filename:
             raise ValidationError("参数校验失败", [{"field": "file", "message": "请选择要上传的图片"}])
 
         original_name = secure_filename(file_storage.filename)
         suffix = original_name.rsplit(".", 1)[-1].lower() if "." in original_name else ""
-        if suffix not in ALLOWED_IMAGE_EXTENSIONS:
-            raise ValidationError("参数校验失败", [{"field": "file", "message": "仅支持 jpg、png、webp、gif 图片"}])
+        if suffix not in ALLOWED_EXTENSIONS:
+            raise ValidationError("参数校验失败", [{"field": "file", "message": "仅支持常见图片、视频和音频格式"}])
 
         content = file_storage.read()
-        if len(content) > MAX_IMAGE_SIZE:
-            raise ValidationError("参数校验失败", [{"field": "file", "message": "单张图片不能超过 5MB"}])
+        if len(content) > MAX_FILE_SIZE:
+            raise ValidationError("参数校验失败", [{"field": "file", "message": "单个文件不能超过 20MB"}])
 
-        safe_usage = usage if usage in {"product", "avatar", "refund", "appeal", "delivery"} else "misc"
+        safe_usage = usage if usage in {"product", "avatar", "refund", "appeal", "delivery", "chat"} else "misc"
         filename = f"{uuid4().hex}.{suffix}"
         upload_root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
         target_dir = upload_root / safe_usage

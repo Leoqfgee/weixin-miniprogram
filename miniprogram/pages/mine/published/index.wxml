@@ -1,0 +1,25 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs"><view class="tabs-inner"><view wx:for="{{statusOptions}}" wx:key="value" class="tab {{index === statusIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view>
+  <view wx:if="{{products.length}}" class="list">
+    <view wx:for="{{products}}" wx:key="id" class="panel item">
+      <view class="item-main" bindtap="goDetail" data-id="{{item.id}}">
+        <image wx:if="{{item.cover_image}}" class="thumb" src="{{item.cover_image}}" mode="aspectFill"></image>
+        <view wx:else class="thumb placeholder">物</view>
+        <view class="info">
+          <view class="title small">{{item.title || '未填写标题的草稿'}}</view>
+          <view class="muted">¥{{item.price || '--'}} · {{item.status_text}}</view>
+          <view wx:if="{{item.status_note}}" class="status-note">{{item.status_note}}</view>
+          <view class="muted">{{item.created_at}}</view>
+        </view>
+      </view>
+      <view class="actions">
+        <button wx:if="{{item.allowed_actions.can_edit}}" class="ghost-btn" data-id="{{item.id}}" bindtap="editProduct">编辑</button>
+        <button wx:if="{{item.allowed_actions.can_submit_review}}" class="ghost-btn" data-id="{{item.id}}" bindtap="submitReview">提交审核</button>
+        <button wx:if="{{item.allowed_actions.can_off_shelf}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="offShelf">下架</button>
+        <button wx:if="{{item.allowed_actions.can_republish}}" class="primary-btn" data-id="{{item.id}}" bindtap="republish">重新发布</button>
+        <button wx:if="{{item.allowed_actions.can_delete}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="deleteProduct">删除</button>
+      </view>
+    </view>
+  </view>
+  <empty-state wx:else title="当前状态暂无商品" description="切换上方状态查看其他商品"></empty-state>
+</view>

@@ -22,7 +22,7 @@
       <view class="title small-title">正在出售</view>
       <view class="muted">只展示审核通过的商品</view>
     </view>
-    <button class="cart-link" bindtap="goCart">购物车</button>
+    <button class="cart-link" bindtap="goSearch">筛选商品</button>
   </view>
 
   <view wx:if="{{products.length}}" class="product-grid">

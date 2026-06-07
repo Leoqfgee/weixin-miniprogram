@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "购物车",
+  "navigationBarTitleText": "我买到的",
   "usingComponents": {
     "empty-state": "/components/empty-state/index"
   }

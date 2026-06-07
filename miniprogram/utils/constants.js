@@ -1,15 +1,17 @@
+const CLOUD_RUN_ENV = 'prod-d2g73fc4ha6d2e317'
+const CLOUD_RUN_SERVICE = 'flask-fnnj'
+const API_PREFIX = '/api/v1'
+const CLOUD_RUN_PUBLIC_BASE_URL = 'https://flask-fnnj-267255-4-1440900946.sh.run.tcloudbase.com/api/v1'
+
 const ENV_CONFIG = {
-  // 开发版：只用于微信开发者工具本地调试，可按电脑当前局域网 IP 修改。
   develop: {
-    API_BASE_URL: 'http://10.6.14.70:5000/api/v1'
+    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
   },
-  // 体验版：真实小程序预览/体验应使用公网 HTTPS 后端域名。
   trial: {
-    API_BASE_URL: 'https://api.your-domain.com/api/v1'
+    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
   },
-  // 正式版：上线前必须替换为已备案、已配置到小程序后台的 HTTPS 合法域名。
   release: {
-    API_BASE_URL: 'https://api.your-domain.com/api/v1'
+    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
   }
 }
 
@@ -33,7 +35,7 @@ const PRODUCT_STATUS_TEXT = {
   draft: '草稿',
   pending_review: '待审核',
   on_sale: '在售',
-  locked: '交易锁定中',
+  locked: '交易中',
   sold: '已售出',
   rejected: '已驳回',
   off_shelf: '已下架'
@@ -45,9 +47,9 @@ const ORDER_STATUS_TEXT = {
   pending_receive: '待收货',
   pending_review: '待评价',
   completed: '交易完成',
-  closed: '已关闭',
+  closed: '已取消',
   refunding: '退款/售后中',
-  refunded: '已退款',
+  refunded: '已退款'
 }
 
 const CONDITION_OPTIONS = [
@@ -59,6 +61,10 @@ const CONDITION_OPTIONS = [
 
 module.exports = {
   API_BASE_URL,
+  API_PREFIX,
+  CLOUD_RUN_ENV,
+  CLOUD_RUN_SERVICE,
+  CLOUD_RUN_PUBLIC_BASE_URL,
   CURRENT_ENV,
   ENV_CONFIG,
   STORAGE_KEYS,

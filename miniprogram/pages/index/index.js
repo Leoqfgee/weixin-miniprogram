@@ -38,8 +38,5 @@ Page({
   goCategory(event) {
     const id = event.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/category/index?category_id=${id}` })
-  },
-  goCart() {
-    wx.navigateTo({ url: '/pages/cart/index/index' })
   }
 })

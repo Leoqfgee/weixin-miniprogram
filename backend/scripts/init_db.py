@@ -16,10 +16,10 @@ from app.config import Config  # noqa: E402
 COLLECTIONS = [
     "users",
     "user_profiles",
+    "addresses",
     "categories",
     "products",
     "favorites",
-    "carts",
     "orders",
     "order_items",
     "payments",
@@ -72,7 +72,7 @@ TEST_USERS = [
         "openid": "mock_buyer_openid",
         "phone": "18800000002",
         "password": "buyer123456",
-        "roles": ["buyer"],
+        "roles": ["buyer", "seller"],
         "nickname": "测试买家",
         "campus": "东校区",
         "student_no": "B2026001",
@@ -108,8 +108,9 @@ def ensure_indexes(db):
     db.users.create_index([("status", ASCENDING)])
     db.user_profiles.create_index([("user_id", ASCENDING)], unique=True)
     db.user_profiles.create_index([("verified_status", ASCENDING)])
+    db.addresses.create_index([("user_id", ASCENDING), ("is_default", DESCENDING), ("created_at", DESCENDING)])
 
-    # 商品、分类、收藏、购物车
+    # 商品、分类、收藏
     db.categories.create_index([("code", ASCENDING)], unique=True)
     db.categories.create_index([("parent_id", ASCENDING), ("sort", ASCENDING)])
     db.products.create_index(
@@ -119,10 +120,12 @@ def ensure_indexes(db):
         [("category_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)]
     )
     db.products.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
+    db.products.create_index([("status", ASCENDING), ("price", ASCENDING)])
+    db.products.create_index([("status", ASCENDING), ("campus", ASCENDING)])
+    db.products.create_index([("status", ASCENDING), ("view_count", DESCENDING)])
     db.products.create_index([("title", "text"), ("description", "text")])
     db.products.create_index([("seed_code", ASCENDING)], unique=True, sparse=True)
     db.favorites.create_index([("user_id", ASCENDING), ("product_id", ASCENDING)], unique=True)
-    db.carts.create_index([("user_id", ASCENDING)], unique=True)
 
     # 订单、支付、交付
     db.orders.create_index([("buyer_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
@@ -154,6 +157,7 @@ def ensure_indexes(db):
     db.messages.create_index([("conversation_id", ASCENDING), ("created_at", ASCENDING)])
     db.messages.create_index([("receiver_id", ASCENDING), ("read_at", ASCENDING)])
     db.reviews.create_index([("order_id", ASCENDING), ("reviewer_id", ASCENDING)], unique=True)
+    db.reviews.create_index([("reviewee_id", ASCENDING), ("created_at", DESCENDING)])
     db.refunds.create_index([("order_id", ASCENDING), ("status", ASCENDING)])
     db.refunds.create_index([("buyer_id", ASCENDING), ("status", ASCENDING)])
     db.refunds.create_index([("seller_id", ASCENDING), ("status", ASCENDING)])
@@ -300,6 +304,8 @@ def seed_products(db):
             "cover_image": item["images"][0] if item["images"] else "",
             "review": review,
             "sold_count": 0,
+            "view_count": item.get("view_count", 0),
+            "favorite_count": item.get("favorite_count", 0),
             "updated_at": now(),
         }
         db.products.update_one(
@@ -312,6 +318,30 @@ def seed_products(db):
 
 
 def main():
+    if Config.DB_BACKEND == "mysql":
+        from app.mysql_document import MySQLDocumentDB
+
+        db = MySQLDocumentDB(
+            {
+                "MYSQL_HOST": Config.MYSQL_HOST,
+                "MYSQL_PORT": Config.MYSQL_PORT,
+                "MYSQL_USERNAME": Config.MYSQL_USERNAME,
+                "MYSQL_PASSWORD": Config.MYSQL_PASSWORD,
+                "MYSQL_DATABASE": Config.MYSQL_DATABASE,
+            }
+        )
+        try:
+            db.command("ping")
+            ensure_collections(db)
+            ensure_indexes(db)
+            seed_categories(db)
+            seed_users(db)
+            seed_products(db)
+            print(f"database initialized: mysql/{Config.MYSQL_DATABASE}")
+        finally:
+            db.close()
+        return
+
     mongo_uri = os.getenv("MONGO_URI", Config.MONGO_URI)
     db_name = os.getenv("MONGO_DB_NAME", Config.MONGO_DB_NAME)
     client = MongoClient(mongo_uri)

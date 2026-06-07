@@ -1,0 +1,1 @@
+.stars{display:flex;gap:18rpx;margin:30rpx 0}.stars text{color:#d8dee5;font-size:62rpx}.stars .active{color:#f2ad3d}textarea{box-sizing:border-box;width:100%;height:220rpx;padding:20rpx;background:#f5f7fa;border-radius:8rpx}.anonymous{display:flex;align-items:center;gap:14rpx;margin:24rpx 0}

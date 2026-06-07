@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 tmp_run_logs/
+backend-cloudrun.zip
 .env
 .env.local
 .env.production

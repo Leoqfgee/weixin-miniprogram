@@ -11,5 +11,5 @@ files_bp = Blueprint("files", __name__)
 @auth_required
 def upload_file():
     usage = request.form.get("usage", "product")
-    data = FileService(current_app.db).upload_image(g.current_user_id, request.files.get("file"), usage)
+    data = FileService(current_app.db).upload_file(g.current_user_id, request.files.get("file"), usage)
     return success_response(data, http_status=201)

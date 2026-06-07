@@ -1,0 +1,6 @@
+<view class="page">
+  <view wx:if="{{products.length}}" class="list">
+    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
+  </view>
+  <empty-state wx:else title="暂无收藏" description="在商品详情页点收藏后会显示在这里"></empty-state>
+</view>

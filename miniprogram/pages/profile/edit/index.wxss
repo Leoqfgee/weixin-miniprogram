@@ -1,0 +1,46 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.avatar {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 8rpx;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f7a68;
+  color: #fff;
+  font-size: 24rpx;
+}
+
+.field text {
+  display: block;
+  margin-bottom: 10rpx;
+  color: #56616d;
+  font-size: 24rpx;
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18rpx;
+  border-radius: 8rpx;
+  background: #f5f7fa;
+}
+
+textarea {
+  min-height: 160rpx;
+}

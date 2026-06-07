@@ -93,6 +93,7 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
     )
     assert ai_response.status_code == 200
     assert "description" in ai_response.get_json()["data"]
+    assert len(ai_response.get_json()["data"]["title_suggestions"]) == 3
 
     deliver_response = client.post(
         f"/api/v1/deliveries/{order_id}/seller-deliver",

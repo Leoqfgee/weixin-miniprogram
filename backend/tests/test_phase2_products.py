@@ -89,7 +89,7 @@ def test_product_review_flow():
     buyer_detail = client.get(f"/api/v1/products/{product['id']}", headers=auth_headers(buyer_token))
     actions = buyer_detail.get_json()["data"]["allowed_actions"]
     assert actions["can_buy"] is True
-    assert actions["can_add_cart"] is True
+    assert "can_add_cart" not in actions
 
     off_shelf_response = client.post(
         f"/api/v1/products/{product['id']}/off-shelf",

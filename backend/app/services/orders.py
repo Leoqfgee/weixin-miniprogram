@@ -4,7 +4,6 @@ from bson import ObjectId
 from flask import current_app
 
 from ..adapters.payment import get_payment_adapter
-from ..repositories.carts import CartRepository
 from ..repositories.deliveries import DeliveryRepository
 from ..repositories.escrows import EscrowRepository
 from ..repositories.logs import BusinessLogRepository
@@ -38,7 +37,6 @@ class OrderService:
         self.payments = PaymentRepository(db)
         self.escrows = EscrowRepository(db)
         self.products = ProductRepository(db)
-        self.carts = CartRepository(db)
         self.users = UserRepository(db)
         self.deliveries = DeliveryRepository(db)
         self.logs = BusinessLogRepository(db)
@@ -83,6 +81,8 @@ class OrderService:
                 locked.append((product["_id"], quantity))
                 self._log("product_locked", "product", product["_id"], buyer_id, "buyer", "on_sale", "locked")
 
+            delivery_type = _normalize_delivery_type(payload.get("delivery_type", "offline_meetup"))
+            shipping_address = _shipping_address_snapshot(payload.get("shipping_address")) if delivery_type == "express" else None
             order_doc = {
                 "order_no": f"ORD{utc_now().strftime('%Y%m%d%H%M%S')}{uuid4().hex[:8].upper()}",
                 "buyer_id": buyer_id,
@@ -92,8 +92,9 @@ class OrderService:
                 "pre_refund_status": "",
                 "total_amount": total_amount,
                 "pay_amount": total_amount,
-                "delivery_type": _normalize_delivery_type(payload.get("delivery_type", "offline_meetup")),
+                "delivery_type": delivery_type,
                 "meet_location": (payload.get("meet_location") or "").strip(),
+                "shipping_address": shipping_address,
                 "remark": (payload.get("remark") or "").strip(),
                 "closed_reason": "",
                 "paid_at": None,
@@ -105,6 +106,7 @@ class OrderService:
                 order_doc["idempotency_key"] = idempotency_key
             order = self.orders.create(order_doc)
             self._log("create_order", "order", order["_id"], buyer_id, "buyer", None, "pending_payment")
+            _append_order_system_message(self.db, order, "买家已提交订单，等待付款", "order_created")
             order_items = []
             for product, quantity in product_docs:
                 order_items.append(
@@ -121,8 +123,6 @@ class OrderService:
                 )
             self.order_items.create_many(order_items)
 
-            if payload.get("clear_cart", True):
-                self.carts.clear_products(buyer_id, [product["_id"] for product, _ in product_docs])
             return self._present_order(order, buyer_id)
         except Exception:
             for product_id, quantity in locked:
@@ -166,6 +166,7 @@ class OrderService:
         if payment and payment.get("status") == "pending":
             self.payments.update_fields(payment["_id"], {"status": "failed"})
         updated = self._transition(order, "closed", ObjectId(str(user_id)), "buyer", "cancel_order", reason)
+        _append_order_system_message(self.db, updated, "买家已取消订单", "order_closed")
         return self._present_order(updated, ObjectId(str(user_id)))
 
     def close_timeout(self, order_id, reason="payment_timeout"):
@@ -197,6 +198,7 @@ class OrderService:
         )
         refunding_order = self._transition(order, "refunding", operator_id, "seller", "seller_cancel_and_refund", reason)
         refunded_order = self._execute_refund(refunding_order, refund, operator_id, "seller", "seller_cancel_and_refund", reason)
+        _append_order_system_message(self.db, refunded_order, "卖家取消交易，退款已处理", "seller_cancelled")
         return self._present_order(refunded_order, operator_id)
 
     def _get_visible_order(self, order_id, user_id):
@@ -323,7 +325,13 @@ class OrderService:
         data["refund"] = serialize_doc(refund) if refund else None
         appeal = self.db.appeals.find_one({"order_id": order["_id"]}, sort=[("created_at", -1)])
         data["appeal"] = serialize_doc(appeal) if appeal else None
-        data["allowed_actions"] = _order_allowed_actions(order, current_user_id, payment, refund)
+        reviews = list(self.db.reviews.find({"order_id": order["_id"]}).sort("created_at", 1))
+        data["reviews"] = [serialize_doc(item) for item in reviews]
+        data["buyer"] = self._party(order["buyer_id"])
+        data["seller"] = self._party(order["seller_id"])
+        data["allowed_actions"] = _order_allowed_actions(
+            order, current_user_id, payment, refund, {str(item["reviewer_id"]) for item in reviews}
+        )
         if compact:
             return {
                 "id": data["id"],
@@ -334,13 +342,26 @@ class OrderService:
                 "payment": data["payment"],
                 "escrow": data["escrow"],
                 "allowed_actions": data["allowed_actions"],
+                "buyer": data["buyer"],
+                "seller": data["seller"],
+                "shipping_address": data.get("shipping_address"),
                 "created_at": data["created_at"],
             }
         return data
 
+    def _party(self, user_id):
+        profile = self.users.find_profile(user_id) or {}
+        return {
+            "id": str(user_id),
+            "nickname": profile.get("nickname", "校园用户"),
+            "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
+            "campus": profile.get("campus", ""),
+        }
+
 
 class PaymentService:
     def __init__(self, db):
+        self.db = db
         self.orders = OrderRepository(db)
         self.payments = PaymentRepository(db)
         self.escrows = EscrowRepository(db)
@@ -389,6 +410,7 @@ class PaymentService:
         updated_order = self.orders.update_fields(order["_id"], {"status": "pending_delivery", "paid_at": paid_at})
         self.logs.create("pay_success", "order", order["_id"], order["buyer_id"], "buyer", "pending_payment", "pending_delivery")
         escrow = self.escrows.create_holding(updated_order)
+        _append_order_system_message(self.db, updated_order, "买家已付款，等待卖家交付", "paid")
         self.logs.create("create_escrow", "escrow", escrow["_id"], order["buyer_id"], "buyer", None, "holding", extra={"order_id": order["_id"]})
         return {"payment": serialize_doc(updated_payment), "escrow": serialize_doc(escrow), "order_status": updated_order["status"]}
 
@@ -440,6 +462,7 @@ class DeliveryService:
         delivery = self.deliveries.mark_delivering(order, ObjectId(str(seller_id)), payload, delivery_type)
         updated_order = self.orders.update_fields(order["_id"], {"status": "pending_receive", "delivered_at": utc_now()})
         self.logs.create("seller_deliver", "order", order["_id"], ObjectId(str(seller_id)), "seller", "pending_delivery", "pending_receive", payload.get("delivery_note") or "")
+        _append_order_system_message(self.db, updated_order, "卖家已交付/发货，等待买家确认收货", "delivered")
         return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery)}
 
     def buyer_confirm(self, order_id, user_id):
@@ -453,6 +476,7 @@ class DeliveryService:
         self.logs.create("escrow_settle", "escrow", escrow["_id"], ObjectId(str(user_id)), "buyer", "holding", "settled", extra={"order_id": order["_id"]})
         updated_order = self.orders.update_fields(order["_id"], {"status": "pending_review", "received_at": utc_now()})
         self.logs.create("buyer_confirm_receive", "order", order["_id"], ObjectId(str(user_id)), "buyer", "pending_receive", "pending_review")
+        _append_order_system_message(self.db, updated_order, "买家已确认收货，双方可以评价", "received")
         return {"order": serialize_doc(updated_order), "delivery": serialize_doc(delivery), "escrow": serialize_doc(escrow)}
 
     def buyer_reject(self, order_id, user_id, payload=None):
@@ -545,18 +569,20 @@ def _validate_delivery_payload(delivery_type, payload):
         raise ValidationError("参数校验失败", [{"field": "tracking_no", "message": "快递方式需填写快递公司和单号"}])
 
 
-def _order_allowed_actions(order, current_user_id, payment=None, refund=None):
+def _order_allowed_actions(order, current_user_id, payment=None, refund=None, reviewer_ids=None):
     is_buyer = str(order["buyer_id"]) == str(current_user_id)
     is_seller = str(order["seller_id"]) == str(current_user_id)
     status = order["status"]
+    reviewer_ids = reviewer_ids or set()
+    already_reviewed = str(current_user_id) in reviewer_ids
     actions = []
     if is_buyer:
         actions_by_status = {
             "pending_payment": ["pay", "cancel_order"],
             "pending_delivery": ["contact_seller", "apply_refund"],
             "pending_receive": ["confirm_receive", "reject_receive", "apply_refund", "contact_seller"],
-            "pending_review": ["create_review", "view_after_sale"],
-            "completed": ["view_review", "apply_after_sale"],
+            "pending_review": ([] if already_reviewed else ["create_review"]) + ["view_after_sale"],
+            "completed": ([] if already_reviewed else ["create_review"]) + ["view_review", "apply_after_sale"],
             "refunding": ["view_refund"],
             "refunded": ["view_refund_result"],
             "closed": ["view_close_reason"],
@@ -569,7 +595,8 @@ def _order_allowed_actions(order, current_user_id, payment=None, refund=None):
             "pending_delivery": ["seller_deliver", "seller_cancel_and_refund", "contact_buyer"],
             "pending_receive": ["view_delivery", "contact_buyer"],
             "refunding": ["agree_refund", "reject_refund", "upload_evidence"],
-            "completed": ["view_review"],
+            "pending_review": ([] if already_reviewed else ["create_review"]) + ["contact_buyer"],
+            "completed": ([] if already_reviewed else ["create_review"]) + ["view_review"],
         }
         actions.extend(actions_by_status.get(status, []))
     return {
@@ -586,3 +613,38 @@ def _order_allowed_actions(order, current_user_id, payment=None, refund=None):
         "can_agree_refund": "agree_refund" in actions,
         "can_reject_refund": "reject_refund" in actions,
     }
+
+
+def _shipping_address_snapshot(value):
+    if not isinstance(value, dict):
+        raise ValidationError("参数校验失败", [{"field": "shipping_address", "message": "邮寄订单必须选择收货地址"}])
+    name = (value.get("name") or "").strip()
+    phone = (value.get("phone") or "").strip()
+    address = (value.get("address") or "").strip()
+    if not name or not phone or not address:
+        raise ValidationError("参数校验失败", [{"field": "shipping_address", "message": "收货地址信息不完整"}])
+    return {"id": str(value.get("id") or ""), "name": name, "phone": phone, "address": address}
+
+
+def _append_order_system_message(db, order, content, action):
+    user_pair = sorted([str(order["buyer_id"]), str(order["seller_id"])])
+    conversation_id = "_".join(user_pair + [str(order["product_id"])])
+    seller_actions = {"order_created", "paid", "received", "order_closed"}
+    sender_id = order["buyer_id"] if action in seller_actions else order["seller_id"]
+    receiver_id = order["seller_id"] if action in seller_actions else order["buyer_id"]
+    db.messages.insert_one(
+        {
+            "conversation_id": conversation_id,
+            "type": "private",
+            "sender_id": sender_id,
+            "receiver_id": receiver_id,
+            "product_id": order["product_id"],
+            "message_type": "system",
+            "content": content,
+            "system_action": action,
+            "order_id": order["_id"],
+            "image_url": "",
+            "read_at": None,
+            "created_at": utc_now(),
+        }
+    )

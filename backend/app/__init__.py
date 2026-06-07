@@ -2,10 +2,10 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from .blueprints.admin import admin_bp
+from .blueprints.addresses import addresses_bp
 from .blueprints.appeals import appeals_bp
 from .blueprints.ai import ai_bp
 from .blueprints.auth import auth_bp
-from .blueprints.cart import cart_bp
 from .blueprints.categories import categories_bp
 from .blueprints.deliveries import deliveries_bp
 from .blueprints.files import files_bp
@@ -42,10 +42,10 @@ def create_app(config_class=Config):
     app.register_blueprint(health_bp, url_prefix=api_prefix)
     app.register_blueprint(auth_bp, url_prefix=api_prefix)
     app.register_blueprint(users_bp, url_prefix=api_prefix)
+    app.register_blueprint(addresses_bp, url_prefix=api_prefix)
     app.register_blueprint(categories_bp, url_prefix=api_prefix)
     app.register_blueprint(products_bp, url_prefix=api_prefix)
     app.register_blueprint(admin_bp, url_prefix=api_prefix)
-    app.register_blueprint(cart_bp, url_prefix=api_prefix)
     app.register_blueprint(orders_bp, url_prefix=api_prefix)
     app.register_blueprint(payments_bp, url_prefix=api_prefix)
     app.register_blueprint(deliveries_bp, url_prefix=api_prefix)

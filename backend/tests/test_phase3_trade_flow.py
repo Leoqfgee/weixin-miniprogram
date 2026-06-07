@@ -90,7 +90,7 @@ def pay_order(client, buyer_token, order_id):
     return response.get_json()["data"]
 
 
-def test_cart_order_payment_delivery_receive_and_review_flow():
+def test_order_payment_delivery_receive_and_review_flow():
     app, client, seller_token, buyer_token, admin_token = setup_flow()
     product_id = create_on_sale_product(client, seller_token, admin_token, stock=2)
 

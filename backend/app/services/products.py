@@ -1,3 +1,4 @@
+from datetime import datetime, time, timezone
 from decimal import Decimal, InvalidOperation
 
 from bson import ObjectId
@@ -10,7 +11,7 @@ from ..utils.serializers import serialize_doc, to_object_id
 
 
 PRODUCT_STATUSES = {"draft", "pending_review", "rejected", "on_sale", "locked", "sold", "off_shelf"}
-EDITABLE_STATUSES = {"draft", "rejected", "off_shelf"}
+EDITABLE_STATUSES = {"draft", "rejected", "off_shelf", "on_sale"}
 CONDITIONS = {"new", "like_new", "good", "fair"}
 
 
@@ -31,15 +32,39 @@ class ProductService:
             "category_id": None,
             "min_price": _optional_float(args.get("min_price"), "min_price"),
             "max_price": _optional_float(args.get("max_price"), "max_price"),
+            "campus": args.get("campus", "").strip(),
+            "sort": (args.get("sort") or "newest").strip(),
+            "date_from": _optional_date(args.get("date_from"), "date_from", end=False),
+            "date_to": _optional_date(args.get("date_to"), "date_to", end=True),
         }
         if args.get("category_id"):
             filters["category_id"] = to_object_id(args.get("category_id"), "category_id")
         if filters["condition"] and filters["condition"] not in CONDITIONS:
             raise ValidationError("参数校验失败", [{"field": "condition", "message": "成色不合法"}])
+        if filters["sort"] not in {"newest", "price_asc", "price_desc", "hot"}:
+            raise ValidationError("参数校验失败", [{"field": "sort", "message": "排序方式不合法"}])
 
         items, total = self.products.list_public(filters, page, page_size)
         return {
             "items": [self._present(item, None, compact=True) for item in items],
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "pages": (total + page_size - 1) // page_size,
+            },
+        }
+
+    def list_my_products(self, user_id, args):
+        page = max(int(args.get("page", 1)), 1)
+        page_size = min(max(int(args.get("page_size", 20)), 1), 50)
+        status = (args.get("status") or "").strip()
+        if status and status not in PRODUCT_STATUSES:
+            raise ValidationError("参数校验失败", [{"field": "status", "message": "商品状态不合法"}])
+        items, total = self.products.list_mine(ObjectId(str(user_id)), status=status or None, page=page, page_size=page_size)
+        current_user = {"_id": ObjectId(str(user_id)), "roles": []}
+        return {
+            "items": [self._present(item, current_user, compact=True) for item in items],
             "pagination": {
                 "page": page,
                 "page_size": page_size,
@@ -69,17 +94,29 @@ class ProductService:
         product = self._get_existing(product_id)
         if not self._can_view(product, current_user):
             raise NotFoundError("商品不存在或不可见")
+        if product.get("status") == "on_sale":
+            product = self.products.increment_view_count(product["_id"])
         return self._present(product, current_user)
 
     def create_product(self, user_id, payload):
         self._reject_client_status(payload)
-        data = self._validate_product_payload(payload, partial=False)
         submit_action = payload.get("submit_action", "draft")
         status = "pending_review" if submit_action == "review" else "draft"
         if submit_action not in {"draft", "review"}:
             raise ValidationError("参数校验失败", [{"field": "submit_action", "message": "提交动作不合法"}])
+        data = self._validate_product_payload(payload, partial=submit_action == "draft")
 
         product = {
+            "title": "",
+            "description": "",
+            "price": None,
+            "category_id": None,
+            "condition": "",
+            "stock": 1,
+            "images": [],
+            "cover_image": "",
+            "campus": "",
+            "delivery_options": ["meetup"],
             **data,
             "seller_id": ObjectId(str(user_id)),
             "status": status,
@@ -87,6 +124,8 @@ class ProductService:
             "sold_count": 0,
         }
         created = self.products.create(product)
+        if submit_action == "review":
+            self._ensure_review_ready(created)
         return self._present(created, {"_id": ObjectId(str(user_id)), "roles": []})
 
     def update_product(self, product_id, user_id, payload):
@@ -167,9 +206,34 @@ class ProductService:
             )
         return self._present(updated, current_user)
 
+    def delete_product(self, product_id, user_id):
+        product = self._get_existing(product_id)
+        self._ensure_owner(product, user_id)
+        if product["status"] not in {"sold", "off_shelf"}:
+            raise ConflictError("只有已售出或已下架商品可以删除")
+        self.products.update_fields(product["_id"], {"deleted_at": utc_now()})
+        return {"deleted": True, "id": str(product["_id"])}
+
+    def republish_product(self, product_id, user_id):
+        product = self._get_existing(product_id)
+        self._ensure_owner(product, user_id)
+        if product["status"] not in {"sold", "off_shelf"}:
+            raise ConflictError("只有已售出或已下架商品可以重新发布")
+        stock = max(int(product.get("stock", 0) or 0), 1)
+        self._ensure_review_ready({**product, "stock": stock})
+        updated = self.products.update_fields(
+            product["_id"],
+            {
+                "status": "pending_review",
+                "stock": stock,
+                "review": {"result": "", "reason": "", "audited_by": None, "audited_at": None},
+            },
+        )
+        return self._present(updated, {"_id": ObjectId(str(user_id)), "roles": []})
+
     def _get_existing(self, product_id):
         product = self.products.find_by_id(to_object_id(product_id, "product_id"))
-        if not product:
+        if not product or product.get("deleted_at"):
             raise NotFoundError("商品不存在")
         return product
 
@@ -226,9 +290,9 @@ class ProductService:
             else:
                 data["category_id"] = category_id
 
-        if need("condition"):
+        if "condition" in payload:
             condition = (payload.get("condition") or "").strip()
-            if condition not in CONDITIONS:
+            if condition and condition not in CONDITIONS:
                 errors.append({"field": "condition", "message": "成色不合法"})
             else:
                 data["condition"] = condition
@@ -265,7 +329,7 @@ class ProductService:
 
     def _ensure_review_ready(self, product):
         missing = []
-        for field in ["title", "description", "price", "category_id", "condition"]:
+        for field in ["title", "description", "price", "category_id"]:
             if not product.get(field):
                 missing.append(field)
         if product.get("stock", 0) <= 0:
@@ -295,6 +359,13 @@ class ProductService:
 
     def _present(self, product, current_user, compact=False):
         data = serialize_doc(product)
+        data["view_count"] = int(product.get("view_count", 0) or 0)
+        data["favorite_count"] = int(product.get("favorite_count", 0) or 0)
+        data["is_favorited"] = False
+        if current_user and current_user.get("_id"):
+            data["is_favorited"] = self.db.favorites.count_documents(
+                {"user_id": ObjectId(str(current_user["_id"])), "product_id": product["_id"]}
+            ) > 0
         seller = self.users.find_by_id(product["seller_id"])
         profile = self.users.find_profile(product["seller_id"])
         data["seller"] = {
@@ -315,6 +386,10 @@ class ProductService:
                     "stock",
                     "status",
                     "seller",
+                    "campus",
+                    "view_count",
+                    "favorite_count",
+                    "is_favorited",
                     "allowed_actions",
                     "created_at",
                 ]
@@ -330,16 +405,17 @@ class ProductService:
             "can_edit": False,
             "can_submit_review": False,
             "can_off_shelf": False,
-            "can_add_cart": False,
             "can_buy": False,
             "can_audit": False,
             "can_force_off_shelf": False,
+            "can_delete": False,
+            "can_republish": False,
         }
         if status == "on_sale" and not is_owner:
-            actions["can_add_cart"] = True
             actions["can_buy"] = True
         if is_owner and status in EDITABLE_STATUSES:
             actions["can_edit"] = True
+        if is_owner and status in {"draft", "rejected"}:
             actions["can_submit_review"] = True
         if is_owner and status == "on_sale":
             actions["can_off_shelf"] = True
@@ -347,6 +423,9 @@ class ProductService:
             actions["can_audit"] = True
         if "admin" in roles and status == "on_sale":
             actions["can_force_off_shelf"] = True
+        if is_owner and status in {"sold", "off_shelf"}:
+            actions["can_delete"] = True
+            actions["can_republish"] = True
         return actions
 
 
@@ -372,3 +451,54 @@ def _optional_float(value, field):
     if amount < 0:
         raise ValidationError("参数校验失败", [{"field": field, "message": "金额不能小于 0"}])
     return round(amount, 2)
+
+
+def _optional_date(value, field, end=False):
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except ValueError as exc:
+        raise ValidationError("参数校验失败", [{"field": field, "message": "日期格式需为 YYYY-MM-DD"}]) from exc
+    if parsed.tzinfo is None:
+        parsed = datetime.combine(parsed.date(), time.max if end else time.min, tzinfo=timezone.utc)
+    return parsed
+
+
+class FavoriteService:
+    def __init__(self, db):
+        self.db = db
+        self.products = ProductRepository(db)
+        self.product_service = ProductService(db)
+
+    def list_favorites(self, user_id):
+        user_object_id = ObjectId(str(user_id))
+        rows = list(self.db.favorites.find({"user_id": user_object_id}).sort("created_at", -1))
+        items = []
+        for row in rows:
+            product = self.products.find_by_id(row["product_id"])
+            if product:
+                items.append(self.product_service._present(product, {"_id": user_object_id, "roles": []}, compact=True))
+        return {"items": items}
+
+    def add_favorite(self, user_id, payload):
+        product_id = to_object_id(payload.get("product_id"), "product_id")
+        product = self.products.find_by_id(product_id)
+        if not product or product.get("status") != "on_sale":
+            raise NotFoundError("商品不存在或不可收藏")
+        user_object_id = ObjectId(str(user_id))
+        result = self.db.favorites.update_one(
+            {"user_id": user_object_id, "product_id": product_id},
+            {"$setOnInsert": {"user_id": user_object_id, "product_id": product_id, "created_at": utc_now()}},
+            upsert=True,
+        )
+        if result.upserted_id:
+            self.db.products.update_one({"_id": product_id}, {"$inc": {"favorite_count": 1}})
+        return {"favorited": True, "product_id": str(product_id)}
+
+    def delete_favorite(self, user_id, product_id):
+        product_object_id = to_object_id(product_id, "product_id")
+        result = self.db.favorites.delete_one({"user_id": ObjectId(str(user_id)), "product_id": product_object_id})
+        if result.deleted_count:
+            self.db.products.update_one({"_id": product_object_id, "favorite_count": {"$gt": 0}}, {"$inc": {"favorite_count": -1}})
+        return {"favorited": False, "product_id": str(product_object_id)}

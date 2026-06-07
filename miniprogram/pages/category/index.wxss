@@ -23,6 +23,7 @@ button {
   display: flex;
   gap: 16rpx;
   margin: 20rpx 0;
+  flex-wrap: wrap;
 }
 
 .filters picker {
@@ -37,6 +38,29 @@ button {
   border: 1rpx solid #e6ebf1;
   border-radius: 8rpx;
   color: #334e68;
+}
+
+.more-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14rpx;
+  margin-bottom: 20rpx;
+}
+
+.more-filters input,
+.date-filter {
+  min-height: 64rpx;
+  padding: 0 14rpx;
+  border: 1rpx solid #e6ebf1;
+  border-radius: 8rpx;
+  background: #f5f7fa;
+  font-size: 24rpx;
+  line-height: 64rpx;
+}
+
+.more-filters button {
+  grid-column: span 3;
+  width: 100%;
 }
 
 .list {

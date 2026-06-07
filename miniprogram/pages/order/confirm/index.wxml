@@ -1,12 +1,26 @@
 <view class="page">
-  <view class="panel">
-    <view class="title">确认订单</view>
-    <view wx:if="{{product}}">
-      <view class="product">{{product.title}}</view>
-      <view class="price">￥{{product.price}} × {{quantity}}</view>
-      <view class="muted">应付金额由后端重新计算，前端金额仅展示</view>
-    </view>
-    <input value="{{meetLocation}}" bindinput="onLocationInput" placeholder="约定交付地点" />
-    <button class="primary-btn action" bindtap="onCreateOrder">提交订单</button>
+  <view wx:if="{{product}}" class="panel product-card">
+    <view class="title small">{{product.title}}</view>
+    <view class="price">¥{{product.price}} × {{quantity}}</view>
   </view>
+
+  <view class="panel delivery">
+    <view class="text-strong">交付方式</view>
+    <view class="segments">
+      <view class="{{deliveryType === 'offline_meetup' ? 'active' : ''}}" data-value="offline_meetup" bindtap="chooseDelivery">无需快递</view>
+      <view class="{{deliveryType === 'express' ? 'active' : ''}}" data-value="express" bindtap="chooseDelivery">快递配送</view>
+    </view>
+    <input wx:if="{{deliveryType === 'offline_meetup'}}" value="{{meetLocation}}" bindinput="onLocationInput" placeholder="约定面交地点" />
+    <view wx:else>
+      <picker wx:if="{{addresses.length}}" mode="selector" range="{{addresses}}" range-key="address" bindchange="onAddressChange">
+        <view class="address">
+          <view class="text-strong">{{addresses[addressIndex].name}}　{{addresses[addressIndex].phone}}</view>
+          <view class="muted">{{addresses[addressIndex].address}}</view>
+        </view>
+      </picker>
+      <view wx:else class="address empty" bindtap="goAddress">还没有地址，点击新增</view>
+      <button class="ghost-btn manage" bindtap="goAddress">管理收货地址</button>
+    </view>
+  </view>
+  <button class="primary-btn action" bindtap="onCreateOrder">提交订单</button>
 </view>

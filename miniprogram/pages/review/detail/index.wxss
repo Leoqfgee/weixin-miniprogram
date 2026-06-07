@@ -1,0 +1,1 @@
+.reviewer{display:flex;align-items:center;gap:18rpx}.avatar{width:88rpx;height:88rpx;border-radius:50%;background:#edf1f5}.rating{margin-top:26rpx;color:#f2ad3d;font-size:42rpx;font-weight:800}.content{margin-top:20rpx;line-height:1.8}

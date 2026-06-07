@@ -96,3 +96,4 @@
   color: #a61b1b;
   border-color: #a61b1b;
 }
+.state-tip{margin:16rpx 0;padding:16rpx;color:#815319;background:#fff6e7;border-left:6rpx solid #d89c3c;border-radius:4rpx}.actions{display:flex;flex-wrap:wrap;gap:14rpx}.actions button{flex:1;min-width:160rpx;margin:0}

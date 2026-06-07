@@ -1,6 +1,6 @@
 # 校园二手交易平台
 
-本项目按课程详细设计报告分阶段开发。当前完成第 1、2、3、4、5、6、7 阶段：Flask 后端基础骨架、用户认证与商品审核主流程、购物车订单模拟支付交易闭环、微信小程序核心页面、消息评价退款申诉 AI mock、后台日志统计、联调测试与课程演示文档。
+本项目按课程详细设计报告分阶段开发。当前完成第 1、2、3、4、5、6、7 阶段：Flask 后端基础骨架、用户认证与商品审核主流程、直接购买订单模拟支付交易闭环、微信小程序核心页面、消息评价退款申诉 AI mock、后台日志统计、联调测试与课程演示文档。
 
 ## 当前目录
 
@@ -68,10 +68,6 @@ on_sale -> off_shelf
 
 ## 第 3 阶段已实现
 
-- `POST /api/v1/cart/items`：加入购物车
-- `GET /api/v1/cart`：查看购物车
-- `PUT /api/v1/cart/items/{product_id}`：修改购物车商品数量
-- `DELETE /api/v1/cart/items/{product_id}`：删除购物车商品
 - `POST /api/v1/orders`：创建订单
 - `GET /api/v1/orders`：查看当前用户相关订单
 - `GET /api/v1/orders/{id}`：查看订单详情
@@ -142,7 +138,6 @@ holding -> refunded
 - `pages/product/detail/`
 - `pages/publish/edit/`
 - `pages/message/index/`
-- `pages/cart/index/`
 - `pages/order/confirm/`
 - `pages/order/detail/`
 - `pages/mine/index/`
@@ -155,15 +150,14 @@ holding -> refunded
 小程序核心页面已接入后端 API：
 
 - 登录页：支持买家、卖家、管理员三个测试账号一键切换和 mock 登录
-- 首页：展示 `on_sale` 商品列表，支持跳转搜索和购物车
+- 首页：展示 `on_sale` 商品列表，支持搜索与筛选
 - 分类/搜索页：支持关键词、分类、成色筛选
-- 商品详情页：展示商品详情，按后端 `allowed_actions` 显示加入购物车、立即购买、下架按钮
-- 发布页：支持基础信息、价格库存、分类、成色、图片上传、AI 文案 mock、保存草稿、提交审核
-- 购物车页：查看购物车、修改数量、删除商品、去结算
+- 商品详情页：展示商品详情，按后端 `allowed_actions` 显示收藏、联系卖家、立即购买、下架按钮
+- 发布页：支持基础信息、价格库存、分类、成色、图片上传、AI 标题建议、AI 描述润色、保存草稿、提交审核
 - 订单确认页：展示商品与数量，提交订单，金额由后端重新计算
 - 订单详情页：展示订单快照、状态步骤、资金担保、交付信息、售后信息和按后端 `allowed_actions.actions` 控制的操作按钮
 - 交付表单页：卖家可选择校内面交、校园自提、校内送达、快递邮寄，并上传交付凭证
-- 我的页：显示登录态、购物车入口、管理员入口
+- 我的页：显示登录态、发布/买到/卖出/收藏/地址/客服入口和管理员入口
 - 管理端商品审核页：查看待审核商品，审核通过或驳回
 - 管理端申诉仲裁页：查看平台介入详情并执行支持买家、支持卖家、部分退款或关闭申诉
 
@@ -194,7 +188,7 @@ holding -> refunded
 - `GET /api/v1/appeals/{id}`：申诉详情
 - `GET /api/v1/admin/appeals`：管理员查看平台介入列表
 - `POST /api/v1/admin/appeals/{id}/arbitrate`：管理员处理平台介入
-- `POST /api/v1/ai/product-copy`：AI 文案 mock
+- `POST /api/v1/ai/product-copy`：商品标题建议与描述润色；开发环境支持 mock，配置 `AI_MODE=dashscope` 与百炼 API Key 后调用通义千问
 - `GET /api/v1/admin/operation-logs`：操作日志
 - `GET /api/v1/admin/stats`：后台基础统计
 
@@ -315,7 +309,7 @@ F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest
 
 | 类型 | 商品 | 状态 | 用途 |
 |---|---|---|---|
-| 在售商品 | 九成新机械键盘 | `on_sale` | 买家首页浏览、加入购物车、创建订单 |
+| 在售商品 | 九成新机械键盘 | `on_sale` | 买家首页浏览、收藏、直接创建订单 |
 | 在售商品 | 高等数学教材套装 | `on_sale` | 首页列表和搜索演示 |
 | 待审核商品 | 宿舍护眼台灯 | `pending_review` | 管理员商品审核演示 |
 
@@ -350,12 +344,6 @@ Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/v1/products"
 
 ## 第 3 阶段接口测试示例
 
-加入购物车：
-
-```powershell
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/cart/items" -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body '{"product_id":"商品ID","quantity":1}'
-```
-
 创建订单：
 
 ```powershell
@@ -384,15 +372,15 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$or
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$orderId/buyer-confirm" -Headers @{ Authorization = "Bearer $token" }
 ```
 
-## 当前 mock 说明
+## 当前本地模式说明
 
 - 支付模式：`PAYMENT_MODE=mock`
-- AI 模式：`AI_MODE=mock`
+- AI 默认模式：`AI_MODE=mock`；配置 `AI_MODE=dashscope`、`DASHSCOPE_API_KEY` 后调用阿里云百炼
 - 微信登录本地默认使用 mock code2Session，也保留手机号密码测试登录
-- 真实支付、真实 AI 调用、对象存储暂未接入
+- 真实支付和对象存储暂未接入
 - 模拟支付：只改变本地支付单和订单状态，不接入真实资金
 - 退款流程：只做状态流转和金额校验，不接入真实退款渠道
-- AI 文案：后端生成 mock 建议，用户仍需手动确认后发布
+- AI 文案：标题建议由用户选择后应用，描述润色只修改描述；用户仍需确认内容真实后发布
 - 图片上传：当前上传到后端本地 `uploads/` 目录，后续可替换为对象存储
 
 ## 小程序环境与接口地址
@@ -503,7 +491,7 @@ http://127.0.0.1:5000/api/v1/health
 5. 切换管理员账号：`18800000000 / admin123456`。
 6. 进入“我的”里的管理员入口，审核通过商品。
 7. 切换买家账号：`18800000002 / buyer123456`。
-8. 首页刷新后查看商品，进入详情，加入购物车或立即购买。
+8. 首页刷新后查看商品，进入详情，收藏、联系卖家或立即购买。
 9. 创建订单，进入订单详情，点击模拟支付。
 10. 切换卖家账号，进入订单详情并确认交付。
 11. 切换买家账号，确认收货，订单进入待评价。
@@ -531,7 +519,7 @@ python .\scripts\init_db.py
 - `miniprogram/` 可被微信开发者工具导入
 - MongoDB 可自动初始化集合、索引、分类、账号和演示商品
 - 首页可展示在售商品
-- 可完成微信登录 mock、发布商品、管理员审核、购物车、订单、模拟支付、平台担保、交付、确认收货
+- 可完成微信登录 mock、发布商品、管理员审核、直接购买、订单、模拟支付、平台担保、交付、确认收货
 - 可演示消息、评价、退款、AI mock、后台日志和统计
 - 前端请求统一走 `miniprogram/utils/request.js`
 - 商品、订单、支付、退款状态由后端 Service 层控制

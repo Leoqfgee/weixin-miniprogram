@@ -1,0 +1,6 @@
+<view class="page">
+  <view class="panel support-loading">
+    <view class="title">正在连接平台客服</view>
+    <view class="muted">管理员会通过消息页回复你的问题</view>
+  </view>
+</view>

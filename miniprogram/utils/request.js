@@ -1,4 +1,4 @@
-const { API_BASE_URL } = require('./constants')
+const { API_BASE_URL, API_PREFIX, CLOUD_RUN_ENV, CLOUD_RUN_SERVICE } = require('./constants')
 const { getToken, clearAuth } = require('./auth')
 
 function buildTraceId() {
@@ -50,11 +50,19 @@ function request(options) {
   }
 
   return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${API_BASE_URL}${options.url}`,
+    wx.cloud.callContainer({
+      config: {
+        env: CLOUD_RUN_ENV
+      },
+      path: `${API_PREFIX}${options.url}`,
       method: options.method || 'GET',
       data: options.data || {},
-      header,
+      header: Object.assign(
+        {
+          'X-WX-SERVICE': CLOUD_RUN_SERVICE
+        },
+        header
+      ),
       success(res) {
         const payload = res.data || {}
         if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {

@@ -21,9 +21,23 @@ def list_conversations():
     return success_response(data)
 
 
+@messages_bp.get("/messages/support")
+@auth_required
+def get_support_contact():
+    data = MessageService(current_app.db).get_support_contact(g.current_user_id)
+    return success_response(data)
+
+
 @messages_bp.get("/messages/conversations/<conversation_id>")
 @auth_required
 def list_messages(conversation_id):
+    data = MessageService(current_app.db).list_messages(g.current_user_id, conversation_id)
+    return success_response(data)
+
+
+@messages_bp.get("/messages/<conversation_id>")
+@auth_required
+def list_messages_alias(conversation_id):
     data = MessageService(current_app.db).list_messages(g.current_user_id, conversation_id)
     return success_response(data)
 

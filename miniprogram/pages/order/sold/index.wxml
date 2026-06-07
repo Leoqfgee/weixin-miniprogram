@@ -1,0 +1,14 @@
+<view class="page">
+  <scroll-view scroll-x class="tabs"><view class="tabs-inner"><view wx:for="{{statusOptions}}" wx:key="value" class="tab {{index === statusIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view>
+  <view wx:if="{{orders.length}}" class="list">
+    <view wx:for="{{orders}}" wx:key="id" class="panel item">
+      <view class="item-main" bindtap="goDetail" data-id="{{item.id}}">
+        <image wx:if="{{item.snapshot.cover_image}}" class="thumb" src="{{item.snapshot.cover_image}}" mode="aspectFill"></image>
+        <view wx:else class="thumb placeholder">售</view>
+        <view class="info"><view class="title small">{{item.snapshot.title || item.order_no}}</view><view class="muted">¥{{item.total_amount}} · {{item.status_text}}</view><view wx:if="{{item.buyer}}" class="party"><image src="{{item.buyer.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>买家：{{item.buyer.nickname}}</view><view class="muted">{{item.created_at}}</view></view>
+      </view>
+      <view class="actions"><button wx:if="{{item.allowed_actions.can_seller_deliver}}" class="primary-btn" data-id="{{item.id}}" bindtap="deliver">我已交付/发货</button><button wx:if="{{item.allowed_actions.can_seller_cancel_and_refund}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="sellerCancel">取消并退款</button><button wx:if="{{item.allowed_actions.can_agree_refund || item.allowed_actions.can_reject_refund}}" class="ghost-btn" bindtap="goDetail" data-id="{{item.id}}">处理退款</button></view>
+    </view>
+  </view>
+  <empty-state wx:else title="暂无卖出的订单" description="商品售出后会显示在这里"></empty-state>
+</view>

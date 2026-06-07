@@ -8,8 +8,36 @@ from ..utils.response import success_response
 auth_bp = Blueprint("auth", __name__)
 
 
-@auth_bp.post("/auth/mock-login")
-def mock_login():
+def _mask_appid(appid):
+    if not appid:
+        return ""
+    if len(appid) <= 8:
+        return f"{appid[:2]}***{appid[-2:]}"
+    return f"{appid[:6]}***{appid[-4:]}"
+
+
+@auth_bp.get("/auth/wechat-config")
+def wechat_config():
+    token = current_app.config.get("INIT_TOKEN")
+    if not token or request.headers.get("X-Init-Token") != token:
+        from ..utils.errors import UnauthorizedError
+
+        raise UnauthorizedError("调试口令无效")
+    appid = current_app.config.get("WECHAT_APPID", "")
+    secret = current_app.config.get("WECHAT_SECRET", "")
+    return success_response(
+        {
+            "wechat_auth_mode": current_app.config.get("WECHAT_AUTH_MODE", ""),
+            "appid_masked": _mask_appid(appid),
+            "appid_length": len(appid),
+            "has_secret": bool(secret),
+            "secret_length": len(secret),
+        }
+    )
+
+
+@auth_bp.post("/auth/password-login")
+def password_login():
     payload = request.get_json(silent=True) or {}
     phone = (payload.get("phone") or "").strip()
     password = payload.get("password") or ""
@@ -21,7 +49,7 @@ def mock_login():
                 {"field": "password", "message": "密码不能为空"},
             ],
         )
-    data = AuthService(current_app.db).mock_login(phone, password)
+    data = AuthService(current_app.db).password_login(phone, password)
     return success_response(data)
 
 

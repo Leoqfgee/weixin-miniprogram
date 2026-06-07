@@ -1,7 +1,8 @@
+import re
 from datetime import datetime, timezone
 
 from bson import ObjectId
-from pymongo import DESCENDING
+from pymongo import ASCENDING, DESCENDING
 
 
 def utc_now():
@@ -25,6 +26,10 @@ class ProductRepository:
     def update_fields(self, product_id, fields):
         fields["updated_at"] = utc_now()
         self.db.products.update_one({"_id": product_id}, {"$set": fields})
+        return self.find_by_id(product_id)
+
+    def increment_view_count(self, product_id):
+        self.db.products.update_one({"_id": product_id}, {"$inc": {"view_count": 1}})
         return self.find_by_id(product_id)
 
     def lock_stock(self, product_id, quantity):
@@ -54,7 +59,20 @@ class ProductRepository:
         if filters.get("condition"):
             query["condition"] = filters["condition"]
         if filters.get("keyword"):
-            query["$text"] = {"$search": filters["keyword"]}
+            keyword = re.escape(filters["keyword"])
+            query["$or"] = [
+                {"title": {"$regex": keyword, "$options": "i"}},
+                {"description": {"$regex": keyword, "$options": "i"}},
+            ]
+        if filters.get("campus"):
+            query["campus"] = {"$regex": re.escape(filters["campus"]), "$options": "i"}
+        if filters.get("date_from") or filters.get("date_to"):
+            date_query = {}
+            if filters.get("date_from"):
+                date_query["$gte"] = filters["date_from"]
+            if filters.get("date_to"):
+                date_query["$lte"] = filters["date_to"]
+            query["created_at"] = date_query
         if filters.get("min_price") is not None or filters.get("max_price") is not None:
             price_query = {}
             if filters.get("min_price") is not None:
@@ -63,6 +81,26 @@ class ProductRepository:
                 price_query["$lte"] = filters["max_price"]
             query["price"] = price_query
 
+        sort = filters.get("sort") or "newest"
+        sort_options = {
+            "newest": [("created_at", DESCENDING)],
+            "price_asc": [("price", ASCENDING), ("created_at", DESCENDING)],
+            "price_desc": [("price", DESCENDING), ("created_at", DESCENDING)],
+            "hot": [("view_count", DESCENDING), ("favorite_count", DESCENDING), ("created_at", DESCENDING)],
+        }
+        total = self.db.products.count_documents(query)
+        items = list(
+            self.db.products.find(query)
+            .sort(sort_options.get(sort, sort_options["newest"]))
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return items, total
+
+    def list_mine(self, seller_id, status=None, page=1, page_size=20):
+        query = {"seller_id": seller_id, "deleted_at": {"$exists": False}}
+        if status:
+            query["status"] = status
         total = self.db.products.count_documents(query)
         items = list(
             self.db.products.find(query)

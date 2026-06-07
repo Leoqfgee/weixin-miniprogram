@@ -77,3 +77,38 @@ def list_operation_logs():
 def get_stats():
     data = AdminReportService(current_app.db).stats()
     return success_response(data)
+
+
+@admin_bp.get("/admin/reports/summary")
+@roles_required("admin")
+def report_summary():
+    data = AdminReportService(current_app.db).summary(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports/products")
+@roles_required("admin")
+def report_products():
+    data = AdminReportService(current_app.db).products(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports/orders")
+@roles_required("admin")
+def report_orders():
+    data = AdminReportService(current_app.db).orders(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports/categories")
+@roles_required("admin")
+def report_categories():
+    data = AdminReportService(current_app.db).categories(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports/users")
+@roles_required("admin")
+def report_users():
+    data = AdminReportService(current_app.db).users(request.args)
+    return success_response(data)

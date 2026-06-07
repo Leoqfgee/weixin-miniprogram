@@ -9,14 +9,22 @@ class MongoExtension:
         self.db = None
 
     def init_app(self, app) -> None:
-        self.client = MongoClient(app.config["MONGO_URI"])
-        self.db = self.client[app.config["MONGO_DB_NAME"]]
+        if app.config["DB_BACKEND"] == "mysql":
+            from .mysql_document import MySQLDocumentDB
+
+            self.client = None
+            self.db = MySQLDocumentDB(app.config)
+        else:
+            self.client = MongoClient(app.config["MONGO_URI"])
+            self.db = self.client[app.config["MONGO_DB_NAME"]]
         app.mongo_client = self.client
         app.db = self.db
 
     def close(self) -> None:
         if self.client:
             self.client.close()
+        elif self.db:
+            self.db.close()
 
 
 mongo = MongoExtension()

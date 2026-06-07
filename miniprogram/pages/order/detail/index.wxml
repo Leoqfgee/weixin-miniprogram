@@ -1,64 +1,15 @@
 <view class="page">
   <view wx:if="{{order}}" class="panel">
     <view class="title">订单详情</view>
-    <view class="steps">
-      <view wx:for="{{steps}}" wx:key="key" class="step {{index <= currentStep ? 'active' : ''}}">{{item.text}}</view>
-    </view>
-    <view class="row">
-      <text>状态</text>
-      <status-badge type="order" status="{{order.status}}"></status-badge>
-    </view>
-    <view class="fund">{{fundText}}</view>
-    <view class="amount">￥{{order.total_amount}}</view>
-    <view wx:for="{{order.items}}" wx:key="id" class="item product-line">
-      <image wx:if="{{item.product_snapshot.cover_image}}" src="{{item.product_snapshot.cover_image}}" mode="aspectFill" class="thumb"></image>
-      <view class="product-info">
-        <view class="text-strong">{{item.product_snapshot.title}}</view>
-        <view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.condition}} · 快照价 ￥{{item.unit_price}}</view>
-        <view wx:if="{{item.product_snapshot.defect_note}}" class="muted">瑕疵：{{item.product_snapshot.defect_note}}</view>
-      </view>
-    </view>
-    <view wx:if="{{order.delivery}}" class="info-block">
-      <view class="block-title">交付信息</view>
-      <view class="muted">{{order.delivery.delivery_type_text}} · {{order.delivery.location_text}}</view>
-      <view class="muted">{{order.delivery.delivery_note}}</view>
-      <view wx:if="{{order.delivery.proof_images.length}}" class="image-grid">
-        <image wx:for="{{order.delivery.proof_images}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
-      </view>
-    </view>
-    <view wx:if="{{order.refund}}" class="info-block">
-      <view class="block-title">售后信息</view>
-      <view class="muted">退款状态：{{order.refund.status_text}}</view>
-      <view class="muted">原因：{{order.refund.reason}}</view>
-      <view class="muted">卖家处理：{{order.refund.seller_result || '待处理'}}</view>
-      <view wx:if="{{order.refund.evidence_images.length}}" class="image-grid">
-        <image wx:for="{{order.refund.evidence_images}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
-      </view>
-    </view>
-    <view wx:elif="{{order.status === 'refunding'}}" class="info-block">
-      <view class="block-title">售后信息</view>
-      <view class="muted">售后记录生成中/暂无退款单</view>
-    </view>
-    <view wx:if="{{order.appeal}}" class="info-block">
-      <view class="block-title">平台介入</view>
-      <view class="muted">处理状态：{{order.appeal.status_text}}</view>
-      <view class="muted">处理结果：{{order.appeal.admin_result || '待平台处理'}}</view>
-      <view wx:if="{{order.appeal.evidence_images.length}}" class="image-grid">
-        <image wx:for="{{order.appeal.evidence_images}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
-      </view>
-    </view>
-    <view class="actions">
-      <button wx:if="{{actionMap.pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button>
-      <button wx:if="{{actionMap.cancel_order}}" class="ghost-btn" bindtap="cancel">取消订单</button>
-      <button wx:if="{{actionMap.seller_cancel_and_refund}}" class="ghost-btn" bindtap="sellerCancel">取消并退款</button>
-      <button wx:if="{{actionMap.seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button>
-      <button wx:if="{{actionMap.confirm_receive}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button>
-      <button wx:if="{{actionMap.reject_receive}}" class="ghost-btn" bindtap="rejectReceive">拒绝收货</button>
-      <button wx:if="{{actionMap.create_review}}" class="ghost-btn" bindtap="review">评价</button>
-      <button wx:if="{{actionMap.apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button>
-      <button wx:if="{{actionMap.apply_appeal}}" class="ghost-btn" bindtap="applyAppeal">平台介入</button>
-      <button wx:if="{{actionMap.view_refund || actionMap.view_refund_result}}" class="ghost-btn" bindtap="viewRefund">查看售后</button>
-    </view>
+    <view class="steps"><view wx:for="{{steps}}" wx:key="key" class="step {{index <= currentStep ? 'active' : ''}}">{{item.text}}</view></view>
+    <view class="row"><text>状态</text><status-badge type="order" status="{{order.status}}"></status-badge></view>
+    <view class="fund">{{fundText}}</view><view class="amount">¥{{order.total_amount}}</view>
+    <view wx:for="{{order.items}}" wx:key="id" class="item product-line"><image wx:if="{{item.product_snapshot.cover_image}}" src="{{item.product_snapshot.cover_image}}" mode="aspectFill" class="thumb"></image><view class="product-info"><view class="text-strong">{{item.product_snapshot.title}}</view><view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.condition || '未填写'}} · 单价 ¥{{item.unit_price}}</view></view></view>
+    <view wx:if="{{order.shipping_address}}" class="info-block"><view class="block-title">收货地址</view><view>{{order.shipping_address.name}}　{{order.shipping_address.phone}}</view><view class="muted">{{order.shipping_address.address}}</view></view>
+    <view wx:if="{{order.delivery}}" class="info-block"><view class="block-title">交付信息</view><view class="muted">{{order.delivery.delivery_type_text}} · {{order.delivery.location_text}}</view><view class="muted">{{order.delivery.delivery_note}}</view></view>
+    <view wx:if="{{order.reviews.length}}" class="info-block"><view class="block-title">交易评价</view><view wx:for="{{order.reviews}}" wx:key="id" class="review-line" data-id="{{item.id}}" bindtap="viewReview"><text>{{item.reviewer_role === 'buyer' ? '买家' : '卖家'}}评价 · {{item.rating}} 星</text><text>查看 ›</text></view></view>
+    <view wx:if="{{order.refund}}" class="info-block"><view class="block-title">售后信息</view><view class="muted">退款状态：{{order.refund.status}}</view><view class="muted">原因：{{order.refund.reason}}</view></view>
+    <view class="actions"><button wx:if="{{actionMap.pay}}" class="primary-btn" bindtap="pay">模拟微信支付</button><button wx:if="{{actionMap.cancel_order}}" class="ghost-btn" bindtap="cancel">取消订单</button><button wx:if="{{actionMap.seller_cancel_and_refund}}" class="ghost-btn" bindtap="sellerCancel">取消并退款</button><button wx:if="{{actionMap.seller_deliver}}" class="primary-btn" bindtap="sellerDeliver">确认交付</button><button wx:if="{{actionMap.confirm_receive}}" class="primary-btn" bindtap="confirmReceipt">确认收货</button><button wx:if="{{actionMap.reject_receive}}" class="ghost-btn" bindtap="rejectReceive">拒绝收货</button><button wx:if="{{actionMap.create_review}}" class="ghost-btn" bindtap="review">评价</button><button wx:if="{{actionMap.apply_refund}}" class="ghost-btn" bindtap="applyRefund">申请退款</button><button wx:if="{{actionMap.apply_appeal}}" class="ghost-btn" bindtap="applyAppeal">平台介入</button><button wx:if="{{actionMap.view_refund || actionMap.view_refund_result}}" class="ghost-btn" bindtap="viewRefund">查看售后</button></view>
   </view>
   <view wx:else class="panel muted">正在加载订单...</view>
 </view>

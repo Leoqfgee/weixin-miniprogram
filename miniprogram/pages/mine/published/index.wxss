@@ -1,0 +1,53 @@
+.filters {
+  margin-bottom: 20rpx;
+}
+
+.filter {
+  height: 68rpx;
+  line-height: 68rpx;
+  padding: 0 20rpx;
+  background: #fff;
+  border: 1rpx solid #e6ebf1;
+  border-radius: 8rpx;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+}
+
+.item-main {
+  display: flex;
+  gap: 18rpx;
+}
+
+.thumb {
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 8rpx;
+  flex: none;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4b35f;
+  color: #fff;
+  font-weight: 800;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+.actions button{flex:1;min-width:150rpx;margin:0}.status-note{margin-top:8rpx;color:#a66b20;font-size:22rpx;line-height:1.45}
+.tabs{margin-bottom:20rpx;white-space:nowrap;background:#fff;border-bottom:1rpx solid #e6ebf1}.tabs-inner{display:inline-flex;gap:30rpx;padding:0 8rpx}.tab{position:relative;padding:22rpx 4rpx;color:#7a869a}.tab.active{color:#17202a;font-weight:800}.tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:5rpx;background:#1f7a68;border-radius:4rpx}

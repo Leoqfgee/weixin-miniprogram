@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 
 from ..utils.response import success_response
+from ..utils.errors import UnauthorizedError
 
 health_bp = Blueprint("health", __name__)
 
@@ -22,7 +23,10 @@ def health_check():
         "service": current_app.config["APP_NAME"],
         "status": "ok" if db_status == "ok" else "degraded",
         "database": {
-            "name": current_app.config["MONGO_DB_NAME"],
+            "backend": current_app.config["DB_BACKEND"],
+            "name": current_app.config["MYSQL_DATABASE"]
+            if current_app.config["DB_BACKEND"] == "mysql"
+            else current_app.config["MONGO_DB_NAME"],
             "status": db_status,
             "error": db_error,
         },
@@ -33,3 +37,36 @@ def health_check():
         "time": datetime.now(timezone.utc).isoformat(),
     }
     return success_response(data)
+
+
+@health_bp.get("/health/db")
+def health_db_check():
+    started_at = datetime.now(timezone.utc)
+    result = current_app.db.command("ping")
+    latency_ms = int((datetime.now(timezone.utc) - started_at).total_seconds() * 1000)
+    return success_response(
+        {
+            "backend": current_app.config["DB_BACKEND"],
+            "database": current_app.config["MYSQL_DATABASE"]
+            if current_app.config["DB_BACKEND"] == "mysql"
+            else current_app.config["MONGO_DB_NAME"],
+            "result": result,
+            "latency_ms": latency_ms,
+        }
+    )
+
+
+@health_bp.post("/init-demo-data")
+def init_demo_data():
+    token = current_app.config.get("INIT_TOKEN")
+    if not token or request.headers.get("X-Init-Token") != token:
+        raise UnauthorizedError("初始化口令无效")
+
+    from scripts.init_db import ensure_collections, ensure_indexes, seed_categories, seed_products, seed_users
+
+    ensure_collections(current_app.db)
+    ensure_indexes(current_app.db)
+    seed_categories(current_app.db)
+    seed_users(current_app.db)
+    seed_products(current_app.db)
+    return success_response({"initialized": True})

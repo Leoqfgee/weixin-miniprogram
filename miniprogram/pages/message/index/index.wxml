@@ -1,9 +1,9 @@
 <view class="page">
   <view wx:if="{{conversations.length}}" class="list">
-    <view wx:for="{{conversations}}" wx:key="id" class="panel item">
-      <view class="title small">会话 {{item.id}}</view>
-      <view class="muted">{{item.last_message.content}}</view>
-      <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}} 条未读</view>
+    <view wx:for="{{conversations}}" wx:key="id" class="panel item" data-index="{{index}}" bindtap="goChat">
+      <image class="avatar" src="{{item.other_user.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+      <view class="main"><view class="text-strong">{{item.other_user ? item.other_user.nickname : '会话'}}<text wx:if="{{item.product}}"> · {{item.product.title}}</text></view><view class="muted last">{{item.last_message.message_type === 'image' ? '[图片]' : item.last_message.content}}</view></view>
+      <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view>
     </view>
   </view>
   <empty-state wx:else title="暂无消息" description="商品详情页可联系卖家"></empty-state>

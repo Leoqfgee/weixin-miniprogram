@@ -1,30 +1,67 @@
 <view class="page">
-  <view class="panel profile">
-    <view class="title">{{user ? user.profile.nickname : '未登录'}}</view>
-    <view class="muted">{{user ? user.phone : '登录后可发布商品和管理订单'}}</view>
-    <button wx:if="{{!user}}" class="primary-btn action" bindtap="goLogin">去登录</button>
-    <button wx:else class="ghost-btn action" bindtap="logout">退出登录</button>
+  <view class="panel profile" bindtap="goProfileHome">
+    <image wx:if="{{user && (user.profile.avatar || user.profile.avatar_url)}}" class="avatar" src="{{user.profile.avatar || user.profile.avatar_url}}" mode="aspectFill"></image>
+    <view wx:else class="avatar placeholder">{{avatarText}}</view>
+    <view class="profile-main">
+      <view class="title">{{user ? user.profile.nickname : '未登录'}}</view>
+      <view class="muted">{{user ? (user.profile.campus || '未填写校区') : '登录后可发布、购买、聊天和管理订单'}}</view>
+      <view wx:if="{{user}}" class="muted">信用分 {{user.profile.credit_score || 100}}</view>
+    </view>
+    <button wx:if="{{!user}}" class="primary-btn action" catchtap="goLogin">去登录</button>
+    <button wx:else class="ghost-btn action" catchtap="goProfileEdit">编辑资料</button>
   </view>
 
-  <view wx:if="{{user}}" class="panel admin-entry" bindtap="goCart">
-    <view class="title small">购物车</view>
-    <view class="muted">查看已加入的商品并创建订单</view>
-  </view>
-  <view wx:if="{{user}}" class="panel admin-entry" bindtap="goRefunds">
-    <view class="title small">退款售后</view>
-    <view class="muted">查看退款进度，卖家可处理退款</view>
+  <view wx:if="{{user}}" class="quick-grid">
+    <view class="panel quick" bindtap="goPublished">
+      <view class="title small">我发布的</view>
+      <view class="muted">草稿、待审核、在售和已售</view>
+    </view>
+    <view class="panel quick" bindtap="goBought">
+      <view class="title small">我买到的</view>
+      <view class="muted">付款、收货和售后</view>
+    </view>
+    <view class="panel quick" bindtap="goSold">
+      <view class="title small">我卖出的</view>
+      <view class="muted">交付、退款和评价</view>
+    </view>
+    <view class="panel quick" bindtap="goFavorites">
+      <view class="title small">我的收藏</view>
+      <view class="muted">暂存感兴趣商品</view>
+    </view>
+    <view class="panel quick" bindtap="goProfileHome">
+      <view class="title small">我的主页</view>
+      <view class="muted">查看公开资料和在售商品</view>
+    </view>
+    <view class="panel quick subtle" bindtap="goRefunds">
+      <view class="title small">售后</view>
+      <view class="muted">退款进度与处理</view>
+    </view>
+    <view class="panel quick" bindtap="goAddresses">
+      <view class="title small">收货地址</view>
+      <view class="muted">添加地址并设置默认地址</view>
+    </view>
+    <view class="panel quick" bindtap="goCustomerService">
+      <view class="title small">联系客服</view>
+      <view class="muted">与管理员客服直接对话</view>
+    </view>
   </view>
 
   <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminProducts">
-    <view class="title small">管理员入口</view>
-    <view class="muted">商品审核页面不放入普通用户 tabBar</view>
+    <view class="title small">商品审核</view>
+    <view class="muted">审核待上架商品</view>
   </view>
   <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminAppeals">
     <view class="title small">申诉仲裁</view>
-    <view class="muted">查看平台介入申请并处理退款争议</view>
+    <view class="muted">处理平台介入申请</view>
+  </view>
+  <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminReports">
+    <view class="title small">统计报表</view>
+    <view class="muted">查看发布、成交和活跃数据</view>
   </view>
   <view wx:if="{{isAdmin}}" class="panel admin-entry" bindtap="goAdminLogs">
-    <view class="title small">后台日志与统计</view>
+    <view class="title small">后台日志</view>
     <view class="muted">查看操作日志和基础统计</view>
   </view>
+
+  <button wx:if="{{user}}" class="ghost-btn logout" bindtap="logout">退出登录</button>
 </view>

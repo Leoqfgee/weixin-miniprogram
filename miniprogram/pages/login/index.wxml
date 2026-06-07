@@ -6,12 +6,7 @@
 
   <view class="panel login-card">
     <view class="title">登录账号</view>
-    <view class="role-row">
-      <button wx:for="{{accounts}}" wx:key="label" data-index="{{index}}" class="role-card" bindtap="useAccount">
-        <text class="role-name">{{item.label}}</text>
-        <text class="role-phone">{{item.phone}}</text>
-      </button>
-    </view>
+    <button class="primary-btn action" bindtap="onWechatLogin">微信账号登录</button>
     <view class="field">
       <text class="field-label">手机号</text>
       <input value="{{phone}}" bindinput="onPhoneInput" placeholder="请输入手机号" />
@@ -20,7 +15,6 @@
       <text class="field-label">密码</text>
       <input value="{{password}}" bindinput="onPasswordInput" password placeholder="请输入密码" />
     </view>
-    <button class="primary-btn action" bindtap="onWechatLogin">微信快捷登录</button>
     <button class="ghost-btn action secondary-action" bindtap="onLogin">手机号密码登录</button>
   </view>
 </view>

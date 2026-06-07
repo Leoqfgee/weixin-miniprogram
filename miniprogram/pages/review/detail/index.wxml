@@ -1,0 +1,13 @@
+<view class="page">
+  <view wx:if="{{review}}" class="panel">
+    <view class="reviewer">
+      <image class="avatar" src="{{review.reviewer.avatar || '/assets/avatar-default.png'}}" mode="aspectFill"></image>
+      <view>
+        <view class="text-strong">{{review.reviewer.nickname}}</view>
+        <view class="muted">{{review.reviewer_role === 'buyer' ? '买家评价' : '卖家评价'}} · {{review.created_at}}</view>
+      </view>
+    </view>
+    <view class="rating">{{review.rating}}.0 ★</view>
+    <view class="content">{{review.content || '未填写评价内容'}}</view>
+  </view>
+</view>

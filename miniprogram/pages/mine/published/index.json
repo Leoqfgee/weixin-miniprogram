@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我发布的",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index",
+    "status-badge": "/components/status-badge/index"
+  }
+}

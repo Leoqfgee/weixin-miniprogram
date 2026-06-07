@@ -7,6 +7,12 @@ App({
   },
 
   onLaunch() {
+    if (wx.cloud && wx.cloud.init) {
+      wx.cloud.init({
+        env: 'prod-d2g73fc4ha6d2e317',
+        traceUser: true
+      })
+    }
     this.globalData.token = getToken()
     this.globalData.user = getUser()
   },
