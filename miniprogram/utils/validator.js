@@ -24,9 +24,6 @@ function validateProductForm(form) {
   if (!required(form.title) || form.title.length < 2 || form.title.length > 50) {
     errors.title = '标题需为 2-50 字'
   }
-  if (!required(form.category_id)) {
-    errors.category_id = '请选择分类'
-  }
   if (!validatePrice(form.price)) {
     errors.price = '价格必须大于 0'
   }

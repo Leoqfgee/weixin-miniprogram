@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..adapters.wechat import WechatAuthAdapter
@@ -25,44 +26,115 @@ class AuthService:
             raise UnauthorizedError("手机号或密码错误")
         if user.get("status") in {"frozen", "disabled"}:
             raise UnauthorizedError("账号已被禁用，请联系管理员")
+        user = self.users.update_user(user["_id"], {"last_login_at": utc_now(), "updated_at": utc_now()})
 
-        profile = self.users.find_profile(user["_id"])
+        profile = self.users.ensure_profile(
+            user["_id"],
+            {
+                "nickname": user.get("nickname", ""),
+                "avatar_url": user.get("avatar_url", ""),
+                "avatar": user.get("avatar_url", ""),
+                "profile_completed": bool(user.get("profile_completed")),
+                "identity_type": user.get("identity_type", ""),
+                "campus": "",
+                "student_no": "",
+                "contact_phone": "",
+                "contact_wechat": "",
+                "verified_status": "unverified",
+                "credit_score": 100,
+                "created_at": utc_now(),
+                "updated_at": utc_now(),
+            },
+        )
         token = create_token(user["_id"], user.get("roles", []))
         return {"token": token, "user": build_user_summary(user, profile)}
+
+    def dev_test_login(self, account_key, enabled=False):
+        if not enabled:
+            raise NotFoundError("开发测试登录未启用")
+        accounts = {
+            "buyer_a": ("18800000002", "buyer123456"),
+            "buyer_b": ("18800000003", "buyerb123456"),
+            "seller": ("18800000001", "seller123456"),
+            "admin": ("18800000000", "admin123456"),
+        }
+        if account_key not in accounts:
+            raise ValidationError("参数校验失败", [{"field": "account", "message": "测试账号不存在"}])
+        phone, password = accounts[account_key]
+        return self.password_login(phone, password)
 
     def wechat_login(self, payload):
         session = self.wechat.code_to_session(payload.get("code"))
         openid = session.get("openid")
         if not openid:
             raise UnauthorizedError("微信登录失败，未获取 openid")
+        openid = str(openid).strip()
         user = self.users.find_by_openid(openid)
         if not user:
-            nickname = (payload.get("nickname") or "微信用户").strip()
-            avatar_url = (payload.get("avatar_url") or "").strip()
-            user = self.users.create_user(
+            try:
+                user = self.users.create_user(
+                    {
+                        "openid": openid,
+                        "password_hash": "",
+                        "roles": ["buyer", "seller"],
+                        "status": "active",
+                        "nickname": "",
+                        "avatar_url": "",
+                        "profile_completed": False,
+                        "identity_type": "",
+                        "last_login_at": utc_now(),
+                        "created_at": utc_now(),
+                        "updated_at": utc_now(),
+                    },
+                    {
+                        "nickname": "",
+                        "avatar_url": "",
+                        "avatar": "",
+                        "profile_completed": False,
+                        "identity_type": "",
+                        "campus": "",
+                        "student_no": "",
+                        "contact_phone": "",
+                        "contact_wechat": "",
+                        "verified_status": "unverified",
+                        "credit_score": 100,
+                        "created_at": utc_now(),
+                        "updated_at": utc_now(),
+                    },
+                )
+            except DuplicateKeyError:
+                user = self.users.find_by_openid(openid)
+                if not user:
+                    raise
+        else:
+            user = self.users.update_user(
+                user["_id"],
                 {
                     "openid": openid,
-                    "phone": None,
-                    "password_hash": "",
-                    "roles": ["buyer", "seller"],
-                    "status": "active",
-                    "created_at": utc_now(),
-                    "updated_at": utc_now(),
-                },
-                {
-                    "nickname": nickname,
-                    "avatar_url": avatar_url,
-                    "campus": "",
-                    "student_no": "",
-                    "verified_status": "unverified",
-                    "credit_score": 100,
-                    "created_at": utc_now(),
+                    "last_login_at": utc_now(),
                     "updated_at": utc_now(),
                 },
             )
         if user.get("status") in {"frozen", "disabled"}:
             raise UnauthorizedError("账号已被禁用，请联系管理员")
-        profile = self.users.find_profile(user["_id"])
+        profile = self.users.ensure_profile(
+            user["_id"],
+            {
+                "nickname": user.get("nickname", ""),
+                "avatar_url": user.get("avatar_url", ""),
+                "avatar": user.get("avatar_url", ""),
+                "profile_completed": bool(user.get("profile_completed")),
+                "identity_type": user.get("identity_type", ""),
+                "campus": "",
+                "student_no": "",
+                "contact_phone": "",
+                "contact_wechat": "",
+                "verified_status": "unverified",
+                "credit_score": 100,
+                "created_at": utc_now(),
+                "updated_at": utc_now(),
+            },
+        )
         token = create_token(user["_id"], user.get("roles", []))
         return {
             "token": token,
@@ -85,14 +157,24 @@ class AuthService:
                 "password_hash": generate_password_hash(password),
                 "roles": ["buyer", "seller"],
                 "status": "active",
+                "nickname": nickname,
+                "avatar_url": "",
+                "profile_completed": False,
+                "identity_type": "custom",
+                "last_login_at": utc_now(),
                 "created_at": utc_now(),
                 "updated_at": utc_now(),
             },
             {
                 "nickname": nickname,
                 "avatar_url": "",
+                "avatar": "",
+                "profile_completed": False,
+                "identity_type": "custom",
                 "campus": (payload.get("campus") or "").strip(),
                 "student_no": "",
+                "contact_phone": "",
+                "contact_wechat": "",
                 "verified_status": "unverified",
                 "credit_score": 100,
                 "created_at": utc_now(),
@@ -144,26 +226,67 @@ class UserService:
 
     def get_me(self, user_id):
         user = self.users.find_by_id(user_id)
-        profile = self.users.find_profile(user_id)
+        if not user:
+            raise NotFoundError("用户不存在")
+        profile = self.users.ensure_profile(
+            user_id,
+            {
+                "nickname": user.get("nickname", ""),
+                "avatar_url": user.get("avatar_url", ""),
+                "avatar": user.get("avatar_url", ""),
+                "profile_completed": bool(user.get("profile_completed")),
+                "identity_type": user.get("identity_type", ""),
+                "campus": "",
+                "student_no": "",
+                "contact_phone": "",
+                "contact_wechat": "",
+                "verified_status": "unverified",
+                "credit_score": 100,
+                "created_at": utc_now(),
+                "updated_at": utc_now(),
+            },
+        )
         return build_user_summary(user, profile)
 
     def update_me(self, user_id, payload):
-        allowed = {"avatar", "avatar_url", "nickname", "campus", "bio"}
+        allowed = {
+            "avatar",
+            "avatar_url",
+            "nickname",
+            "campus",
+            "bio",
+            "contact_phone",
+            "contact_wechat",
+            "identity_type",
+        }
         unknown = set(payload.keys()) - allowed
         if unknown:
             raise ValidationError("参数校验失败", [{"field": ",".join(sorted(unknown)), "message": "包含不允许的字段"}])
         fields = {}
+        user_fields = {}
         if "avatar" in payload:
             fields["avatar"] = (payload.get("avatar") or "").strip()
             fields["avatar_url"] = fields["avatar"]
         if "avatar_url" in payload:
             fields["avatar_url"] = (payload.get("avatar_url") or "").strip()
             fields["avatar"] = fields["avatar_url"]
+        if "avatar_url" in fields:
+            user_fields["avatar_url"] = fields["avatar_url"]
         if "nickname" in payload:
             nickname = (payload.get("nickname") or "").strip()
             if len(nickname) < 1 or len(nickname) > 30:
                 raise ValidationError("参数校验失败", [{"field": "nickname", "message": "昵称需为 1-30 字"}])
             fields["nickname"] = nickname
+            user_fields["nickname"] = nickname
+        if "identity_type" in payload:
+            identity_type = (payload.get("identity_type") or "").strip()
+            if identity_type not in {"wechat", "custom"}:
+                raise ValidationError(
+                    "参数校验失败",
+                    [{"field": "identity_type", "message": "identity_type 只能是 wechat 或 custom"}],
+                )
+            fields["identity_type"] = identity_type
+            user_fields["identity_type"] = identity_type
         if "campus" in payload:
             fields["campus"] = (payload.get("campus") or "").strip()
         if "bio" in payload:
@@ -171,7 +294,23 @@ class UserService:
             if len(bio) > 120:
                 raise ValidationError("参数校验失败", [{"field": "bio", "message": "简介不能超过 120 字"}])
             fields["bio"] = bio
+        if "contact_phone" in payload:
+            contact_phone = (payload.get("contact_phone") or "").strip()
+            if contact_phone and (len(contact_phone) < 7 or len(contact_phone) > 20):
+                raise ValidationError("参数校验失败", [{"field": "contact_phone", "message": "请填写有效联系方式"}])
+            fields["contact_phone"] = contact_phone
+        if "contact_wechat" in payload:
+            fields["contact_wechat"] = (payload.get("contact_wechat") or "").strip()
+        current_profile = self.users.find_profile(user_id) or {}
+        nickname_value = fields.get("nickname") or current_profile.get("nickname") or ""
+        avatar_value = fields.get("avatar_url") or current_profile.get("avatar_url") or current_profile.get("avatar") or ""
+        completed = bool(nickname_value.strip() and avatar_value.strip())
+        fields["profile_completed"] = completed
+        user_fields["profile_completed"] = completed
         fields["updated_at"] = utc_now()
+        user_fields["updated_at"] = utc_now()
+        if user_fields:
+            self.users.update_user(user_id, user_fields)
         profile = self.users.update_profile(user_id, fields)
         user = self.users.find_by_id(user_id)
         return build_user_summary(user, profile)
@@ -286,17 +425,40 @@ class AddressService:
 def build_user_summary(user, profile=None):
     profile = profile or {}
     profile_data = serialize_doc(profile) or {}
-    if "avatar" not in profile_data:
-        profile_data["avatar"] = profile_data.get("avatar_url", "")
+    nickname = profile_data.get("nickname") or user.get("nickname") or ""
+    avatar_url = profile_data.get("avatar_url") or profile_data.get("avatar") or user.get("avatar_url") or ""
+    identity_type = profile_data.get("identity_type") or user.get("identity_type") or ""
+    profile_completed = bool(nickname.strip() and avatar_url.strip())
+    profile_data["nickname"] = nickname
+    profile_data["avatar_url"] = avatar_url
+    profile_data["profile_completed"] = profile_completed
+    profile_data["identity_type"] = identity_type
+    if not profile_data.get("avatar"):
+        profile_data["avatar"] = avatar_url
     if "bio" not in profile_data:
         profile_data["bio"] = ""
     return {
         "id": str(user["_id"]),
+        "openid_mask": _mask_openid(user.get("openid")),
         "phone": user.get("phone"),
         "roles": user.get("roles", []),
         "status": user.get("status"),
+        "nickname": nickname,
+        "avatar_url": avatar_url,
+        "profile_completed": profile_completed,
+        "identity_type": identity_type,
+        "last_login_at": user.get("last_login_at").isoformat() if user.get("last_login_at") else None,
         "profile": profile_data,
     }
+
+
+def _mask_openid(openid):
+    if not openid:
+        return ""
+    openid = str(openid)
+    if len(openid) <= 8:
+        return f"{openid[:2]}***{openid[-2:]}"
+    return f"{openid[:6]}***{openid[-4:]}"
 
 
 def _public_product(product, profile):

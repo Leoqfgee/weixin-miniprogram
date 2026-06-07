@@ -13,18 +13,30 @@ def test_wechat_login_register_bind_phone_and_change_password():
     app = create_app()
     client = app.test_client()
 
-    openid = "pytest_wechat_openid"
+    openid = "local_wechat_pytest-code"
     app.db.users.delete_many({"openid": openid})
     app.db.users.delete_many({"phone": "19900000001"})
     response = client.post(
         "/api/v1/auth/wechat-login",
-        json={"code": "pytest-code", "mock_openid": openid, "nickname": "微信测试用户"},
+        json={"code": "pytest-code", "nickname": "微信测试用户", "avatar_url": "https://example.com/a.png"},
     )
     assert response.status_code == 200
     data = response.get_json()["data"]
     assert data["need_bind_phone"] is True
     assert "buyer" in data["user"]["roles"]
     assert "user" not in data["user"]["roles"]
+    assert data["user"]["profile"]["nickname"] == ""
+    assert data["user"]["profile_completed"] is False
+    first_user_id = data["user"]["id"]
+
+    second_response = client.post(
+        "/api/v1/auth/wechat-login",
+        json={"code": "pytest-code", "nickname": "另一个昵称"},
+    )
+    assert second_response.status_code == 200
+    second_data = second_response.get_json()["data"]
+    assert second_data["user"]["id"] == first_user_id
+    assert second_data["user"]["profile"]["nickname"] == ""
 
     bind_response = client.post(
         "/api/v1/auth/bind-phone",
@@ -42,7 +54,7 @@ def test_wechat_login_register_bind_phone_and_change_password():
     assert change_response.status_code == 200
 
     login_response = client.post(
-        "/api/v1/auth/mock-login",
+        "/api/v1/auth/password-login",
         json={"phone": "19900000001", "password": "new123456"},
     )
     assert login_response.status_code == 200
@@ -53,7 +65,7 @@ def test_upload_image_returns_static_url():
     app = create_app()
     client = app.test_client()
     login = client.post(
-        "/api/v1/auth/mock-login",
+        "/api/v1/auth/password-login",
         json={"phone": "18800000001", "password": "seller123456"},
     ).get_json()["data"]
 
@@ -74,7 +86,7 @@ def test_upload_delivery_image_uses_delivery_folder():
     app = create_app()
     client = app.test_client()
     login = client.post(
-        "/api/v1/auth/mock-login",
+        "/api/v1/auth/password-login",
         json={"phone": "18800000001", "password": "seller123456"},
     ).get_json()["data"]
 
@@ -94,13 +106,58 @@ def test_wechat_login_default_role_is_buyer():
     app = create_app()
     client = app.test_client()
 
-    openid = "pytest_wechat_buyer_role"
+    openid = "local_wechat_pytest-role-code"
     app.db.users.delete_many({"openid": openid})
     response = client.post(
         "/api/v1/auth/wechat-login",
-        json={"code": "pytest-role-code", "mock_openid": openid, "nickname": "默认买家"},
+        json={"code": "pytest-role-code", "nickname": "默认买家"},
     )
     assert response.status_code == 200
     roles = response.get_json()["data"]["user"]["roles"]
     assert "buyer" in roles
     assert "user" not in roles
+
+
+def test_update_me_completes_platform_identity_and_masks_openid():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    app.db.users.delete_many({"openid": "local_wechat_profile-code"})
+    login = client.post("/api/v1/auth/wechat-login", json={"code": "profile-code"}).get_json()["data"]
+    update = client.put(
+        "/api/v1/users/me",
+        headers=auth_headers(login["token"]),
+        json={
+            "nickname": "平台昵称",
+            "avatar_url": "https://example.com/avatar.png",
+            "identity_type": "custom",
+            "contact_phone": "19900000009",
+        },
+    )
+    assert update.status_code == 200
+    user = update.get_json()["data"]
+    assert user["profile_completed"] is True
+    assert user["identity_type"] == "custom"
+    assert user["profile"]["nickname"] == "平台昵称"
+    assert user["profile"]["avatar_url"] == "https://example.com/avatar.png"
+
+    me = client.get("/api/v1/users/me", headers=auth_headers(login["token"]))
+    assert me.status_code == 200
+    body = me.get_json()["data"]
+    assert body["openid_mask"].startswith("local_")
+    assert "session_key" not in body
+
+
+def test_dev_test_login_requires_switch_and_can_login_seed_user(monkeypatch):
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    disabled = client.post("/api/v1/auth/dev-test-login", json={"account": "buyer_a"})
+    assert disabled.status_code == 404
+
+    app.config["DEV_TEST_LOGIN_ENABLED"] = True
+    enabled = client.post("/api/v1/auth/dev-test-login", json={"account": "buyer_a"})
+    assert enabled.status_code == 200
+    assert enabled.get_json()["data"]["user"]["phone"] == "18800000002"

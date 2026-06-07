@@ -78,6 +78,16 @@ TEST_USERS = [
         "student_no": "B2026001",
         "verified_status": "approved",
     },
+    {
+        "openid": "mock_buyer_b_openid",
+        "phone": "18800000003",
+        "password": "buyerb123456",
+        "roles": ["buyer", "seller"],
+        "nickname": "测试买家B",
+        "campus": "西校区",
+        "student_no": "B2026002",
+        "verified_status": "approved",
+    },
 ]
 
 
@@ -203,6 +213,11 @@ def seed_users(db):
             "password_hash": generate_password_hash(item["password"]),
             "roles": item["roles"],
             "status": "active",
+            "nickname": item["nickname"],
+            "avatar_url": "",
+            "profile_completed": True,
+            "identity_type": "custom",
+            "last_login_at": now(),
             "updated_at": now(),
         }
         result = db.users.update_one(
@@ -215,6 +230,9 @@ def seed_users(db):
             "user_id": user["_id"],
             "nickname": item["nickname"],
             "avatar_url": "",
+            "avatar": "",
+            "profile_completed": True,
+            "identity_type": "custom",
             "campus": item["campus"],
             "student_no": item["student_no"],
             "verified_status": item["verified_status"],

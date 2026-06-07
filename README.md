@@ -1,5 +1,57 @@
 # 校园二手交易平台
 
+## 当前正式版本说明
+
+本项目当前已面向微信云托管正式化改造：小程序前端通过 `wx.cloud.callContainer` 调用云托管 Flask 服务，后端支持 MySQL 文档适配层、真实微信 `code2Session` 登录、真实千问 DashScope API、商品审核、订单交易、聊天、收藏管理和管理员审核流程。
+
+### 登录与身份
+
+- 正式登录入口：`POST /api/v1/auth/wechat-login`，绑定依据只使用微信 `code2Session` 返回的 `openid`。
+- `users.openid` 必须唯一，同一个微信号重复登录会命中同一条用户记录。
+- 昵称和头像不是绑定依据；新用户登录后如果平台昵称或头像为空，小程序会跳转到“完善资料”页。
+- `GET /api/v1/users/me` 返回当前 JWT 对应用户，包含 `openid_mask`，不会返回完整 `session_key`。
+- `PUT /api/v1/users/me` 保存平台昵称、头像、联系方式、简介和 `identity_type`。
+
+### 开发测试模式
+
+真实微信登录保留为正式主流程。为了在只有一个微信号时测试多账号交易和管理员审核，后端新增：
+
+```text
+POST /api/v1/auth/dev-test-login
+Body: {"account":"buyer_a|buyer_b|seller|admin"}
+```
+
+该接口只在 `DEV_TEST_LOGIN_ENABLED=1` 时可用。生产环境应保持：
+
+```text
+DEV_TEST_LOGIN_ENABLED=0
+```
+
+测试账号由 `backend/scripts/init_db.py` 初始化：`buyer_a`、`buyer_b`、`seller`、`admin`。小程序开发版登录页会显示“开发测试账号”面板；体验版和正式版不显示。
+
+### 收藏管理
+
+收藏功能现在不是纯前端筛选，后端会保存收藏时价格 `favorited_price`，并通过接口返回真实分类：
+
+- `GET /api/v1/favorites?type=all`：全部收藏
+- `GET /api/v1/favorites?type=price_drop`：收藏后当前价格低于收藏价的“降价宝贝”
+- `GET /api/v1/favorites?type=valid`：仍有效的商品，包括在售、交易中和已售出
+- `GET /api/v1/favorites?type=invalid`：卖家主动下架的失效商品
+- `POST /api/v1/favorites/cleanup-invalid`：清理已下架失效收藏
+- `DELETE /api/v1/favorites/{product_id}`：手动取消收藏，已售出商品也可手动移除
+
+### AI 文案
+
+AI 标题和描述润色仍调用真实千问 API，不回退 mock。提示词已针对校园二手场景优化：标题更短、更像真实同学发布；描述保留原始重点，避免夸张营销、虚构配件或保修承诺。
+
+### 小程序 UI 与交互
+
+本轮重点优化页面：发布商品页、商品详情页、聊天页、收藏页、完善资料页、消息列表页和收货地址页。发布时分类和成色为选填；商品详情展示卖家头像昵称并可进入卖家主页；聊天商品卡片和头像支持跳转；收藏页支持全部、降价宝贝、有效宝贝、失效宝贝和清理失效收藏；完善资料页去掉双栏结构，保留微信头像/昵称能力，同时支持相册和拍照设置头像。
+
+### 个人主体限制说明
+
+微信手机号授权、微信支付等能力可能受个人主体小程序权限限制。本项目保留正式接口结构和 mock 支付闭环，不在文档或界面中假装个人主体已经完整打通微信支付。
+
 本项目按课程详细设计报告分阶段开发。当前完成第 1、2、3、4、5、6、7 阶段：Flask 后端基础骨架、用户认证与商品审核主流程、直接购买订单模拟支付交易闭环、微信小程序核心页面、消息评价退款申诉 AI mock、后台日志统计、联调测试与课程演示文档。
 
 ## 当前目录
@@ -44,7 +96,8 @@ campus_secondhand_platform/
 
 ## 第 2 阶段已实现
 
-- `POST /api/v1/auth/mock-login`：测试账号 mock 登录
+- `POST /api/v1/auth/password-login`：手机号密码登录
+- `POST /api/v1/auth/dev-test-login`：开发环境测试账号快速登录
 - `GET /api/v1/users/me`：读取当前登录用户
 - `GET /api/v1/categories`：读取基础分类
 - `GET /api/v1/products`：读取公开在售商品列表
@@ -320,7 +373,7 @@ F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest
 登录卖家：
 
 ```powershell
-$login = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/auth/mock-login" -ContentType "application/json" -Body '{"phone":"18800000001","password":"seller123456"}'
+$login = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/auth/password-login" -ContentType "application/json" -Body '{"phone":"18800000001","password":"seller123456"}'
 $token = $login.data.token
 ```
 
@@ -375,7 +428,7 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$or
 ## 当前本地模式说明
 
 - 支付模式：`PAYMENT_MODE=mock`
-- AI 默认模式：`AI_MODE=mock`；配置 `AI_MODE=dashscope`、`DASHSCOPE_API_KEY` 后调用阿里云百炼
+- AI 正式模式：`AI_MODE=qwen`；配置 `DASHSCOPE_API_KEY`、`QWEN_MODEL=qwen-plus` 后调用千问 DashScope API
 - 微信登录本地默认使用 mock code2Session，也保留手机号密码测试登录
 - 真实支付和对象存储暂未接入
 - 模拟支付：只改变本地支付单和订单状态，不接入真实资金

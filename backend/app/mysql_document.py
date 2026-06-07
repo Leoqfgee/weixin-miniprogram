@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pymysql
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 
 
 ASCENDING = 1
@@ -234,6 +235,7 @@ class MySQLDocumentCollection:
         return deleted
 
     def insert_one(self, doc):
+        self._check_unique(doc)
         return InsertOneResult(self._save(doc))
 
     def insert_many(self, docs):
@@ -318,6 +320,19 @@ class MySQLDocumentCollection:
 
     def drop_index(self, name):
         return None
+
+    def _check_unique(self, doc):
+        if self.name == "users":
+            openid = doc.get("openid")
+            if openid and self.find_one({"openid": openid}):
+                raise DuplicateKeyError("duplicate users.openid")
+            phone = doc.get("phone")
+            if phone and self.find_one({"phone": phone}):
+                raise DuplicateKeyError("duplicate users.phone")
+        if self.name == "user_profiles":
+            user_id = doc.get("user_id")
+            if user_id and self.find_one({"user_id": user_id}):
+                raise DuplicateKeyError("duplicate user_profiles.user_id")
 
     def _apply_update(self, doc, update, inserting=False):
         if not any(str(key).startswith("$") for key in update):

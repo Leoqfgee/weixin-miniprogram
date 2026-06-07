@@ -10,6 +10,34 @@
   gap: 20rpx;
 }
 
+.notice {
+  padding: 18rpx 20rpx;
+  border-radius: 8rpx;
+  background: #e8f4f0;
+  color: #1f7a68;
+  font-size: 26rpx;
+}
+
+.avatar-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.compact {
+  align-self: flex-start;
+  min-width: 220rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  font-size: 24rpx;
+}
+
+.compact.light {
+  color: #56616d;
+  background: #f5f7fa;
+}
+
 .avatar {
   width: 128rpx;
   height: 128rpx;

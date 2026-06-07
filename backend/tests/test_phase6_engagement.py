@@ -12,7 +12,7 @@ def auth_headers(token, idem=None):
 
 
 def login(client, phone, password):
-    response = client.post("/api/v1/auth/mock-login", json={"phone": phone, "password": password})
+    response = client.post("/api/v1/auth/password-login", json={"phone": phone, "password": password})
     assert response.status_code == 200
     return response.get_json()["data"]
 

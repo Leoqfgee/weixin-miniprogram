@@ -25,6 +25,7 @@ function getEnvVersion() {
 
 const CURRENT_ENV = getEnvVersion()
 const API_BASE_URL = (ENV_CONFIG[CURRENT_ENV] || ENV_CONFIG.develop).API_BASE_URL
+const DEV_TEST_LOGIN_ENABLED = CURRENT_ENV === 'develop'
 
 const STORAGE_KEYS = {
   token: 'campus_token',
@@ -65,6 +66,7 @@ module.exports = {
   CLOUD_RUN_ENV,
   CLOUD_RUN_SERVICE,
   CLOUD_RUN_PUBLIC_BASE_URL,
+  DEV_TEST_LOGIN_ENABLED,
   CURRENT_ENV,
   ENV_CONFIG,
   STORAGE_KEYS,

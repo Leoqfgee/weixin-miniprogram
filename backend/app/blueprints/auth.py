@@ -53,6 +53,17 @@ def password_login():
     return success_response(data)
 
 
+@auth_bp.post("/auth/dev-test-login")
+def dev_test_login():
+    payload = request.get_json(silent=True) or {}
+    account = (payload.get("account") or "").strip()
+    data = AuthService(current_app.db).dev_test_login(
+        account,
+        enabled=current_app.config.get("DEV_TEST_LOGIN_ENABLED", False),
+    )
+    return success_response(data)
+
+
 @auth_bp.post("/auth/wechat-login")
 def wechat_login():
     data = AuthService(current_app.db).wechat_login(request.get_json(silent=True) or {})

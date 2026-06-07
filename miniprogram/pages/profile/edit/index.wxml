@@ -1,17 +1,31 @@
 <view class="page">
   <view class="panel form">
-    <view class="avatar-row" bindtap="chooseAvatar">
+    <view wx:if="{{completeMode}}" class="notice">登录成功，请先完善平台资料</view>
+
+    <view class="avatar-row">
       <image wx:if="{{form.avatar}}" class="avatar" src="{{form.avatar}}" mode="aspectFill"></image>
       <view wx:else class="avatar placeholder">头像</view>
-      <view class="muted">点击更换头像</view>
+      <view class="avatar-actions">
+        <button class="ghost-btn compact" bindtap="openAvatarSheet">设置头像</button>
+        <button class="ghost-btn compact light" open-type="chooseAvatar" bindchooseavatar="onChooseWechatAvatar">使用微信头像</button>
+        <view class="muted">头像会作为平台公开身份展示，也可从相册选择或拍照上传</view>
+      </view>
     </view>
     <view class="field">
       <text>昵称</text>
-      <input value="{{form.nickname}}" data-field="nickname" bindinput="onInput" placeholder="昵称" />
+      <input value="{{form.nickname}}" type="nickname" data-field="nickname" bindinput="onInput" placeholder="可直接使用微信昵称，也可以自己输入" />
     </view>
     <view class="field">
       <text>校区</text>
       <input value="{{form.campus}}" data-field="campus" bindinput="onInput" placeholder="例如 主校区" />
+    </view>
+    <view class="field">
+      <text>联系电话</text>
+      <input value="{{form.contact_phone}}" data-field="contact_phone" bindinput="onInput" placeholder="可选，交易联系使用" />
+    </view>
+    <view class="field">
+      <text>微信号</text>
+      <input value="{{form.contact_wechat}}" data-field="contact_wechat" bindinput="onInput" placeholder="可选，交易联系使用" />
     </view>
     <view class="field">
       <text>简介</text>

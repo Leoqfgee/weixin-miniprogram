@@ -36,3 +36,13 @@ class UserRepository:
         object_id = user_id if isinstance(user_id, ObjectId) else ObjectId(str(user_id))
         self.db.user_profiles.update_one({"user_id": object_id}, {"$set": fields}, upsert=True)
         return self.find_profile(object_id)
+
+    def ensure_profile(self, user_id, defaults=None):
+        object_id = user_id if isinstance(user_id, ObjectId) else ObjectId(str(user_id))
+        profile = self.find_profile(object_id)
+        if profile:
+            return profile
+        doc = dict(defaults or {})
+        doc["user_id"] = object_id
+        self.db.user_profiles.insert_one(doc)
+        return self.find_profile(object_id)

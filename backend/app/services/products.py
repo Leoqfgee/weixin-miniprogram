@@ -284,11 +284,15 @@ class ProductService:
             data["original_price"] = original_price
 
         if need("category_id"):
-            category_id = to_object_id(payload.get("category_id"), "category_id")
-            if not self.categories.exists(category_id):
-                errors.append({"field": "category_id", "message": "分类不存在或已停用"})
+            raw_category_id = payload.get("category_id")
+            if raw_category_id:
+                category_id = to_object_id(raw_category_id, "category_id")
+                if not self.categories.exists(category_id):
+                    errors.append({"field": "category_id", "message": "分类不存在或已停用"})
+                else:
+                    data["category_id"] = category_id
             else:
-                data["category_id"] = category_id
+                data["category_id"] = None
 
         if "condition" in payload:
             condition = (payload.get("condition") or "").strip()
@@ -329,7 +333,7 @@ class ProductService:
 
     def _ensure_review_ready(self, product):
         missing = []
-        for field in ["title", "description", "price", "category_id"]:
+        for field in ["title", "description", "price"]:
             if not product.get(field):
                 missing.append(field)
         if product.get("stock", 0) <= 0:
@@ -371,6 +375,8 @@ class ProductService:
         data["seller"] = {
             "id": str(seller["_id"]) if seller else str(product["seller_id"]),
             "nickname": (profile or {}).get("nickname", "未知用户"),
+            "avatar": (profile or {}).get("avatar") or (profile or {}).get("avatar_url", ""),
+            "avatar_url": (profile or {}).get("avatar_url") or (profile or {}).get("avatar", ""),
             "campus": (profile or {}).get("campus", ""),
         }
         data["allowed_actions"] = self._allowed_actions(product, current_user)
@@ -471,15 +477,40 @@ class FavoriteService:
         self.products = ProductRepository(db)
         self.product_service = ProductService(db)
 
-    def list_favorites(self, user_id):
+    def list_favorites(self, user_id, favorite_type="all"):
         user_object_id = ObjectId(str(user_id))
         rows = list(self.db.favorites.find({"user_id": user_object_id}).sort("created_at", -1))
         items = []
+        stats = {"all": 0, "price_drop": 0, "valid": 0, "invalid": 0, "sold": 0}
         for row in rows:
             product = self.products.find_by_id(row["product_id"])
             if product:
-                items.append(self.product_service._present(product, {"_id": user_object_id, "roles": []}, compact=True))
-        return {"items": items}
+                item = self.product_service._present(product, {"_id": user_object_id, "roles": []}, compact=True)
+                favorited_price = row.get("favorited_price")
+                current_price = float(product.get("price") or 0)
+                item["favorited_price"] = favorited_price
+                item["favorited_at"] = row.get("created_at").isoformat() if row.get("created_at") else None
+                item["price_dropped"] = favorited_price is not None and current_price < float(favorited_price)
+                item["favorite_invalid"] = product.get("status") == "off_shelf"
+                item["favorite_valid"] = product.get("status") in {"on_sale", "locked", "sold"}
+                item["favorite_note"] = _favorite_note(item)
+                stats["all"] += 1
+                if item["price_dropped"]:
+                    stats["price_drop"] += 1
+                if item["favorite_invalid"]:
+                    stats["invalid"] += 1
+                if item["favorite_valid"]:
+                    stats["valid"] += 1
+                if product.get("status") == "sold":
+                    stats["sold"] += 1
+                if favorite_type == "price_drop" and not item["price_dropped"]:
+                    continue
+                if favorite_type == "valid" and not item["favorite_valid"]:
+                    continue
+                if favorite_type == "invalid" and not item["favorite_invalid"]:
+                    continue
+                items.append(item)
+        return {"items": items, "stats": stats, "type": favorite_type}
 
     def add_favorite(self, user_id, payload):
         product_id = to_object_id(payload.get("product_id"), "product_id")
@@ -489,7 +520,14 @@ class FavoriteService:
         user_object_id = ObjectId(str(user_id))
         result = self.db.favorites.update_one(
             {"user_id": user_object_id, "product_id": product_id},
-            {"$setOnInsert": {"user_id": user_object_id, "product_id": product_id, "created_at": utc_now()}},
+            {
+                "$setOnInsert": {
+                    "user_id": user_object_id,
+                    "product_id": product_id,
+                    "favorited_price": float(product.get("price") or 0),
+                    "created_at": utc_now(),
+                }
+            },
             upsert=True,
         )
         if result.upserted_id:
@@ -502,3 +540,29 @@ class FavoriteService:
         if result.deleted_count:
             self.db.products.update_one({"_id": product_object_id, "favorite_count": {"$gt": 0}}, {"$inc": {"favorite_count": -1}})
         return {"favorited": False, "product_id": str(product_object_id)}
+
+    def cleanup_invalid(self, user_id):
+        user_object_id = ObjectId(str(user_id))
+        rows = list(self.db.favorites.find({"user_id": user_object_id}))
+        removed = 0
+        for row in rows:
+            product = self.products.find_by_id(row["product_id"])
+            if product and product.get("status") == "off_shelf":
+                result = self.db.favorites.delete_one({"_id": row["_id"]})
+                removed += result.deleted_count
+                if result.deleted_count:
+                    self.db.products.update_one(
+                        {"_id": product["_id"], "favorite_count": {"$gt": 0}},
+                        {"$inc": {"favorite_count": -1}},
+                    )
+        return {"removed": removed}
+
+
+def _favorite_note(item):
+    if item.get("favorite_invalid"):
+        return "卖家已下架，建议清理"
+    if item.get("status") == "sold":
+        return "已售出，可手动移除"
+    if item.get("price_dropped"):
+        return "收藏后降价"
+    return "仍可查看"

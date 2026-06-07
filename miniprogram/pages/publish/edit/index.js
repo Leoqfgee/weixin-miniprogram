@@ -133,7 +133,7 @@ Page({
       const result = validateProductForm(form)
       this.setData({ errors: result.errors })
       if (!result.valid) {
-        wx.showToast({ title: '请补全标题、分类和价格', icon: 'none' })
+        wx.showToast({ title: '请补全标题、价格和库存', icon: 'none' })
         return
       }
     }

@@ -5,16 +5,45 @@ page {
 .list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 16rpx;
 }
 
-.small {
-  font-size: 28rpx;
+.item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx;
+}
+
+.avatar {
+  width: 82rpx;
+  height: 82rpx;
+  border-radius: 50%;
+  background: #edf1f5;
+  flex: none;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.last {
+  margin-top: 8rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 24rpx;
 }
 
 .badge {
-  margin-top: 12rpx;
-  color: #1d4e89;
-  font-size: 24rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  line-height: 34rpx;
+  padding: 0 5rpx;
+  text-align: center;
+  color: #fff;
+  background: #d64545;
+  border-radius: 18rpx;
+  font-size: 20rpx;
 }
-.item{display:flex;align-items:center;gap:16rpx}.avatar{width:86rpx;height:86rpx;border-radius:50%;background:#edf1f5;flex:none}.main{flex:1;min-width:0}.last{margin-top:8rpx;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.badge{min-width:34rpx;height:34rpx;line-height:34rpx;padding:0 5rpx;text-align:center;color:#fff;background:#d64545;border-radius:18rpx;font-size:20rpx}

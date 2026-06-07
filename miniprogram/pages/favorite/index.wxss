@@ -1,5 +1,90 @@
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10rpx;
+  margin-bottom: 18rpx;
+}
+
+.tab {
+  min-width: 0;
+  padding: 16rpx 6rpx;
+  text-align: center;
+  color: #56616d;
+  background: #fff;
+  border: 1rpx solid #edf0f3;
+  border-radius: 8rpx;
+  font-size: 23rpx;
+}
+
+.tab.active {
+  color: #1f7a68;
+  background: #eef8f5;
+  border-color: #b8dfd3;
+  font-weight: 800;
+}
+
+.count {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 20rpx;
+}
+
+.cleanup-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+  padding: 18rpx;
+  color: #815319;
+  background: #fff6e7;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
 .list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 18rpx;
+}
+
+.favorite-card {
+  background: #fff;
+  border-radius: 8rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 28rpx rgba(23, 32, 42, 0.06);
+}
+
+.favorite-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+  padding: 0 18rpx 18rpx;
+}
+
+.note {
+  display: block;
+  color: #56616d;
+  font-size: 24rpx;
+}
+
+.note.drop {
+  color: #e0522d;
+  font-weight: 800;
+}
+
+.mini {
+  flex: none;
+  min-width: 150rpx;
+  height: 58rpx;
+  line-height: 58rpx;
+  margin: 0;
+  padding: 0 18rpx;
+  font-size: 23rpx;
+}
+
+.danger {
+  color: #a61b1b;
+  border-color: #d8aaa4;
 }

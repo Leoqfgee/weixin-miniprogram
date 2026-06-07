@@ -123,6 +123,17 @@ Page({
   previewImage(event) {
     wx.previewImage({ urls: [event.currentTarget.dataset.url] })
   },
+  viewProduct() {
+    if (this.data.productId) {
+      wx.navigateTo({ url: `/pages/product/detail/index?id=${this.data.productId}` })
+    }
+  },
+  viewUser(event) {
+    const userId = event.currentTarget.dataset.id
+    if (userId) {
+      wx.navigateTo({ url: `/pages/profile/home/index?id=${userId}` })
+    }
+  },
   sendMessage(extra) {
     if (!this.data.receiverId) {
       wx.showToast({ title: '缺少收信人', icon: 'none' })

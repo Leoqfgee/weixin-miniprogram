@@ -1,6 +1,27 @@
-<view class="page">
+<view class="page favorite-page">
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="value" class="tab {{activeType === item.value ? 'active' : ''}}" data-type="{{item.value}}" bindtap="switchType">
+      <text>{{item.label}}</text>
+      <text class="count">{{stats[item.value] || 0}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{activeType === 'invalid' && products.length}}" class="cleanup-bar">
+    <text>卖家已下架的商品可一键清理</text>
+    <button class="ghost-btn mini" bindtap="cleanupInvalid">清理失效</button>
+  </view>
+
   <view wx:if="{{products.length}}" class="list">
-    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
+    <view wx:for="{{products}}" wx:key="id" class="favorite-card">
+      <product-card product="{{item}}"></product-card>
+      <view class="favorite-meta">
+        <view>
+          <text class="note {{item.price_dropped ? 'drop' : ''}}">{{item.favorite_note}}</text>
+          <text wx:if="{{item.favorited_price}}" class="muted">收藏价 ¥{{item.favorited_price}}</text>
+        </view>
+        <button class="ghost-btn mini danger" data-id="{{item.id}}" bindtap="removeFavorite">取消收藏</button>
+      </view>
+    </view>
   </view>
   <empty-state wx:else title="暂无收藏" description="在商品详情页点收藏后会显示在这里"></empty-state>
 </view>

@@ -80,7 +80,10 @@ def delete_product(product_id):
 @products_bp.get("/favorites")
 @auth_required
 def list_favorites():
-    data = FavoriteService(current_app.db).list_favorites(g.current_user_id)
+    data = FavoriteService(current_app.db).list_favorites(
+        g.current_user_id,
+        favorite_type=(request.args.get("type") or "all").strip(),
+    )
     return success_response(data)
 
 
@@ -95,4 +98,11 @@ def add_favorite():
 @auth_required
 def delete_favorite(product_id):
     data = FavoriteService(current_app.db).delete_favorite(g.current_user_id, product_id)
+    return success_response(data)
+
+
+@products_bp.post("/favorites/cleanup-invalid")
+@auth_required
+def cleanup_invalid_favorites():
+    data = FavoriteService(current_app.db).cleanup_invalid(g.current_user_id)
     return success_response(data)

@@ -16,5 +16,11 @@
       <input value="{{password}}" bindinput="onPasswordInput" password placeholder="请输入密码" />
     </view>
     <button class="ghost-btn action secondary-action" bindtap="onLogin">手机号密码登录</button>
+    <view wx:if="{{devTestEnabled}}" class="dev-panel">
+      <view class="dev-title">开发测试账号</view>
+      <view class="dev-grid">
+        <button wx:for="{{testAccounts}}" wx:key="key" class="dev-btn" data-account="{{item.key}}" bindtap="onDevLogin">{{item.label}}</button>
+      </view>
+    </view>
   </view>
 </view>

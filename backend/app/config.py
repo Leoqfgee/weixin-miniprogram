@@ -45,6 +45,7 @@ class Config:
     MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "")
     MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "flask_demo")
     INIT_TOKEN = os.getenv("INIT_TOKEN", "")
+    DEV_TEST_LOGIN_ENABLED = os.getenv("DEV_TEST_LOGIN_ENABLED", "0") == "1"
 
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
     UPLOAD_FOLDER = os.getenv(

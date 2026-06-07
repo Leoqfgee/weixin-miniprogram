@@ -12,7 +12,7 @@ def auth_headers(token):
 
 def login(client, phone, password):
     response = client.post(
-        "/api/v1/auth/mock-login",
+        "/api/v1/auth/password-login",
         json={"phone": phone, "password": password},
     )
     assert response.status_code == 200
@@ -91,6 +91,18 @@ def test_product_review_flow():
     assert actions["can_buy"] is True
     assert "can_add_cart" not in actions
 
+    favorite_response = client.post(
+        "/api/v1/favorites",
+        headers=auth_headers(buyer_token),
+        json={"product_id": product["id"]},
+    )
+    assert favorite_response.status_code == 201
+    app.db.products.update_one({"_id": ObjectId(product["id"])}, {"$set": {"price": 16.0}})
+    dropped = client.get("/api/v1/favorites?type=price_drop", headers=auth_headers(buyer_token))
+    assert dropped.status_code == 200
+    dropped_data = dropped.get_json()["data"]
+    assert dropped_data["items"][0]["price_dropped"] is True
+
     off_shelf_response = client.post(
         f"/api/v1/products/{product['id']}/off-shelf",
         headers=auth_headers(admin_token),
@@ -101,6 +113,13 @@ def test_product_review_flow():
 
     hidden_response = client.get(f"/api/v1/products?keyword={title}")
     assert hidden_response.get_json()["data"]["items"] == []
+
+    invalid = client.get("/api/v1/favorites?type=invalid", headers=auth_headers(buyer_token))
+    assert invalid.status_code == 200
+    assert invalid.get_json()["data"]["items"][0]["favorite_invalid"] is True
+    cleanup = client.post("/api/v1/favorites/cleanup-invalid", headers=auth_headers(buyer_token))
+    assert cleanup.status_code == 200
+    assert cleanup.get_json()["data"]["removed"] == 1
 
     log_count = app.db.operation_logs.count_documents(
         {

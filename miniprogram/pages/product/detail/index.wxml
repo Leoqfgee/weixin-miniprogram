@@ -1,15 +1,25 @@
-<view class="page">
-  <view wx:if="{{product}}" class="panel">
+<view class="page product-page">
+  <view wx:if="{{product}}" class="detail-shell">
     <image wx:if="{{product.cover_image}}" class="cover-wrap" src="{{product.cover_image}}" mode="aspectFill"></image>
     <view wx:else class="cover-wrap placeholder"><view class="cover-tag">{{conditionText}}</view><view class="cover-title">{{coverText}}</view></view>
-    <view class="title">{{product.title}}</view>
-    <view class="row"><text class="price">¥{{product.price}}</text><status-badge status="{{product.status}}"></status-badge></view>
-    <view wx:if="{{product.status === 'locked'}}" class="state-tip">买家已下单，交易完成或取消前商品暂不可再次购买。</view>
-    <view wx:if="{{product.status === 'sold'}}" class="state-tip">交易已经完成，你可以删除记录或重新发布商品。</view>
-    <view wx:if="{{product.status === 'off_shelf'}}" class="state-tip">商品已停止展示，你可以编辑后重新发布。</view>
-    <view class="meta-line"><text>{{product.seller.campus || product.campus || '校内'}}</text><text>库存 {{product.stock}}</text><text bindtap="goSellerProfile">{{product.seller.nickname}}</text><text>浏览 {{product.view_count || 0}}</text><text>收藏 {{product.favorite_count || 0}}</text></view>
-    <view class="detail-block"><view class="block-title">商品描述</view><view class="desc">{{product.description || '卖家暂未填写描述'}}</view></view>
-    <view class="actions">
+    <view class="panel summary-panel">
+      <view class="title">{{product.title}}</view>
+      <view class="row"><text class="price">¥{{product.price}}</text><status-badge status="{{product.status}}"></status-badge></view>
+      <view class="meta-line"><text>{{conditionText}}</text><text>{{product.campus || product.seller.campus || '校内'}}</text><text>库存 {{product.stock}}</text><text>浏览 {{product.view_count || 0}}</text><text>收藏 {{product.favorite_count || 0}}</text></view>
+      <view wx:if="{{product.status === 'locked'}}" class="state-tip">买家已下单，交易完成或取消前商品暂不可再次购买。</view>
+      <view wx:if="{{product.status === 'sold'}}" class="state-tip">商品已售出，可手动管理收藏或查看历史订单。</view>
+      <view wx:if="{{product.status === 'off_shelf'}}" class="state-tip">商品已下架，买家不能继续购买。</view>
+    </view>
+    <view class="seller-card panel" bindtap="goSellerProfile">
+      <image class="seller-avatar" src="{{product.seller.avatar || product.seller.avatar_url || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+      <view class="seller-main">
+        <view class="seller-name">{{product.seller.nickname || '校园同学'}}</view>
+        <view class="muted">{{product.seller.campus || product.campus || '校内交易'}} · 查看卖家主页</view>
+      </view>
+      <text class="chevron">›</text>
+    </view>
+    <view class="detail-block panel"><view class="block-title">商品描述</view><view class="desc">{{product.description || '卖家暂未填写描述'}}</view></view>
+    <view class="actions bottom-bar">
       <button wx:if="{{product.allowed_actions.can_buy}}" class="ghost-btn" bindtap="toggleFavorite">{{product.is_favorited ? '已收藏' : '收藏'}}</button>
       <button wx:if="{{product.allowed_actions.can_buy}}" class="ghost-btn" bindtap="contactSeller">联系卖家</button>
       <button wx:if="{{product.allowed_actions.can_buy}}" class="primary-btn" bindtap="buyNow">立即购买</button>
