@@ -1,46 +1,50 @@
 <view class="page home-page">
-  <view class="section market-header">
-    <view class="header-main">
-      <view class="location">主校区 · 今日闲置</view>
-      <view class="headline">把闲置留给刚好需要的人</view>
-      <view class="subline">教材、数码、宿舍好物，校内见面交易更安心</view>
-    </view>
-    <button class="refresh-btn" bindtap="loadProducts">刷新</button>
+  <view class="brand-block">
+    <view class="brand-title">校园<text>二手</text></view>
+    <view class="brand-sub">让闲置流转，让校园更美好</view>
   </view>
 
-  <view class="section search-panel">
+  <view class="search-panel">
     <text class="search-icon">⌕</text>
-    <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜教材、键盘、台灯" confirm-type="search" bindconfirm="goSearch" />
+    <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索商品名称 / 分类 / 关键词" confirm-type="search" bindconfirm="goSearch" />
     <button class="primary-btn search-btn" bindtap="goSearch">搜索</button>
   </view>
 
-  <view class="section feature-row">
-    <view class="feature-card">
-      <view class="feature-title">校内面交</view>
-      <view class="feature-desc">同校沟通更方便</view>
-    </view>
-    <view class="feature-card">
-      <view class="feature-title">审核上架</view>
-      <view class="feature-desc">减少无效信息</view>
-    </view>
-  </view>
-
-  <view class="section category-panel" wx:if="{{categories.length}}">
-    <view class="section-head"><text>常用分类</text><text class="muted" bindtap="goSearch">全部筛选</text></view>
-    <view class="category-grid">
-      <button wx:for="{{categories}}" wx:key="id" class="category-chip" data-id="{{item.id}}" bindtap="goCategory">{{item.name}}</button>
-    </view>
-  </view>
-
-  <view class="section board-title">
+  <view class="hero-card">
     <view>
-      <view class="title small-title">正在出售</view>
-      <view class="muted">只展示审核通过的商品</view>
+      <view class="hero-title">闲置不闲置 · 校园更有爱</view>
+      <view class="hero-sub">校内面交更安全，低价好物在身边</view>
+      <button class="hero-btn" bindtap="goSearch">去逛逛 ›</button>
     </view>
-    <button class="cart-link" bindtap="goSearch">筛选</button>
+    <view class="hero-visual">
+      <view class="bag"></view>
+      <view class="book one"></view>
+      <view class="book two"></view>
+    </view>
   </view>
 
-  <view wx:if="{{products.length}}" class="product-grid">
+  <view class="category-panel" wx:if="{{categories.length}}">
+    <view class="category-grid">
+      <button wx:for="{{categories}}" wx:key="id" class="category-item" data-id="{{item.id}}" bindtap="goCategory">
+        <view class="category-icon">{{item.short_name}}</view>
+        <text>{{item.name}}</text>
+      </button>
+      <button class="category-item" bindtap="goSearch">
+        <view class="category-icon more">••</view>
+        <text>全部分类</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="filter-bar">
+    <view class="filter active">全部</view>
+    <view class="filter">距离⌄</view>
+    <view class="filter">价格⌄</view>
+    <view class="filter active-soft">最新发布</view>
+    <view class="filter right" bindtap="goSearch">筛选</view>
+  </view>
+
+  <view wx:if="{{products.length}}" class="product-list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
   </view>
 

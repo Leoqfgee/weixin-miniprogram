@@ -52,6 +52,13 @@ class ProductRepository:
         )
         return self.find_by_id(product_id)
 
+    def mark_off_shelf_after_refund(self, product_id):
+        self.db.products.update_one(
+            {"_id": product_id},
+            {"$set": {"status": "off_shelf", "stock": 0, "updated_at": utc_now()}},
+        )
+        return self.find_by_id(product_id)
+
     def list_public(self, filters, page, page_size):
         query = {"status": "on_sale"}
         if filters.get("category_id"):

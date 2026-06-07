@@ -39,6 +39,9 @@ Page({
   goDetail(event) {
     wx.navigateTo({ url: `/pages/order/detail/index?id=${event.currentTarget.dataset.id}` })
   },
+  handleAfterSale(event) {
+    wx.navigateTo({ url: `/pages/refund/list/index?role=seller&order_id=${event.currentTarget.dataset.id}` })
+  },
   deliver(event) {
     wx.navigateTo({ url: `/pages/delivery/form/index?order_id=${event.currentTarget.dataset.id}` })
   },

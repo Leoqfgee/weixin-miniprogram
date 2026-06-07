@@ -1,25 +1,64 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 22rpx;
+}
+
+.item {
+  border-radius: 24rpx;
 }
 
 .small {
   font-size: 30rpx;
 }
 
+.product-line {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 18rpx;
+}
+
+.thumb {
+  width: 132rpx;
+  height: 132rpx;
+  border-radius: 18rpx;
+  background: #edf3ee;
+  flex: none;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #16b85e;
+  font-weight: 900;
+}
+
 .reason {
   margin-top: 16rpx;
-  color: #334e68;
+  color: #334155;
+  line-height: 1.55;
+}
+
+.timeline {
+  margin-top: 14rpx;
+  padding: 14rpx 18rpx;
+  background: #f7f8f5;
+  border-radius: 18rpx;
 }
 
 .actions {
   display: flex;
-  gap: 16rpx;
-  margin-top: 24rpx;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 22rpx;
 }
 
 .actions button {
   flex: 1;
-  font-size: 24rpx;
+  min-width: 180rpx;
+  height: 70rpx;
+  line-height: 70rpx;
+  font-size: 23rpx;
 }

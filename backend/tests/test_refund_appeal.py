@@ -72,12 +72,12 @@ def test_seller_cancel_and_refund_creates_refund_and_refunds_payment():
     assert data["refund"]["reason"] == "卖家取消交易"
     assert data["payment"]["status"] == "refunded"
     assert data["escrow"]["status"] == "refunded"
-    assert app.db.products.find_one({"_id": ObjectId(product_id)})["status"] == "on_sale"
+    assert app.db.products.find_one({"_id": ObjectId(product_id)})["status"] == "off_shelf"
 
     order_object_id = ObjectId(order["id"])
     for action in ["seller_cancel_and_refund", "refund_success"]:
         assert app.db.business_logs.count_documents({"target_type": "order", "target_id": order_object_id, "action": action}) >= 1
-    assert app.db.business_logs.count_documents({"target_type": "product", "target_id": ObjectId(product_id), "action": "product_reopen"}) >= 1
+    assert app.db.business_logs.count_documents({"target_type": "product", "target_id": ObjectId(product_id), "action": "product_off_shelf_after_refund"}) >= 1
 
 
 def test_buyer_reject_creates_refund_record_and_order_detail_contains_refund():

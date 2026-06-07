@@ -1,9 +1,13 @@
 const api = require('../../../utils/request')
 const { getUser, requireLogin } = require('../../../utils/auth')
+const { refreshUnreadBadge } = require('../../../utils/unread')
 
 function displayTime(value) {
   if (!value) return ''
-  return String(value).replace('T', ' ').slice(0, 16)
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value).replace('T', ' ').slice(0, 16)
+  const pad = (num) => String(num).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 Page({
@@ -73,6 +77,7 @@ Page({
         return result
       })
       this.setData({ messages, scrollIntoView: messages.length ? `msg-${messages[messages.length - 1].id}` : '' })
+      refreshUnreadBadge()
     })
   },
   sendText() {

@@ -1,5 +1,6 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
+const { refreshUnreadBadge } = require('../../../utils/unread')
 
 Page({
   data: {
@@ -13,6 +14,7 @@ Page({
   loadConversations() {
     api.get('/messages/conversations').then((data) => {
       this.setData({ conversations: data.items || [] })
+      refreshUnreadBadge()
     })
   },
   goChat(event) {

@@ -39,7 +39,6 @@
       <button class="primary-btn" data-id="{{item.id}}" data-action="refund" bindtap="arbitrate">支持买家退款</button>
       <button class="ghost-btn" data-id="{{item.id}}" data-action="reject_refund" bindtap="arbitrate">支持卖家</button>
       <button class="ghost-btn" data-id="{{item.id}}" data-action="partial_refund" bindtap="arbitrate">部分退款</button>
-      <button class="ghost-btn" data-id="{{item.id}}" data-action="close" bindtap="arbitrate">关闭申诉</button>
     </view>
     <view wx:else class="muted">处理结果：{{item.admin_result || item.status}}</view>
   </view>

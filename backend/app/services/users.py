@@ -55,7 +55,6 @@ class AuthService:
         accounts = {
             "buyer_a": ("18800000002", "buyer123456"),
             "buyer_b": ("18800000003", "buyerb123456"),
-            "seller": ("18800000001", "seller123456"),
             "admin": ("18800000000", "admin123456"),
         }
         if account_key not in accounts:

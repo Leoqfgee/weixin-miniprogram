@@ -42,6 +42,11 @@ Page({
   goDetail(event) {
     wx.navigateTo({ url: `/pages/order/detail/index?id=${event.currentTarget.dataset.id}` })
   },
+  applyAfterSale(event) {
+    const id = event.currentTarget.dataset.id
+    const amount = event.currentTarget.dataset.amount || ''
+    wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${id}&amount=${amount}` })
+  },
   pay(event) {
     const id = event.currentTarget.dataset.id
     api.post('/payments/prepay', { order_id: id }, { loading: true })

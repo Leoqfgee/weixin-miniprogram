@@ -2,7 +2,7 @@ const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 
 Page({
-  data: { id: '', product: null, conditionText: '', coverText: '闲置', quantity: 1 },
+  data: { id: '', product: null, gallery: [], currentImage: 0, conditionText: '', coverText: '闲置', quantity: 1, descExpanded: false },
   onLoad(options) {
     this.setData({ id: options.id || '' })
     this.loadProduct()
@@ -15,10 +15,17 @@ Page({
       const conditionMap = { new: '全新', like_new: '几乎全新', good: '成色良好', fair: '有使用痕迹' }
       this.setData({
         product,
+        gallery: (product.images && product.images.length ? product.images : [product.cover_image]).filter(Boolean),
         conditionText: conditionMap[product.condition] || '成色未填写',
         coverText: (product.title || '闲置好物').slice(0, 4)
       })
     })
+  },
+  onImageChange(event) {
+    this.setData({ currentImage: event.detail.current || 0 })
+  },
+  toggleDescription() {
+    this.setData({ descExpanded: !this.data.descExpanded })
   },
   buyNow() {
     if (requireLogin()) wx.navigateTo({ url: `/pages/order/confirm/index?product_id=${this.data.id}&quantity=${this.data.quantity}` })

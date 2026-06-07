@@ -1,16 +1,31 @@
 const api = require('../../utils/request')
+const { getToken, getUser } = require('../../utils/auth')
 
 Page({
   data: {
     loading: false,
     products: [],
     keyword: '',
-    categories: []
+    categories: [],
+    authKey: ''
   },
 
   onLoad() {
+    this.setData({ authKey: this.getAuthKey() })
     this.loadProducts()
     this.loadCategories()
+  },
+  onShow() {
+    const authKey = this.getAuthKey()
+    if (authKey !== this.data.authKey) {
+      this.setData({ authKey, products: [] })
+      this.loadProducts()
+      this.loadCategories()
+    }
+  },
+  getAuthKey() {
+    const user = getUser() || {}
+    return `${getToken() || ''}:${user.id || ''}`
   },
 
   loadProducts() {
@@ -26,7 +41,12 @@ Page({
   loadCategories() {
     api.get('/categories')
       .then((data) => {
-        this.setData({ categories: (data.items || []).slice(0, 5) })
+        this.setData({
+          categories: (data.items || []).slice(0, 8).map((item) => ({
+            ...item,
+            short_name: (item.name || '类').slice(0, 1)
+          }))
+        })
       })
   },
   onKeywordInput(event) {

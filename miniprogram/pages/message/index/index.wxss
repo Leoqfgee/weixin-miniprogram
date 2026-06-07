@@ -1,25 +1,26 @@
 page {
-  background: #f5f7fa;
+  background: #f7f8f5;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 18rpx;
 }
 
 .item {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 22rpx;
+  gap: 18rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
 }
 
 .avatar {
-  width: 82rpx;
-  height: 82rpx;
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
-  background: #edf1f5;
+  background: #edf3ee;
   flex: none;
 }
 
@@ -37,13 +38,14 @@ page {
 }
 
 .badge {
-  min-width: 34rpx;
-  height: 34rpx;
-  line-height: 34rpx;
-  padding: 0 5rpx;
+  min-width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  padding: 0 7rpx;
   text-align: center;
-  color: #fff;
-  background: #d64545;
-  border-radius: 18rpx;
+  color: #ffffff;
+  background: #f04438;
+  border-radius: 999rpx;
   font-size: 20rpx;
+  font-weight: 800;
 }

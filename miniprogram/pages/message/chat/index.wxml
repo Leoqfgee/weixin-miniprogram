@@ -1,7 +1,14 @@
 <view class="page chat-page">
+  <view class="safety-tip">交易安全提醒：请通过校园二手内置聊天和交易，不要脱离平台交易。</view>
+
   <view wx:if="{{product.title}}" class="product-head" bindtap="viewProduct">
     <image wx:if="{{product.cover_image}}" class="product-cover" src="{{product.cover_image}}" mode="aspectFill"></image>
-    <view class="product-main"><view class="text-strong">{{product.title}}</view><view wx:if="{{product.price}}" class="price">¥{{product.price}}</view></view>
+    <view class="product-main">
+      <view class="text-strong">{{product.title}}</view>
+      <view class="muted">校内交易 · 可现场验货</view>
+      <view wx:if="{{product.price}}" class="price">¥{{product.price}}</view>
+    </view>
+    <view class="chevron">›</view>
   </view>
 
   <scroll-view scroll-y class="messages" scroll-into-view="{{scrollIntoView}}">
@@ -11,7 +18,6 @@
       <view wx:else class="message-row {{item.mine ? 'mine' : 'other'}}">
         <image class="avatar" src="{{item.sender.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill" data-id="{{item.sender.id || item.sender_id}}" bindtap="viewUser"></image>
         <view class="message-main">
-          <view class="sender-name">{{item.sender.nickname}}</view>
           <view class="bubble">
             <image wx:if="{{item.message_type === 'image'}}" class="chat-image" src="{{item.image_url}}" mode="widthFix" data-url="{{item.image_url}}" bindtap="previewImage"></image>
             <video wx:elif="{{item.message_type === 'video'}}" class="chat-video" src="{{item.image_url}}"></video>
@@ -28,7 +34,7 @@
   <view class="composer">
     <button class="icon-btn" bindtap="toggleVoice">{{voiceMode ? '⌨' : '🎙'}}</button>
     <button wx:if="{{voiceMode}}" class="voice-btn" bindtouchstart="startVoice" bindtouchend="stopVoice">{{recording ? '松开发送' : '按住说话'}}</button>
-    <input wx:else class="message-input" value="{{content}}" bindinput="onInput" confirm-type="send" bindconfirm="sendText" placeholder="输入消息" />
+    <input wx:else class="message-input" value="{{content}}" bindinput="onInput" confirm-type="send" bindconfirm="sendText" placeholder="输入消息..." />
     <button wx:if="{{content}}" class="send-btn" bindtap="sendText">发送</button>
     <button wx:else class="icon-btn" bindtap="toggleEmoji">☺</button>
   </view>

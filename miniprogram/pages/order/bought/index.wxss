@@ -1,28 +1,47 @@
-.filter {
-  height: 68rpx;
-  line-height: 68rpx;
-  padding: 0 20rpx;
-  margin-bottom: 20rpx;
-  background: #fff;
-  border: 1rpx solid #e6ebf1;
-  border-radius: 8rpx;
+.tabs {
+  margin: -4rpx 0 22rpx;
+  white-space: nowrap;
+}
+
+.tabs-inner {
+  display: inline-flex;
+  gap: 14rpx;
+  padding: 4rpx;
+}
+
+.tab {
+  padding: 16rpx 22rpx;
+  color: #687380;
+  background: #ffffff;
+  border-radius: 999rpx;
+  box-shadow: 0 8rpx 20rpx rgba(31, 41, 51, 0.05);
+}
+
+.tab.active {
+  color: #16a45a;
+  background: #eaf8ef;
+  font-weight: 900;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
+  gap: 20rpx;
+}
+
+.item {
+  border-radius: 24rpx;
 }
 
 .item-main {
   display: flex;
-  gap: 18rpx;
+  gap: 20rpx;
 }
 
 .thumb {
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: 8rpx;
+  width: 146rpx;
+  height: 146rpx;
+  border-radius: 18rpx;
   flex: none;
 }
 
@@ -30,9 +49,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1f7a68;
-  color: #fff;
-  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #20c767, #0f9f55);
+  font-weight: 900;
 }
 
 .info {
@@ -40,9 +59,37 @@
   min-width: 0;
 }
 
+.info .muted {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+}
+
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 14rpx;
-  margin-top: 18rpx;
+  margin-top: 20rpx;
 }
-.tabs{margin-bottom:20rpx;white-space:nowrap;background:#fff;border-bottom:1rpx solid #e6ebf1}.tabs-inner{display:inline-flex;gap:30rpx;padding:0 8rpx}.tab{position:relative;padding:22rpx 4rpx;color:#7a869a}.tab.active{color:#17202a;font-weight:800}.tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:5rpx;background:#1f7a68;border-radius:4rpx}.party{display:flex;align-items:center;gap:8rpx;margin:8rpx 0;color:#586474;font-size:24rpx}.party image{width:38rpx;height:38rpx;border-radius:50%}
+
+.actions button {
+  flex: 1;
+  min-width: 180rpx;
+  height: 70rpx;
+  line-height: 70rpx;
+  font-size: 24rpx;
+}
+
+.party {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin: 8rpx 0;
+  color: #586474;
+  font-size: 24rpx;
+}
+
+.party image {
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+}

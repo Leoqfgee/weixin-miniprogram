@@ -18,7 +18,7 @@
 
 ```text
 POST /api/v1/auth/dev-test-login
-Body: {"account":"buyer_a|buyer_b|seller|admin"}
+Body: {"account":"buyer_a|buyer_b|admin"}
 ```
 
 该接口只在 `DEV_TEST_LOGIN_ENABLED=1` 时可用。生产环境应保持：
@@ -27,7 +27,7 @@ Body: {"account":"buyer_a|buyer_b|seller|admin"}
 DEV_TEST_LOGIN_ENABLED=0
 ```
 
-测试账号由 `backend/scripts/init_db.py` 初始化：`buyer_a`、`buyer_b`、`seller`、`admin`。小程序开发版登录页会显示“开发测试账号”面板；体验版和正式版不显示。
+测试账号由 `backend/scripts/init_db.py` 初始化。小程序开发版登录页的一键测试入口只显示测试用户 A、测试用户 B、管理员；演示卖家仍可使用手机号密码登录。体验版和正式版不显示开发测试账号面板。
 
 ### 收藏管理
 
@@ -202,7 +202,7 @@ holding -> refunded
 
 小程序核心页面已接入后端 API：
 
-- 登录页：支持买家、卖家、管理员三个测试账号一键切换和 mock 登录
+- 登录页：微信登录为主入口，手机号密码登录收起为次入口；开发模式只显示测试用户 A、测试用户 B、管理员三个一键测试账号
 - 首页：展示 `on_sale` 商品列表，支持搜索与筛选
 - 分类/搜索页：支持关键词、分类、成色筛选
 - 商品详情页：展示商品详情，按后端 `allowed_actions` 显示收藏、联系卖家、立即购买、下架按钮
@@ -212,7 +212,7 @@ holding -> refunded
 - 交付表单页：卖家可选择校内面交、校园自提、校内送达、快递邮寄，并上传交付凭证
 - 我的页：显示登录态、发布/买到/卖出/收藏/地址/客服入口和管理员入口
 - 管理端商品审核页：查看待审核商品，审核通过或驳回
-- 管理端申诉仲裁页：查看平台介入详情并执行支持买家、支持卖家、部分退款或关闭申诉
+- 管理端申诉仲裁页：查看平台介入详情并执行支持买家退款、支持卖家拒绝或部分退款，避免出现无业务含义的关闭入口
 
 本阶段补充后端接口：
 
@@ -220,7 +220,7 @@ holding -> refunded
 
 图片上传和 AI 功能说明：
 
-- 图片上传已通过 `wx.chooseMedia` + `wx.uploadFile` 接入后端 `POST /api/v1/files/upload`，课程阶段文件保存在本地 `uploads/` 目录
+- 图片上传已通过 `wx.chooseMedia` + `wx.uploadFile` 接入后端 `POST /api/v1/files/upload`；开发阶段可使用本地 `uploads/`，云托管正式演示需配置 COS/云存储以保证重启后图片可恢复
 - AI 文案建议为后端 mock，不接入真实大模型，不会直接发布商品
 
 ## 第 6 阶段已实现
@@ -232,7 +232,7 @@ holding -> refunded
 - `GET /api/v1/messages/conversations/{conversation_id}`：会话消息
 - `GET /api/v1/notifications`：系统通知列表
 - `POST /api/v1/reviews`：已完成订单评价
-- `POST /api/v1/refunds`：买家申请退款
+- `POST /api/v1/refunds`：买家申请售后，记录申请金额、原因、凭证、买卖双方和商品快照
 - `GET /api/v1/refunds`：买家/卖家退款列表
 - `GET /api/v1/refunds/{id}`：退款详情
 - `POST /api/v1/refunds/{id}/seller-agree`：卖家同意退款
@@ -249,10 +249,10 @@ holding -> refunded
 
 - 商品详情页可联系卖家
 - 消息页展示会话
-- 订单详情页可评价、申请退款
+- 订单详情页可评价、申请售后
 - 新增退款申请页，支持上传最多 6 张售后证据图
 - 新增平台介入申请页，支持上传最多 6 张申诉证据图
-- 新增退款售后列表页，卖家可处理退款，管理员可仲裁
+- 新增售后列表页，买家查看“我申请的售后”，卖家查看“我需要处理的售后”，管理员可仲裁
 - 新增申诉仲裁页，管理员可查看订单、支付、担保、交付、退款与申诉凭证
 - 发布页 AI 建议调用后端 mock 接口
 - 新增后台日志与统计页
@@ -262,7 +262,7 @@ holding -> refunded
 - AI 文案生成仍为后端 mock，不接入真实大模型
 - 系统通知接口已预留，课程阶段可为空列表
 - 退款为流程状态模拟，不接入真实资金退款
-- 售后证据当前保存图片 URL 数组，可复用 `POST /api/v1/files/upload` 上传到本地 `uploads/`
+- 售后证据保存图片 URL 数组，可复用 `POST /api/v1/files/upload`；正式环境应保存 COS/云存储 URL 或可恢复 file_key
 - 交付信息和凭证为课程阶段模拟记录，不接入真实物流 API；快递方式只保存快递公司和单号
 
 ## 第 7 阶段已实现
@@ -351,7 +351,7 @@ F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest
 | 角色 | 手机号 | 密码 |
 |---|---|---|
 | 管理员 | `18800000000` | `admin123456` |
-| 测试卖家 | `18800000001` | `seller123456` |
+| 演示卖家（手机号密码） | `18800000001` | `seller123456` |
 | 测试买家 | `18800000002` | `buyer123456` |
 
 当前角色命名统一为 `buyer`、`seller`、`admin`。买家账号默认拥有 `buyer` 角色，卖家账号同时拥有 `buyer` 和 `seller` 角色，管理员账号拥有 `admin` 角色。
@@ -434,7 +434,7 @@ Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:5000/api/v1/deliveries/$or
 - 模拟支付：只改变本地支付单和订单状态，不接入真实资金
 - 退款流程：只做状态流转和金额校验，不接入真实退款渠道
 - AI 文案：标题建议由用户选择后应用，描述润色只修改描述；用户仍需确认内容真实后发布
-- 图片上传：当前上传到后端本地 `uploads/` 目录，后续可替换为对象存储
+- 图片上传：本地开发可上传到后端 `uploads/` 目录；云托管容器本地目录不保证持久，正式演示建议替换为 COS/云存储
 
 ## 小程序环境与接口地址
 
@@ -549,7 +549,7 @@ http://127.0.0.1:5000/api/v1/health
 10. 切换卖家账号，进入订单详情并确认交付。
 11. 切换买家账号，确认收货，订单进入待评价。
 12. 买家提交评价后，订单进入交易完成。
-13. 订单详情页可申请退款；卖家进入“我的 -> 退款售后”处理退款，管理员可在同一入口仲裁。
+13. 订单详情页可申请售后；卖家进入“我的 -> 售后处理”处理售后，管理员可在仲裁页支持买家退款、支持卖家拒绝或部分退款。
 14. 管理员进入“我的 -> 后台日志与统计”查看审计记录。
 
 ## MongoDB 检查说明
@@ -583,7 +583,7 @@ python .\scripts\init_db.py
 
 - 微信登录适配器：新增 `POST /api/v1/auth/wechat-login`，本地开发默认 mock，生产可切换真实 code2Session
 - 账号体系：新增注册、绑定手机号、修改密码、退出登录接口
-- 图片上传：新增 `POST /api/v1/files/upload`，小程序使用 `wx.chooseMedia` + `wx.uploadFile` 上传到后端 `uploads/`
+- 图片上传：新增 `POST /api/v1/files/upload`，小程序使用 `wx.chooseMedia` + `wx.uploadFile` 上传；正式环境应接入 COS/云存储，数据库保存可恢复 URL 或 file_key
 - 订单状态机：买家下单后直接进入 `pending_payment`，商品从 `on_sale` 锁定为 `locked`
 - 平台担保：支付成功后创建 `escrow_records.status=holding`，不把担保塞进订单状态
 - 卖家操作：新增卖家确认交付、卖家取消并进入退款处理
@@ -664,7 +664,7 @@ refunding 超过 48 小时卖家未处理 -> 写入业务提醒日志
 - 将 Flask 后端部署到 HTTPS 服务
 - 在微信公众平台配置合法服务器域名
 - 将 `miniprogram/utils/constants.js` 中 `trial`、`release` 的 `API_BASE_URL` 改为线上 HTTPS API 地址
-- 如需上线高并发或长期保存图片，建议把本地 `uploads/` 替换为对象存储
+- 如需上线高并发或长期保存图片，必须把本地 `uploads/` 替换为 COS/对象存储，并配置 `COS_BUCKET`、`COS_REGION` 和访问授权
 - 如果要接入真实微信登录、支付或 AI，需要把对应 Adapter 从 mock 实现替换为真实服务封装
 
 真实小程序上线检查清单：

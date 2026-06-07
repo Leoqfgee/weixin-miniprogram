@@ -12,7 +12,8 @@ Page({
       contact_phone: '',
       contact_wechat: '',
       identity_type: 'custom'
-    }
+    },
+    showWechatAvatarPicker: false
   },
   onLoad(options) {
     this.setData({ completeMode: options && options.mode === 'complete' })
@@ -42,7 +43,8 @@ Page({
     api.uploadFile({ url: '/files/upload', filePath, loading: true }).then((data) => {
       this.setData({
         'form.avatar': data.url,
-        'form.identity_type': 'wechat'
+        'form.identity_type': 'wechat',
+        showWechatAvatarPicker: false
       })
     })
   },
@@ -51,9 +53,11 @@ Page({
       itemList: ['使用微信头像', '从相册选择', '拍照'],
       success: (res) => {
         if (res.tapIndex === 0) {
-          wx.showToast({ title: '请点击下方微信头像按钮', icon: 'none' })
+          this.setData({ showWechatAvatarPicker: true })
+          wx.showToast({ title: '请确认使用微信头像', icon: 'none' })
           return
         }
+        this.setData({ showWechatAvatarPicker: false })
         this.chooseAvatar(res.tapIndex === 2 ? 'camera' : 'album')
       }
     })

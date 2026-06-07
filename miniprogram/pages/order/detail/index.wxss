@@ -9,15 +9,15 @@
   flex: 1;
   padding: 10rpx 6rpx;
   color: #8a94a3;
-  background: #f7f4ee;
-  border-radius: 8rpx;
+  background: #f7f8f5;
+  border-radius: 999rpx;
   font-size: 21rpx;
   text-align: center;
 }
 
 .step.active {
   color: #ffffff;
-  background: #1f7a68;
+  background: #16b85e;
 }
 
 .row {
@@ -32,7 +32,7 @@
   padding: 14rpx 18rpx;
   color: #8a4b14;
   background: #fff3df;
-  border-radius: 8rpx;
+  border-radius: 18rpx;
   font-size: 25rpx;
 }
 
@@ -46,8 +46,8 @@
 .item {
   margin-top: 24rpx;
   padding: 20rpx;
-  background: #f5f7fa;
-  border-radius: 8rpx;
+  background: #f7f8f5;
+  border-radius: 20rpx;
 }
 
 .product-line {
@@ -59,7 +59,7 @@
   width: 132rpx;
   height: 132rpx;
   flex-shrink: 0;
-  border-radius: 8rpx;
+  border-radius: 18rpx;
   background: #edf1f5;
 }
 
@@ -71,8 +71,8 @@
 .info-block {
   margin-top: 22rpx;
   padding: 20rpx;
-  background: #f8faf8;
-  border-radius: 8rpx;
+  background: #f7f8f5;
+  border-radius: 20rpx;
 }
 
 .block-title {
@@ -91,7 +91,7 @@
 .image-grid image {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8rpx;
+  border-radius: 18rpx;
   background: #edf1f5;
 }
 

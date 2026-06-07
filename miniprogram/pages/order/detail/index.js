@@ -84,8 +84,7 @@ Page({
     wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount}` })
   },
   viewRefund() {
-    const refund = this.data.order && this.data.order.refund
-    wx.showModal({ title: '售后进度', content: refund ? `状态：${refund.status}\n原因：${refund.reason || '无'}` : '暂无售后记录', showCancel: false })
+    wx.navigateTo({ url: `/pages/refund/list/index?order_id=${this.data.id}` })
   },
   applyAppeal() {
     const refund = this.data.order && this.data.order.refund

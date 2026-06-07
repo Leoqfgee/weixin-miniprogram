@@ -1,34 +1,63 @@
 <view class="page publish-page">
-  <view class="title">{{productId ? '编辑发布' : '发布闲置'}}</view>
-  <view class="muted intro">{{editingOnSale ? '修改保存后立即更新在售商品信息' : '真实描述更容易成交，草稿可稍后继续完善'}}</view>
+  <view class="page-title">{{productId ? '编辑发布' : '发布商品'}}</view>
+  <view class="page-sub">让闲置流转，让校园更美好</view>
 
-  <view class="image-grid">
-    <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap">
-      <image src="{{item}}" mode="aspectFill"></image>
-      <text data-index="{{index}}" bindtap="removeImage">×</text>
-    </view>
-    <view wx:if="{{form.images.length < 9}}" class="image-add" bindtap="chooseImages">＋<text>添加图片</text></view>
+  <view class="publish-banner">
+    <view class="banner-title">校园二手 · 真实友善 · 交易安全</view>
+    <view class="banner-sub">请如实描述商品，规范发布更容易卖出哦</view>
+  </view>
+
+  <view class="panel image-panel">
+    <view class="panel-head"><view class="block-title">商品图片</view><text>{{form.images.length}}/9</text></view>
+    <scroll-view scroll-x class="image-scroll">
+      <view class="image-row">
+        <view wx:if="{{form.images.length < 9}}" class="image-add" bindtap="chooseImages"><view>＋</view><text>添加图片</text><text>({{form.images.length}}/9)</text></view>
+        <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap">
+          <image src="{{item}}" mode="aspectFill"></image>
+          <text data-index="{{index}}" bindtap="removeImage">×</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="muted tip">建议上传清晰实拍图，首图为封面更吸引人</view>
   </view>
 
   <view class="panel form-panel">
-    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="标题：品牌、型号或关键词" />
-    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、购买时间、使用情况、配件和瑕疵"></textarea>
+    <view class="block-title">标题</view>
+    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="请输入商品标题，建议20字以内" />
     <view class="ai-actions">
-      <button class="ai-btn" bindtap="useAiTitle">AI 标题建议</button>
-      <button class="ai-btn" bindtap="useAiDescription">AI 润色描述</button>
+      <button class="ai-btn" bindtap="useAiTitle"><text>AI</text> 标题建议<view>智能生成高曝光标题</view></button>
+      <button class="ai-btn" bindtap="useAiDescription"><text>AI</text> 润色描述<view>优化商品描述，更吸引人</view></button>
     </view>
   </view>
 
-  <view class="panel option-panel">
-    <view class="row"><text>价格</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="¥ 0.00" /></view>
-    <view class="row"><text>库存</text><input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" /></view>
+  <view class="panel form-panel">
+    <view class="block-title">描述</view>
+    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="请详细描述商品的品牌型号、功能、使用情况、购买时间等信息..."></textarea>
+  </view>
+
+  <view class="two-grid">
+    <view class="panel mini-panel">
+      <view class="block-title">价格 *</view>
+      <input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="¥ 请输入价格" />
+      <view class="muted">建议参考相似商品定价</view>
+    </view>
+    <view class="panel mini-panel">
+      <view class="block-title">库存 *</view>
+      <input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" placeholder="请输入库存数量" />
+      <view class="muted">如仅一件可填1</view>
+    </view>
+  </view>
+
+  <view class="option-grid">
     <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
-      <view class="row"><text>分类（选填）</text><text class="muted">{{categoryIndex >= 0 ? categories[categoryIndex].name : '暂不填写'}}</text></view>
+      <view class="option-card"><view class="option-icon">▦</view><view><view class="text-strong">分类 <text>（选填）</text></view><view class="muted">{{categoryIndex >= 0 ? categories[categoryIndex].name : '选择商品分类'}}</view></view><view class="chevron">›</view></view>
     </picker>
     <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
-      <view class="row"><text>成色（选填）</text><text class="muted">{{conditionOptions[conditionIndex].label}}</text></view>
+      <view class="option-card"><view class="option-icon warm">✓</view><view><view class="text-strong">成色 <text>（选填）</text></view><view class="muted">{{conditionOptions[conditionIndex].label}}</view></view><view class="chevron">›</view></view>
     </picker>
   </view>
+
+  <view class="agreement">发布即表示同意《校园二手发布规范》</view>
 
   <view class="bottom-actions">
     <button wx:if="{{editingOnSale}}" class="primary-btn" data-action="draft" bindtap="submit">保存修改</button>

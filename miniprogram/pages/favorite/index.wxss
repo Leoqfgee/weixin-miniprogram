@@ -2,25 +2,25 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10rpx;
-  margin-bottom: 18rpx;
+  margin-bottom: 20rpx;
 }
 
 .tab {
   min-width: 0;
   padding: 16rpx 6rpx;
   text-align: center;
-  color: #56616d;
-  background: #fff;
-  border: 1rpx solid #edf0f3;
-  border-radius: 8rpx;
+  color: #687380;
+  background: #ffffff;
+  border: 1rpx solid #e8ece8;
+  border-radius: 999rpx;
   font-size: 23rpx;
 }
 
 .tab.active {
-  color: #1f7a68;
-  background: #eef8f5;
-  border-color: #b8dfd3;
-  font-weight: 800;
+  color: #16a45a;
+  background: #eaf8ef;
+  border-color: #cfeedd;
+  font-weight: 900;
 }
 
 .count {
@@ -34,25 +34,26 @@
   align-items: center;
   justify-content: space-between;
   gap: 14rpx;
-  margin-bottom: 18rpx;
-  padding: 18rpx;
-  color: #815319;
-  background: #fff6e7;
-  border-radius: 8rpx;
+  margin-bottom: 20rpx;
+  padding: 18rpx 20rpx;
+  color: #8a5a15;
+  background: #fff7e6;
+  border-radius: 18rpx;
   font-size: 24rpx;
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
+  gap: 20rpx;
 }
 
 .favorite-card {
-  background: #fff;
-  border-radius: 8rpx;
+  background: #ffffff;
+  border: 1rpx solid #e8ece8;
+  border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 8rpx 28rpx rgba(23, 32, 42, 0.06);
+  box-shadow: 0 12rpx 28rpx rgba(31, 41, 51, 0.06);
 }
 
 .favorite-meta {
@@ -60,18 +61,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 14rpx;
-  padding: 0 18rpx 18rpx;
+  padding: 0 20rpx 20rpx;
 }
 
 .note {
   display: block;
-  color: #56616d;
+  color: #687380;
   font-size: 24rpx;
 }
 
 .note.drop {
-  color: #e0522d;
-  font-weight: 800;
+  color: #f04438;
+  font-weight: 900;
 }
 
 .mini {
@@ -82,9 +83,4 @@
   margin: 0;
   padding: 0 18rpx;
   font-size: 23rpx;
-}
-
-.danger {
-  color: #a61b1b;
-  border-color: #d8aaa4;
 }

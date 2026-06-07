@@ -1,12 +1,12 @@
 <view class="page">
   <view class="panel">
-    <view class="title">申请退款</view>
-    <view class="muted">退款金额不能超过订单实付金额</view>
+    <view class="title">申请售后</view>
+    <view class="muted">售后金额不能超过订单实付金额</view>
     <picker mode="selector" range="{{refundTypes}}" range-key="label" bindchange="onRefundTypeChange">
       <view class="picker">{{refundTypes[refundTypeIndex].label}}</view>
     </picker>
-    <input value="{{amount}}" type="digit" bindinput="onAmountInput" placeholder="退款金额" />
-    <textarea value="{{reason}}" bindinput="onReasonInput" placeholder="填写退款原因"></textarea>
+    <input value="{{amount}}" type="digit" bindinput="onAmountInput" placeholder="售后金额" />
+    <textarea value="{{reason}}" bindinput="onReasonInput" placeholder="填写售后原因"></textarea>
     <textarea value="{{description}}" bindinput="onDescriptionInput" placeholder="补充说明，例如商品瑕疵、交付问题"></textarea>
     <view class="evidence-head">
       <view class="text-strong">凭证图片</view>

@@ -70,7 +70,7 @@ Page({
       description: this.data.description,
       evidence_images: this.data.evidenceImages
     }, { loading: true }).then(() => {
-      wx.showToast({ title: '已申请退款', icon: 'success' })
+      wx.showToast({ title: '已申请售后', icon: 'success' })
       wx.navigateBack()
     })
   }

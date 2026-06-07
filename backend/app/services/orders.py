@@ -214,6 +214,11 @@ class OrderService:
             self.products.release_stock(item["product_id"], item["quantity"])
             self._log("product_reopen", "product", item["product_id"], operator_id, operator_role, "locked", "on_sale")
 
+    def _close_products_after_refund(self, order_id, operator_id=None, operator_role="system"):
+        for item in self.order_items.list_by_order(order_id):
+            self.products.mark_off_shelf_after_refund(item["product_id"])
+            self._log("product_off_shelf_after_refund", "product", item["product_id"], operator_id, operator_role, "locked", "off_shelf")
+
     def _ensure_refund(
         self,
         order,
@@ -231,18 +236,24 @@ class OrderService:
         now = utc_now()
         doc = {
             "order_id": order["_id"],
+            "product_id": order.get("product_id"),
             "buyer_id": order["buyer_id"],
             "seller_id": order["seller_id"],
+            "applicant_id": operator_id,
             "refund_type": refund_type,
             "amount": order["pay_amount"],
+            "request_amount": order["pay_amount"],
+            "final_refund_amount": order["pay_amount"] if status in {"seller_agreed", "refunded"} else None,
             "reason": reason,
             "description": reason,
             "evidence_images": [],
             "status": status,
             "seller_result": seller_result,
             "seller_reason": seller_reason,
+            "seller_response": seller_reason,
             "seller_handled_at": now if seller_result else None,
             "admin_result": "",
+            "admin_decision": "",
             "admin_reason": "",
             "admin_handled_at": None,
             "created_at": now,
@@ -264,13 +275,14 @@ class OrderService:
             {
                 "$set": {
                     "status": "refunded",
+                    "final_refund_amount": refund.get("final_refund_amount") or refund.get("amount") or order.get("pay_amount"),
                     "seller_result": refund.get("seller_result") or "agreed",
                     "seller_handled_at": refund.get("seller_handled_at") or utc_now(),
                     "updated_at": utc_now(),
                 }
             },
         )
-        self._release_order_stock(order["_id"], operator_id, operator_role)
+        self._close_products_after_refund(order["_id"], operator_id, operator_role)
         updated_order = self.orders.update_fields(order["_id"], {"status": "refunded", "pre_refund_status": ""})
         self._log(action, "refund", refund["_id"], operator_id, operator_role, refund.get("status"), "refunded", reason)
         self._log("refund_success", "order", order["_id"], operator_id, operator_role, order["status"], "refunded", reason)
@@ -500,18 +512,24 @@ class DeliveryService:
         now = utc_now()
         doc = {
             "order_id": order["_id"],
+            "product_id": order.get("product_id"),
             "buyer_id": buyer_id,
             "seller_id": order["seller_id"],
+            "applicant_id": buyer_id,
             "refund_type": payload.get("refund_type") or "refund_only",
             "amount": order["pay_amount"],
+            "request_amount": order["pay_amount"],
+            "final_refund_amount": None,
             "reason": reason,
             "description": (payload.get("description") or reason).strip(),
             "evidence_images": payload.get("evidence_images") or [],
             "status": "requested",
             "seller_result": "",
             "seller_reason": "",
+            "seller_response": "",
             "seller_handled_at": None,
             "admin_result": "",
+            "admin_decision": "",
             "admin_reason": "",
             "admin_handled_at": None,
             "created_at": now,

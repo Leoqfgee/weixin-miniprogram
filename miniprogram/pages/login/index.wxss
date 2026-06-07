@@ -70,8 +70,9 @@ input {
   height: 82rpx;
   padding: 0 22rpx;
   color: #17202a;
-  background: #f7f4ee;
-  border-radius: 8rpx;
+  background: #fbfcfb;
+  border: 1rpx solid #e1e7e1;
+  border-radius: 18rpx;
   font-size: 28rpx;
 }
 
@@ -108,10 +109,10 @@ input {
 
 .dev-btn {
   margin: 0;
-  height: 68rpx;
-  line-height: 68rpx;
-  color: #1f7a68;
-  background: #eef8f5;
-  border-radius: 8rpx;
+  height: 70rpx;
+  line-height: 70rpx;
+  color: #16a45a;
+  background: #eaf8ef;
+  border-radius: 999rpx;
   font-size: 24rpx;
 }

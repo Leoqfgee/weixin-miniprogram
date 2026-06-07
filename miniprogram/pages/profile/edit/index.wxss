@@ -12,9 +12,9 @@
 
 .notice {
   padding: 18rpx 20rpx;
-  border-radius: 8rpx;
-  background: #e8f4f0;
-  color: #1f7a68;
+  border-radius: 18rpx;
+  background: #eaf8ef;
+  color: #16a45a;
   font-size: 26rpx;
 }
 
@@ -41,14 +41,14 @@
 .avatar {
   width: 128rpx;
   height: 128rpx;
-  border-radius: 8rpx;
+  border-radius: 50%;
 }
 
 .placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1f7a68;
+  background: #16b85e;
   color: #fff;
   font-size: 24rpx;
 }
@@ -64,9 +64,10 @@ input,
 textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: 18rpx;
-  border-radius: 8rpx;
-  background: #f5f7fa;
+  padding: 18rpx 22rpx;
+  border-radius: 18rpx;
+  background: #fbfcfb;
+  border: 1rpx solid #e1e7e1;
 }
 
 textarea {

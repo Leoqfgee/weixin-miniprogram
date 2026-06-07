@@ -1,16 +1,16 @@
 const api = require('../../utils/request')
-const { saveAuth } = require('../../utils/auth')
+const { clearAuth, saveAuth } = require('../../utils/auth')
 const { DEV_TEST_LOGIN_ENABLED } = require('../../utils/constants')
 
 Page({
   data: {
     phone: '',
     password: '',
+    showPasswordLogin: false,
     devTestEnabled: DEV_TEST_LOGIN_ENABLED,
     testAccounts: [
       { key: 'buyer_a', label: '测试买家 A' },
       { key: 'buyer_b', label: '测试买家 B' },
-      { key: 'seller', label: '测试卖家' },
       { key: 'admin', label: '测试管理员' }
     ]
   },
@@ -30,6 +30,9 @@ Page({
   },
   onPasswordInput(event) {
     this.setData({ password: event.detail.value })
+  },
+  togglePasswordLogin() {
+    this.setData({ showPasswordLogin: !this.data.showPasswordLogin })
   },
   onWechatLogin() {
     wx.login({
@@ -58,6 +61,8 @@ Page({
     })
   },
   onDevLogin(event) {
+    clearAuth()
+    this.setData({ phone: '', password: '', showPasswordLogin: false })
     api.post('/auth/dev-test-login', {
       account: event.currentTarget.dataset.account
     }, { loading: true, loadingText: '切换测试账号' }).then((data) => {

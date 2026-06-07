@@ -1,4 +1,5 @@
 const { getToken, getUser, clearAuth } = require('./utils/auth')
+const { refreshUnreadBadge } = require('./utils/unread')
 
 App({
   globalData: {
@@ -15,6 +16,10 @@ App({
     }
     this.globalData.token = getToken()
     this.globalData.user = getUser()
+  },
+
+  onShow() {
+    refreshUnreadBadge()
   },
 
   refreshAuth(token, user) {

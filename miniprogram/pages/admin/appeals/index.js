@@ -12,8 +12,7 @@ const APPEAL_STATUS_TEXT = {
   pending: '平台介入中',
   approved: '支持买家',
   rejected: '支持卖家',
-  partial_refund: '部分退款',
-  closed: '已关闭'
+  partial_refund: '部分退款'
 }
 
 Page({
@@ -58,8 +57,7 @@ Page({
     const reasonMap = {
       refund: '管理员支持买家退款',
       reject_refund: '管理员支持卖家，驳回退款',
-      partial_refund: '管理员判定部分退款',
-      close: '管理员关闭申诉'
+      partial_refund: '管理员判定部分退款'
     }
     wx.showModal({
       title: '确认仲裁',

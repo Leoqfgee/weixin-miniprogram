@@ -11,7 +11,8 @@ Component({
   data: {
     conditionText: '',
     campusText: '',
-    coverText: '闲置'
+    coverText: '闲置',
+    coverFailed: false
   },
   lifetimes: {
     attached() {
@@ -30,8 +31,12 @@ Component({
       this.setData({
         conditionText: conditionMap[product.condition] || '校内闲置',
         campusText: product.campus || (product.seller && product.seller.campus) || '校内',
-        coverText: title.slice(0, 2)
+        coverText: title.slice(0, 2),
+        coverFailed: false
       })
+    },
+    onCoverError() {
+      this.setData({ coverFailed: true })
     },
     onTap() {
       const id = this.data.product && this.data.product.id
