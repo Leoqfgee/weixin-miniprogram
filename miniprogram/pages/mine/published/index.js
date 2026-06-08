@@ -32,6 +32,7 @@ Page({
     api.get('/products/mine', { page: 1, page_size: 50, status: option.value }, { loading: true }).then((data) => {
       const products = (data.items || []).map((item) => ({
         ...item,
+        cover_image: item.cover_image || (Array.isArray(item.images) && item.images[0]) || '',
         status_text: PRODUCT_STATUS_TEXT[item.status] || item.status,
         status_note: STATUS_NOTES[item.status] || ''
       }))

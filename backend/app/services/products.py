@@ -380,6 +380,8 @@ class ProductService:
             "campus": (profile or {}).get("campus", ""),
         }
         data["allowed_actions"] = self._allowed_actions(product, current_user)
+        if not data.get("cover_image") and data.get("images"):
+            data["cover_image"] = data["images"][0]
         if compact:
             return {
                 key: data.get(key)
@@ -388,6 +390,7 @@ class ProductService:
                     "title",
                     "price",
                     "cover_image",
+                    "images",
                     "condition",
                     "stock",
                     "status",

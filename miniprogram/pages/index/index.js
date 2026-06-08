@@ -19,9 +19,9 @@ Page({
     const authKey = this.getAuthKey()
     if (authKey !== this.data.authKey) {
       this.setData({ authKey, products: [] })
-      this.loadProducts()
       this.loadCategories()
     }
+    this.loadProducts()
   },
   getAuthKey() {
     const user = getUser() || {}

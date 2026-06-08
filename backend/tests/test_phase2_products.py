@@ -34,6 +34,7 @@ def test_product_review_flow():
     category_id = category_response.get_json()["data"]["items"][0]["id"]
 
     title = f"pytest-{uuid4().hex}"
+    image_url = f"https://example.com/{title}.png"
     create_response = client.post(
         "/api/v1/products",
         headers=auth_headers(seller_token),
@@ -44,7 +45,7 @@ def test_product_review_flow():
             "category_id": category_id,
             "condition": "good",
             "stock": 2,
-            "images": [],
+            "images": [image_url],
             "campus": "主校区",
             "delivery_options": ["meetup"],
             "submit_action": "draft",
@@ -85,6 +86,8 @@ def test_product_review_flow():
     items = list_response.get_json()["data"]["items"]
     assert len(items) == 1
     assert items[0]["title"] == title
+    assert items[0]["cover_image"] == image_url
+    assert items[0]["images"] == [image_url]
 
     buyer_detail = client.get(f"/api/v1/products/{product['id']}", headers=auth_headers(buyer_token))
     actions = buyer_detail.get_json()["data"]["allowed_actions"]

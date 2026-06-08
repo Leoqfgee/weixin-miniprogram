@@ -11,6 +11,7 @@ Component({
   data: {
     conditionText: '',
     campusText: '',
+    coverImage: '',
     coverText: '闲置',
     coverFailed: false
   },
@@ -27,10 +28,12 @@ Component({
         good: '成色良好',
         fair: '有使用痕迹'
       }
+      const images = Array.isArray(product.images) ? product.images : []
       const title = product.title || '闲置好物'
       this.setData({
         conditionText: conditionMap[product.condition] || '校内闲置',
         campusText: product.campus || (product.seller && product.seller.campus) || '校内',
+        coverImage: product.cover_image || images[0] || '',
         coverText: title.slice(0, 2),
         coverFailed: false
       })
@@ -40,9 +43,7 @@ Component({
     },
     onTap() {
       const id = this.data.product && this.data.product.id
-      if (!id) {
-        return
-      }
+      if (!id) return
       wx.navigateTo({ url: `/pages/product/detail/index?id=${id}` })
     }
   }

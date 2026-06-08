@@ -1,5 +1,5 @@
 <view class="product-card" bindtap="onTap">
-  <image wx:if="{{product.cover_image && !coverFailed}}" class="cover" src="{{product.cover_image}}" mode="aspectFill" binderror="onCoverError"></image>
+  <image wx:if="{{coverImage && !coverFailed}}" class="cover" src="{{coverImage}}" mode="aspectFill" binderror="onCoverError"></image>
   <view wx:else class="cover placeholder">
     <view class="cover-text">{{coverText}}</view>
     <view class="cover-tag">{{conditionText}}</view>
