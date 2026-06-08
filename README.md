@@ -676,3 +676,30 @@ refunding 超过 48 小时卖家未处理 -> 写入业务提醒日志
 - 后端生产环境 `FLASK_DEBUG=0`
 - 生产环境 `SECRET_KEY`、`JWT_SECRET` 已替换为随机强密钥
 - 服务器防火墙开放 443，由 Nginx 转发到 Flask WSGI 服务
+
+## 微信云托管图片持久化
+
+微信云托管容器内的本地 `uploads/` 目录只适合本地开发和临时调试，容器重启、重新部署或实例迁移后，本地文件可能丢失。正式演示和同学测试必须使用 COS 持久化图片、头像、聊天图片、退款凭证和申诉凭证。
+
+云托管服务设置中的环境变量需要配置：
+
+```text
+STORAGE_BACKEND=cos
+COS_BUCKET=campus-secondhand-1440900946
+COS_REGION=ap-shanghai
+COS_PUBLIC_BASE_URL=https://campus-secondhand-1440900946.cos.ap-shanghai.myqcloud.com
+COS_SECRET_ID=腾讯云 SecretId
+COS_SECRET_KEY=腾讯云 SecretKey
+```
+
+如果你的 bucket 实际创建在广州，则把 `COS_REGION` 改成 `ap-guangzhou`，并把 `COS_PUBLIC_BASE_URL` 改成对应的 `https://campus-secondhand-1440900946.cos.ap-guangzhou.myqcloud.com`。地域必须和 bucket 所在地域一致。
+
+当前上传接口 `POST /api/v1/files/upload` 会根据 `usage` 生成 COS 对象路径，例如 `product/2026/06/xxx.jpg`、`avatar/2026/06/xxx.jpg`、`chat/2026/06/xxx.jpg`、`refund/2026/06/xxx.jpg`、`appeal/2026/06/xxx.jpg`。接口返回的 `data.url` 是 COS 公网 URL，前端发布商品、保存头像、聊天发送图片、退款/申诉上传凭证时都应保存这个 URL，不保存 `wx.chooseMedia` 的临时路径。
+
+验证方式：
+
+1. 上传头像并保存资料，刷新个人中心后头像能显示。
+2. 发布带图片的商品，进入商品详情后图片能显示。
+3. 在云托管重新部署或重启服务。
+4. 再打开个人中心和商品详情，图片仍然显示。
+5. 检查 `files`、`users`、`products`、`refunds`、`appeals` 相关记录，保存的应是 COS URL，而不是本地临时路径。

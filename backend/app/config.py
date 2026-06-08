@@ -52,6 +52,12 @@ class Config:
         "UPLOAD_FOLDER",
         str(PROJECT_ROOT / "uploads"),
     )
+    STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "local").strip().lower()
+    COS_BUCKET = os.getenv("COS_BUCKET", "").strip()
+    COS_REGION = os.getenv("COS_REGION", "").strip()
+    COS_SECRET_ID = os.getenv("COS_SECRET_ID", "").strip()
+    COS_SECRET_KEY = os.getenv("COS_SECRET_KEY", "").strip()
+    COS_PUBLIC_BASE_URL = os.getenv("COS_PUBLIC_BASE_URL", "").strip().rstrip("/")
 
     PAYMENT_MODE = os.getenv("PAYMENT_MODE", "mock")
     AI_MODE = os.getenv("AI_MODE", "qwen")

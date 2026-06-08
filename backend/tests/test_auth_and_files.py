@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from app import create_app
+from app.adapters import storage as storage_adapter
 from scripts.init_db import main as init_db
 
 
@@ -79,6 +80,8 @@ def test_upload_image_returns_static_url():
     file_doc = response.get_json()["data"]
     assert file_doc["url"].endswith(".png")
     assert "/uploads/product/" in file_doc["url"]
+    assert file_doc["storage_backend"] == "local"
+    assert file_doc["object_key"].startswith("product/")
 
 
 def test_upload_delivery_image_uses_delivery_folder():
@@ -99,6 +102,97 @@ def test_upload_delivery_image_uses_delivery_folder():
     assert response.status_code == 201
     file_doc = response.get_json()["data"]
     assert "/uploads/delivery/" in file_doc["url"]
+    assert file_doc["storage_backend"] == "local"
+    assert file_doc["object_key"].startswith("delivery/")
+
+
+def test_cos_storage_returns_public_url(monkeypatch):
+    app = create_app()
+    app.config.update(
+        STORAGE_BACKEND="cos",
+        COS_BUCKET="campus-secondhand-1440900946",
+        COS_REGION="ap-shanghai",
+        COS_SECRET_ID="fake-id",
+        COS_SECRET_KEY="fake-key",
+        COS_PUBLIC_BASE_URL="https://campus-secondhand-1440900946.cos.ap-shanghai.myqcloud.com",
+    )
+    uploaded = {}
+
+    class FakeCosConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeCosClient:
+        def __init__(self, config):
+            self.config = config
+
+        def put_object(self, **kwargs):
+            uploaded.update(kwargs)
+
+    monkeypatch.setattr(storage_adapter, "CosConfig", FakeCosConfig)
+    monkeypatch.setattr(storage_adapter, "CosS3Client", FakeCosClient)
+
+    with app.test_request_context():
+        result = storage_adapter.StorageService().save(b"avatar", "me.png", "image/png", "avatar")
+
+    assert result["storage_backend"] == "cos"
+    assert result["object_key"].startswith("avatar/")
+    assert result["object_key"].endswith(".png")
+    assert result["url"] == f"{app.config['COS_PUBLIC_BASE_URL']}/{result['object_key']}"
+    assert uploaded["Bucket"] == "campus-secondhand-1440900946"
+    assert uploaded["Key"] == result["object_key"]
+    assert uploaded["ContentType"] == "image/png"
+
+
+def test_upload_with_cos_backend_persists_cos_url(monkeypatch):
+    init_db()
+    app = create_app()
+    app.config.update(
+        STORAGE_BACKEND="cos",
+        COS_BUCKET="campus-secondhand-1440900946",
+        COS_REGION="ap-shanghai",
+        COS_SECRET_ID="fake-id",
+        COS_SECRET_KEY="fake-key",
+        COS_PUBLIC_BASE_URL="https://campus-secondhand-1440900946.cos.ap-shanghai.myqcloud.com",
+    )
+    uploaded = {}
+
+    class FakeCosConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class FakeCosClient:
+        def __init__(self, config):
+            self.config = config
+
+        def put_object(self, **kwargs):
+            uploaded.update(kwargs)
+
+    monkeypatch.setattr(storage_adapter, "CosConfig", FakeCosConfig)
+    monkeypatch.setattr(storage_adapter, "CosS3Client", FakeCosClient)
+    client = app.test_client()
+    login = client.post(
+        "/api/v1/auth/password-login",
+        json={"phone": "18800000001", "password": "seller123456"},
+    ).get_json()["data"]
+
+    response = client.post(
+        "/api/v1/files/upload",
+        headers=auth_headers(login["token"]),
+        data={"usage": "avatar", "file": (BytesIO(b"fake-avatar"), "avatar.png")},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 201
+    file_doc = response.get_json()["data"]
+    assert file_doc["storage_backend"] == "cos"
+    assert file_doc["object_key"].startswith("avatar/")
+    assert file_doc["url"] == f"{app.config['COS_PUBLIC_BASE_URL']}/{file_doc['object_key']}"
+    assert uploaded["Key"] == file_doc["object_key"]
+
+    persisted = app.db.files.find_one({"object_key": file_doc["object_key"]})
+    assert persisted["storage_backend"] == "cos"
+    assert persisted["url"] == file_doc["url"]
 
 
 def test_wechat_login_default_role_is_buyer():

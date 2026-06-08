@@ -40,7 +40,7 @@ Page({
   onChooseWechatAvatar(event) {
     const filePath = event.detail.avatarUrl
     if (!filePath) return
-    api.uploadFile({ url: '/files/upload', filePath, loading: true }).then((data) => {
+    api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
       this.setData({
         'form.avatar': data.url,
         'form.identity_type': 'wechat',
@@ -69,7 +69,7 @@ Page({
       sourceType: [sourceType || 'album'],
       success: (res) => {
         const filePath = res.tempFiles[0].tempFilePath
-        api.uploadFile({ url: '/files/upload', filePath, loading: true }).then((data) => {
+        api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
           this.setData({
             'form.avatar': data.url,
             'form.identity_type': 'custom'
