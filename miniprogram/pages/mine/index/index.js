@@ -1,4 +1,5 @@
-const { getUser, clearAuth, hasRole } = require('../../../utils/auth')
+const api = require('../../../utils/request')
+const { getToken, getUser, clearAuth, hasRole, saveAuth } = require('../../../utils/auth')
 
 Page({
   data: {
@@ -8,6 +9,14 @@ Page({
   },
   onShow() {
     const user = getUser()
+    this.applyUser(user)
+    if (!getToken()) return
+    api.get('/users/me').then((freshUser) => {
+      saveAuth(getToken(), freshUser)
+      this.applyUser(freshUser)
+    })
+  },
+  applyUser(user) {
     const nickname = user && user.profile ? user.profile.nickname || '我' : '?'
     this.setData({ user, isAdmin: hasRole('admin'), avatarText: nickname.slice(0, 1) })
   },

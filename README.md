@@ -73,7 +73,7 @@ downloadFile 合法域名：https://campus-secondhand-1440900946.cos.ap-shanghai
 
 首页顶部已改为真实可交互的胶囊 Tab：
 
-- 推荐：后端根据用户浏览历史 `product_views`、收藏分类、购买分类做轻量推荐；没有历史时回退热门或最新。
+- 推荐：不是偏好过滤器，而是在全部可展示商品中计算 `recommendation_score` 后排序。浏览最多类目、收藏类目、购买类目只加分，不会把其他在售商品过滤掉；没有历史时使用基础分、热度分和新鲜度分综合排序。
 - 最新：`GET /api/v1/products?mode=latest`，按 `created_at` 倒序。
 - 热门：`GET /api/v1/products?mode=hot`，后端按 `view_count + favorite_count * 3` 排序。
 
@@ -153,5 +153,5 @@ gunicorn --bind 0.0.0.0:${PORT:-80} wsgi:app
 1. 打开首页，顶部应显示“推荐 / 最新 / 热门”胶囊 Tab。
 2. 点击“最新”，请求 `GET /api/v1/products?mode=latest`，商品按发布时间倒序。
 3. 点击“热门”，请求 `GET /api/v1/products?mode=hot`，商品按浏览量和收藏量综合排序。
-4. 登录用户进入几个商品详情，再回首页点“推荐”，应优先出现相关分类商品。
+4. 登录用户进入几个商品详情，再回首页点“推荐”，应优先出现相关分类商品，但其他可展示商品仍应保留在列表中。
 5. 切换账号后回到首页，应重新请求列表，不显示上一个账号的推荐结果。

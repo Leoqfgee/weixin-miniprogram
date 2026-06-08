@@ -1,4 +1,4 @@
-from datetime import datetime, time, timezone
+from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 from bson import ObjectId
@@ -67,44 +67,94 @@ class ProductService:
         }
 
     def _list_recommended(self, filters, page, page_size, current_user=None):
-        if not current_user or not current_user.get("_id"):
-            return self.products.list_public({**filters, "sort": "hot"}, page, page_size)
+        user_id = ObjectId(str(current_user["_id"])) if current_user and current_user.get("_id") else None
+        query_filters = {**filters}
+        if user_id:
+            query_filters["exclude_seller_id"] = user_id
+        items = self.products.list_public_all(query_filters)
+        include_self = False
+        if user_id and not items:
+            include_self = True
+            items = self.products.list_public_all({**filters})
 
-        user_id = ObjectId(str(current_user["_id"]))
-        category_scores = {}
+        preferences = self._recommendation_preferences(user_id) if user_id else {
+            "top_viewed_categories": set(),
+            "favorite_categories": set(),
+            "bought_categories": set(),
+        }
+        scored = []
+        for item in items:
+            item["recommendation_score"] = self._recommendation_score(item, user_id, preferences, include_self)
+            scored.append(item)
+        scored.sort(
+            key=lambda item: (
+                float(item.get("recommendation_score", 0) or 0),
+                item.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
+            ),
+            reverse=True,
+        )
+        total = len(scored)
+        return scored[(page - 1) * page_size : page * page_size], total
+
+    def _recommendation_preferences(self, user_id):
+        viewed_counts = {}
         for view in self.db.product_views.find({"user_id": user_id}):
             category_id = view.get("category_id")
             if category_id:
-                category_scores[category_id] = category_scores.get(category_id, 0) + 3
+                viewed_counts[category_id] = viewed_counts.get(category_id, 0) + 1
+        max_view_count = max(viewed_counts.values(), default=0)
+        top_viewed_categories = {
+            category_id for category_id, count in viewed_counts.items() if count == max_view_count and count > 0
+        }
+
+        favorite_categories = set()
         for favorite in self.db.favorites.find({"user_id": user_id}):
             product = self.products.find_by_id(favorite.get("product_id"))
             if product and product.get("category_id"):
-                category_scores[product["category_id"]] = category_scores.get(product["category_id"], 0) + 5
+                favorite_categories.add(product["category_id"])
+
+        bought_categories = set()
         for order in self.db.orders.find({"buyer_id": user_id}):
             product = self.products.find_by_id(order.get("product_id"))
             if product and product.get("category_id"):
-                category_scores[product["category_id"]] = category_scores.get(product["category_id"], 0) + 4
+                bought_categories.add(product["category_id"])
+            for snapshot in order.get("items", []):
+                category_id = (snapshot.get("product_snapshot") or {}).get("category_id")
+                if category_id:
+                    bought_categories.add(category_id)
 
-        if category_scores:
-            top_categories = [
-                item[0] for item in sorted(category_scores.items(), key=lambda item: item[1], reverse=True)[:5]
-            ]
-            items, total = self.products.list_public(
-                {**filters, "sort": "hot", "category_ids": top_categories, "exclude_seller_id": user_id},
-                page,
-                page_size,
-            )
-            if items:
-                return items, total
+        return {
+            "top_viewed_categories": top_viewed_categories,
+            "favorite_categories": favorite_categories,
+            "bought_categories": bought_categories,
+        }
 
-        items, total = self.products.list_public(
-            {**filters, "sort": "hot", "exclude_seller_id": user_id},
-            page,
-            page_size,
-        )
-        if items:
-            return items, total
-        return self.products.list_public({**filters, "sort": "newest"}, page, page_size)
+    def _recommendation_score(self, product, user_id, preferences, include_self=False):
+        score = 10.0
+        category_id = product.get("category_id")
+        if category_id in preferences["top_viewed_categories"]:
+            score += 30
+        if category_id in preferences["favorite_categories"]:
+            score += 25
+        if category_id in preferences["bought_categories"]:
+            score += 35
+
+        score += min(int(product.get("view_count", 0) or 0), 100) * 0.2
+        score += int(product.get("favorite_count", 0) or 0) * 2
+
+        created_at = product.get("created_at")
+        if created_at:
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            age = utc_now() - created_at
+            if age <= timedelta(days=7):
+                score += 10
+            if age <= timedelta(days=1):
+                score += 10
+
+        if include_self and user_id and str(product.get("seller_id")) == str(user_id):
+            score -= 100
+        return round(score, 2)
 
     def list_my_products(self, user_id, args):
         page = max(int(args.get("page", 1)), 1)
@@ -455,6 +505,7 @@ class ProductService:
                     "favorite_count",
                     "is_favorited",
                     "allowed_actions",
+                    "recommendation_score",
                     "created_at",
                 ]
             }

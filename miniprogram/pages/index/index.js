@@ -3,8 +3,8 @@ const { getToken, getUser } = require('../../utils/auth')
 
 const EMPTY_TEXT = {
   recommend: {
-    title: '暂无推荐，先去浏览几个商品吧',
-    description: '系统会根据浏览、收藏和购买记录推荐'
+    title: '暂无匹配商品',
+    description: '换个关键词或查看最新商品'
   },
   latest: {
     title: '暂无最新商品',
@@ -68,6 +68,7 @@ Page({
     api.get('/products', { page: 1, page_size: 10, mode: activeMode })
       .then((data) => {
         const items = data.items || []
+        console.info('[home products]', activeMode, items.length)
         if (activeMode === 'recommend' && !items.length && allowFallback) {
           wx.showToast({ title: '暂无推荐，已展示最新商品', icon: 'none' })
           this.setData({

@@ -8,8 +8,10 @@ def normalize_image_url(url):
         return ""
     if COS_HOST_MARKER in value:
         return value
-    if value.startswith("http://") and "tcloudbase.com/uploads/" in value:
-        return "https://" + value[len("http://") :]
+    if "tcloudbase.com/uploads/" in value:
+        return ""
+    if "flask-fnnj" in value and "/uploads/" in value:
+        return ""
     if value.startswith("/uploads/demo/"):
         return ""
     if value.startswith("/uploads/"):

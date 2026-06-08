@@ -31,7 +31,9 @@ def test_product_review_flow():
     buyer_token = login(client, "18800000002", "buyer123456")
 
     category_response = client.get("/api/v1/categories")
-    category_id = category_response.get_json()["data"]["items"][0]["id"]
+    categories = category_response.get_json()["data"]["items"]
+    category_id = categories[0]["id"]
+    other_category_id = categories[1]["id"]
 
     title = f"pytest-{uuid4().hex}"
     image_url = f"https://example.com/{title}.png"
@@ -99,9 +101,39 @@ def test_product_review_flow():
     assert "can_add_cart" not in actions
     assert app.db.product_views.count_documents({"product_id": ObjectId(product["id"])}) == 1
 
+    other_title = f"pytest-{uuid4().hex}"
+    other_create = client.post(
+        "/api/v1/products",
+        headers=auth_headers(seller_token),
+        json={
+            "title": other_title,
+            "description": "不同分类也必须留在推荐列表中。",
+            "price": 26,
+            "category_id": other_category_id,
+            "condition": "good",
+            "stock": 1,
+            "images": [],
+            "campus": "主校区",
+            "delivery_options": ["meetup"],
+            "submit_action": "review",
+        },
+    )
+    assert other_create.status_code == 201
+    other_product = other_create.get_json()["data"]
+    other_audit = client.post(
+        f"/api/v1/admin/products/{other_product['id']}/audit",
+        headers=auth_headers(admin_token),
+        json={"result": "approved", "reason": "推荐全量排序测试", "test_case": "phase2"},
+    )
+    assert other_audit.status_code == 200
+
     recommend_response = client.get("/api/v1/products?mode=recommend", headers=auth_headers(buyer_token))
     assert recommend_response.status_code == 200
-    assert recommend_response.get_json()["data"]["items"]
+    recommend_items = recommend_response.get_json()["data"]["items"]
+    recommend_ids = {item["id"] for item in recommend_items}
+    assert product["id"] in recommend_ids
+    assert other_product["id"] in recommend_ids
+    assert all("recommendation_score" in item for item in recommend_items)
 
     favorite_response = client.post(
         "/api/v1/favorites",
@@ -141,6 +173,31 @@ def test_product_review_flow():
         }
     )
     assert log_count == 2
+
+
+def test_debug_storage_masks_secrets():
+    init_db()
+    app = create_app()
+    app.config.update(
+        DEV_TEST_LOGIN_ENABLED=True,
+        STORAGE_BACKEND="cos",
+        COS_BUCKET="campus-secondhand-1440900946",
+        COS_REGION="ap-shanghai",
+        COS_PUBLIC_BASE_URL="https://campus-secondhand-1440900946.cos.ap-shanghai.myqcloud.com",
+        COS_SECRET_ID="secret-id-for-test",
+        COS_SECRET_KEY="secret-key-for-test",
+    )
+    client = app.test_client()
+
+    response = client.get("/api/v1/debug/storage")
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert data["storage_backend"] == "cos"
+    assert data["cos_region"] == "ap-shanghai"
+    assert data["has_cos_secret_id"] is True
+    assert data["has_cos_secret_key"] is True
+    assert "secret-id-for-test" not in str(data)
+    assert "secret-key-for-test" not in str(data)
 
 
 def test_non_owner_cannot_edit_product():

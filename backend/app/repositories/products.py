@@ -60,7 +60,42 @@ class ProductRepository:
         return self.find_by_id(product_id)
 
     def list_public(self, filters, page, page_size):
-        query = {"status": "on_sale"}
+        query = self.build_public_query(filters)
+        sort = filters.get("sort") or "newest"
+        total = self.db.products.count_documents(query)
+        if sort == "hot":
+            matched = list(self.db.products.find(query))
+            matched.sort(
+                key=lambda item: (
+                    int(item.get("view_count", 0) or 0) + int(item.get("favorite_count", 0) or 0) * 3,
+                    item.get("created_at"),
+                ),
+                reverse=True,
+            )
+            return matched[(page - 1) * page_size : page * page_size], total
+        sort_options = {
+            "newest": [("created_at", DESCENDING)],
+            "price_asc": [("price", ASCENDING), ("created_at", DESCENDING)],
+            "price_desc": [("price", DESCENDING), ("created_at", DESCENDING)],
+        }
+        items = list(
+            self.db.products.find(query)
+            .sort(sort_options.get(sort, sort_options["newest"]))
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return items, total
+
+    def list_public_all(self, filters):
+        query = self.build_public_query(filters)
+        return list(self.db.products.find(query))
+
+    def build_public_query(self, filters):
+        query = {
+            "status": "on_sale",
+            "deleted_at": {"$exists": False},
+            "stock": {"$gt": 0},
+        }
         if filters.get("category_id"):
             query["category_id"] = filters["category_id"]
         elif filters.get("category_ids"):
@@ -91,31 +126,7 @@ class ProductRepository:
             if filters.get("max_price") is not None:
                 price_query["$lte"] = filters["max_price"]
             query["price"] = price_query
-
-        sort = filters.get("sort") or "newest"
-        total = self.db.products.count_documents(query)
-        if sort == "hot":
-            matched = list(self.db.products.find(query))
-            matched.sort(
-                key=lambda item: (
-                    int(item.get("view_count", 0) or 0) + int(item.get("favorite_count", 0) or 0) * 3,
-                    item.get("created_at"),
-                ),
-                reverse=True,
-            )
-            return matched[(page - 1) * page_size : page * page_size], total
-        sort_options = {
-            "newest": [("created_at", DESCENDING)],
-            "price_asc": [("price", ASCENDING), ("created_at", DESCENDING)],
-            "price_desc": [("price", DESCENDING), ("created_at", DESCENDING)],
-        }
-        items = list(
-            self.db.products.find(query)
-            .sort(sort_options.get(sort, sort_options["newest"]))
-            .skip((page - 1) * page_size)
-            .limit(page_size)
-        )
-        return items, total
+        return query
 
     def list_mine(self, seller_id, status=None, page=1, page_size=20):
         query = {"seller_id": seller_id, "deleted_at": {"$exists": False}}

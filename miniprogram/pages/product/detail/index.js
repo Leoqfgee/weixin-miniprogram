@@ -14,8 +14,15 @@ Page({
   loadProduct() {
     api.get(`/products/${this.data.id}`, {}, { loading: true }).then((product) => {
       const conditionMap = { new: '全新', like_new: '几乎全新', good: '成色良好', fair: '有使用痕迹' }
+      const seller = product.seller || {}
+      const sellerAvatar = normalizeImageUrl(seller.avatar || seller.avatar_url, 'avatar')
       this.setData({
-        product,
+        product: Object.assign({}, product, {
+          seller: Object.assign({}, seller, {
+            avatar: sellerAvatar,
+            avatar_url: sellerAvatar
+          })
+        }),
         gallery: normalizeImageList(product.images && product.images.length ? product.images : [product.cover_image], 'product'),
         conditionText: conditionMap[product.condition] || '成色未填写',
         coverText: (product.title || '闲置好物').slice(0, 4)
