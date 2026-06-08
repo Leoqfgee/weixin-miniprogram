@@ -1,6 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { PRODUCT_STATUS_TEXT } = require('../../../utils/constants')
+const { DEFAULT_PRODUCT_IMAGE, normalizeImageUrl } = require('../../../utils/image')
 
 const STATUS_NOTES = {
   sold: '交易已完成，可删除记录或重新发布',
@@ -32,7 +33,7 @@ Page({
     api.get('/products/mine', { page: 1, page_size: 50, status: option.value }, { loading: true }).then((data) => {
       const products = (data.items || []).map((item) => ({
         ...item,
-        cover_image: item.cover_image || (Array.isArray(item.images) && item.images[0]) || '',
+        cover_image: normalizeImageUrl(item.cover_image || (Array.isArray(item.images) && item.images[0]), 'product'),
         status_text: PRODUCT_STATUS_TEXT[item.status] || item.status,
         status_note: STATUS_NOTES[item.status] || ''
       }))
@@ -44,6 +45,10 @@ Page({
   },
   editProduct(event) {
     wx.navigateTo({ url: `/pages/publish/product-edit/index?id=${event.currentTarget.dataset.id}` })
+  },
+  onThumbError(event) {
+    const index = Number(event.currentTarget.dataset.index || 0)
+    this.setData({ [`products.${index}.cover_image`]: DEFAULT_PRODUCT_IMAGE })
   },
   offShelf(event) {
     const id = event.currentTarget.dataset.id

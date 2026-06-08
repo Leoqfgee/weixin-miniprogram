@@ -33,6 +33,7 @@ COLLECTIONS = [
     "business_logs",
     "ai_generation_logs",
     "files",
+    "product_views",
     "idempotency_keys",
 ]
 
@@ -181,6 +182,8 @@ def ensure_indexes(db):
     db.business_logs.create_index([("operator_id", ASCENDING), ("created_at", DESCENDING)])
     db.ai_generation_logs.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     db.files.create_index([("owner_id", ASCENDING), ("created_at", DESCENDING)])
+    db.product_views.create_index([("user_id", ASCENDING), ("product_id", ASCENDING)], unique=True)
+    db.product_views.create_index([("user_id", ASCENDING), ("viewed_at", DESCENDING)])
     db.idempotency_keys.create_index([("key", ASCENDING)], unique=True)
 
 
@@ -266,7 +269,7 @@ def seed_products(db):
             "category_code": "digital",
             "condition": "good",
             "stock": 3,
-            "images": ["/uploads/demo/keyboard.jpg"],
+            "images": [],
             "campus": "主校区",
             "delivery_options": ["meetup", "express"],
             "status": "on_sale",
@@ -280,7 +283,7 @@ def seed_products(db):
             "category_code": "book",
             "condition": "fair",
             "stock": 5,
-            "images": ["/uploads/demo/math-books.jpg"],
+            "images": [],
             "campus": "东校区",
             "delivery_options": ["meetup"],
             "status": "on_sale",
@@ -294,7 +297,7 @@ def seed_products(db):
             "category_code": "daily",
             "condition": "like_new",
             "stock": 2,
-            "images": ["/uploads/demo/lamp.jpg"],
+            "images": [],
             "campus": "主校区",
             "delivery_options": ["meetup"],
             "status": "pending_review",

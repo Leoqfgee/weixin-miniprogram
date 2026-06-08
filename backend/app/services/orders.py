@@ -12,6 +12,7 @@ from ..repositories.payments import PaymentRepository
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from ..utils.images import normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
 
 
@@ -561,7 +562,7 @@ def _product_snapshot(product):
         "title": product.get("title"),
         "description": product.get("description"),
         "price": product.get("price"),
-        "cover_image": product.get("cover_image"),
+        "cover_image": normalize_image_url(product.get("cover_image")),
         "condition": product.get("condition"),
         "category_id": product.get("category_id"),
         "defect_note": product.get("defect_note", ""),

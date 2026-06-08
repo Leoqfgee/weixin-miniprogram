@@ -7,6 +7,7 @@ from ..repositories.logs import OperationLogRepository
 from ..repositories.products import ProductRepository, utc_now
 from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
 
 
@@ -23,9 +24,12 @@ class ProductService:
         self.users = UserRepository(db)
         self.operation_logs = OperationLogRepository(db)
 
-    def list_products(self, args):
+    def list_products(self, args, current_user=None):
         page = max(int(args.get("page", 1)), 1)
         page_size = min(max(int(args.get("page_size", 10)), 1), 50)
+        mode = (args.get("mode") or "latest").strip()
+        if mode == "newest":
+            mode = "latest"
         filters = {
             "keyword": args.get("keyword", "").strip(),
             "condition": args.get("condition", "").strip(),
@@ -34,19 +38,26 @@ class ProductService:
             "max_price": _optional_float(args.get("max_price"), "max_price"),
             "campus": args.get("campus", "").strip(),
             "sort": (args.get("sort") or "newest").strip(),
+            "mode": mode,
             "date_from": _optional_date(args.get("date_from"), "date_from", end=False),
             "date_to": _optional_date(args.get("date_to"), "date_to", end=True),
         }
         if args.get("category_id"):
             filters["category_id"] = to_object_id(args.get("category_id"), "category_id")
+        if filters["mode"] not in {"recommend", "latest", "hot"}:
+            raise ValidationError("参数校验失败", [{"field": "mode", "message": "展示模式不合法"}])
         if filters["condition"] and filters["condition"] not in CONDITIONS:
             raise ValidationError("参数校验失败", [{"field": "condition", "message": "成色不合法"}])
         if filters["sort"] not in {"newest", "price_asc", "price_desc", "hot"}:
             raise ValidationError("参数校验失败", [{"field": "sort", "message": "排序方式不合法"}])
 
-        items, total = self.products.list_public(filters, page, page_size)
+        if mode == "recommend":
+            items, total = self._list_recommended(filters, page, page_size, current_user)
+        else:
+            filters["sort"] = "hot" if mode == "hot" else "newest"
+            items, total = self.products.list_public(filters, page, page_size)
         return {
-            "items": [self._present(item, None, compact=True) for item in items],
+            "items": [self._present(item, current_user, compact=True) for item in items],
             "pagination": {
                 "page": page,
                 "page_size": page_size,
@@ -54,6 +65,46 @@ class ProductService:
                 "pages": (total + page_size - 1) // page_size,
             },
         }
+
+    def _list_recommended(self, filters, page, page_size, current_user=None):
+        if not current_user or not current_user.get("_id"):
+            return self.products.list_public({**filters, "sort": "hot"}, page, page_size)
+
+        user_id = ObjectId(str(current_user["_id"]))
+        category_scores = {}
+        for view in self.db.product_views.find({"user_id": user_id}):
+            category_id = view.get("category_id")
+            if category_id:
+                category_scores[category_id] = category_scores.get(category_id, 0) + 3
+        for favorite in self.db.favorites.find({"user_id": user_id}):
+            product = self.products.find_by_id(favorite.get("product_id"))
+            if product and product.get("category_id"):
+                category_scores[product["category_id"]] = category_scores.get(product["category_id"], 0) + 5
+        for order in self.db.orders.find({"buyer_id": user_id}):
+            product = self.products.find_by_id(order.get("product_id"))
+            if product and product.get("category_id"):
+                category_scores[product["category_id"]] = category_scores.get(product["category_id"], 0) + 4
+
+        if category_scores:
+            top_categories = [
+                item[0] for item in sorted(category_scores.items(), key=lambda item: item[1], reverse=True)[:5]
+            ]
+            items, total = self.products.list_public(
+                {**filters, "sort": "hot", "category_ids": top_categories, "exclude_seller_id": user_id},
+                page,
+                page_size,
+            )
+            if items:
+                return items, total
+
+        items, total = self.products.list_public(
+            {**filters, "sort": "hot", "exclude_seller_id": user_id},
+            page,
+            page_size,
+        )
+        if items:
+            return items, total
+        return self.products.list_public({**filters, "sort": "newest"}, page, page_size)
 
     def list_my_products(self, user_id, args):
         page = max(int(args.get("page", 1)), 1)
@@ -96,6 +147,8 @@ class ProductService:
             raise NotFoundError("商品不存在或不可见")
         if product.get("status") == "on_sale":
             product = self.products.increment_view_count(product["_id"])
+            if current_user and current_user.get("_id"):
+                self._record_product_view(current_user["_id"], product)
         return self._present(product, current_user)
 
     def create_product(self, user_id, payload):
@@ -365,6 +418,8 @@ class ProductService:
         data = serialize_doc(product)
         data["view_count"] = int(product.get("view_count", 0) or 0)
         data["favorite_count"] = int(product.get("favorite_count", 0) or 0)
+        data["images"] = normalize_image_list(product.get("images") or [])
+        data["cover_image"] = normalize_image_url(product.get("cover_image"))
         data["is_favorited"] = False
         if current_user and current_user.get("_id"):
             data["is_favorited"] = self.db.favorites.count_documents(
@@ -375,8 +430,8 @@ class ProductService:
         data["seller"] = {
             "id": str(seller["_id"]) if seller else str(product["seller_id"]),
             "nickname": (profile or {}).get("nickname", "未知用户"),
-            "avatar": (profile or {}).get("avatar") or (profile or {}).get("avatar_url", ""),
-            "avatar_url": (profile or {}).get("avatar_url") or (profile or {}).get("avatar", ""),
+            "avatar": normalize_image_url((profile or {}).get("avatar") or (profile or {}).get("avatar_url", "")),
+            "avatar_url": normalize_image_url((profile or {}).get("avatar_url") or (profile or {}).get("avatar", "")),
             "campus": (profile or {}).get("campus", ""),
         }
         data["allowed_actions"] = self._allowed_actions(product, current_user)
@@ -436,6 +491,23 @@ class ProductService:
             actions["can_delete"] = True
             actions["can_republish"] = True
         return actions
+
+    def _record_product_view(self, user_id, product):
+        user_object_id = ObjectId(str(user_id))
+        product_id = product["_id"]
+        self.db.product_views.update_one(
+            {"user_id": user_object_id, "product_id": product_id},
+            {
+                "$set": {
+                    "user_id": user_object_id,
+                    "product_id": product_id,
+                    "category_id": product.get("category_id"),
+                    "viewed_at": utc_now(),
+                },
+                "$setOnInsert": {"created_at": utc_now()},
+            },
+            upsert=True,
+        )
 
 
 def _required_float(value, field, errors):

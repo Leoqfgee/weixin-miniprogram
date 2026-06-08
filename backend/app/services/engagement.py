@@ -12,6 +12,7 @@ from ..repositories.payments import PaymentRepository
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
 from ..utils.errors import AppError, ConflictError, ForbiddenError, NotFoundError, ValidationError
+from ..utils.images import normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
 
 
@@ -134,13 +135,13 @@ class MessageService:
         data["other_user"] = {
             "id": str(other_id) if other_id else "",
             "nickname": "平台客服" if "admin" in other_user.get("roles", []) else (other_profile or {}).get("nickname", "校园用户"),
-            "avatar": (other_profile or {}).get("avatar") or (other_profile or {}).get("avatar_url", ""),
+            "avatar": normalize_image_url((other_profile or {}).get("avatar") or (other_profile or {}).get("avatar_url", "")),
             "campus": (other_profile or {}).get("campus", ""),
         } if other_user else None
         data["product"] = {
             "id": str(product["_id"]),
             "title": product.get("title", ""),
-            "cover_image": product.get("cover_image", ""),
+            "cover_image": normalize_image_url(product.get("cover_image", "")),
             "price": product.get("price", 0),
         } if product else None
         data["updated_at"] = data.get("last_message", {}).get("created_at")
@@ -154,7 +155,7 @@ class MessageService:
         data["sender"] = {
             "id": str(message.get("sender_id")),
             "nickname": "平台客服" if sender and "admin" in sender.get("roles", []) else sender_profile.get("nickname", "校园用户"),
-            "avatar": sender_profile.get("avatar") or sender_profile.get("avatar_url", ""),
+            "avatar": normalize_image_url(sender_profile.get("avatar") or sender_profile.get("avatar_url", "")),
         }
         return data
 
@@ -493,7 +494,7 @@ class RefundService:
         data["product"] = {
             "id": str((product or {}).get("_id") or product_snapshot.get("product_id") or ""),
             "title": (product or {}).get("title") or product_snapshot.get("title", ""),
-            "cover_image": (product or {}).get("cover_image") or product_snapshot.get("cover_image", ""),
+            "cover_image": normalize_image_url((product or {}).get("cover_image") or product_snapshot.get("cover_image", "")),
             "price": (product or {}).get("price") or product_snapshot.get("price", 0),
             "status": (product or {}).get("status") or "",
         }
@@ -519,7 +520,7 @@ class RefundService:
         return {
             "id": str(user_id),
             "nickname": profile.get("nickname", "校园同学"),
-            "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
+            "avatar": normalize_image_url(profile.get("avatar") or profile.get("avatar_url", "")),
             "campus": profile.get("campus", ""),
         }
 

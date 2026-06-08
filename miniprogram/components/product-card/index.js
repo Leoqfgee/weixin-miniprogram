@@ -1,3 +1,5 @@
+const { DEFAULT_PRODUCT_IMAGE, normalizeImageUrl } = require('../../utils/image')
+
 Component({
   properties: {
     product: {
@@ -33,13 +35,13 @@ Component({
       this.setData({
         conditionText: conditionMap[product.condition] || '校内闲置',
         campusText: product.campus || (product.seller && product.seller.campus) || '校内',
-        coverImage: product.cover_image || images[0] || '',
+        coverImage: normalizeImageUrl(product.cover_image || images[0], 'product'),
         coverText: title.slice(0, 2),
         coverFailed: false
       })
     },
     onCoverError() {
-      this.setData({ coverFailed: true })
+      this.setData({ coverImage: DEFAULT_PRODUCT_IMAGE, coverFailed: false })
     },
     onTap() {
       const id = this.data.product && this.data.product.id

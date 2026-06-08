@@ -63,6 +63,10 @@ class ProductRepository:
         query = {"status": "on_sale"}
         if filters.get("category_id"):
             query["category_id"] = filters["category_id"]
+        elif filters.get("category_ids"):
+            query["category_id"] = {"$in": filters["category_ids"]}
+        if filters.get("exclude_seller_id"):
+            query["seller_id"] = {"$ne": filters["exclude_seller_id"]}
         if filters.get("condition"):
             query["condition"] = filters["condition"]
         if filters.get("keyword"):
@@ -89,13 +93,22 @@ class ProductRepository:
             query["price"] = price_query
 
         sort = filters.get("sort") or "newest"
+        total = self.db.products.count_documents(query)
+        if sort == "hot":
+            matched = list(self.db.products.find(query))
+            matched.sort(
+                key=lambda item: (
+                    int(item.get("view_count", 0) or 0) + int(item.get("favorite_count", 0) or 0) * 3,
+                    item.get("created_at"),
+                ),
+                reverse=True,
+            )
+            return matched[(page - 1) * page_size : page * page_size], total
         sort_options = {
             "newest": [("created_at", DESCENDING)],
             "price_asc": [("price", ASCENDING), ("created_at", DESCENDING)],
             "price_desc": [("price", DESCENDING), ("created_at", DESCENDING)],
-            "hot": [("view_count", DESCENDING), ("favorite_count", DESCENDING), ("created_at", DESCENDING)],
         }
-        total = self.db.products.count_documents(query)
         items = list(
             self.db.products.find(query)
             .sort(sort_options.get(sort, sort_options["newest"]))

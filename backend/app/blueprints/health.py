@@ -56,6 +56,22 @@ def health_db_check():
     )
 
 
+@health_bp.get("/debug/storage")
+def debug_storage():
+    if not current_app.config.get("DEBUG") and not current_app.config.get("DEV_TEST_LOGIN_ENABLED"):
+        raise UnauthorizedError("调试接口未启用")
+    return success_response(
+        {
+            "storage_backend": current_app.config.get("STORAGE_BACKEND"),
+            "cos_bucket": current_app.config.get("COS_BUCKET"),
+            "cos_region": current_app.config.get("COS_REGION"),
+            "cos_public_base_url": current_app.config.get("COS_PUBLIC_BASE_URL"),
+            "has_cos_secret_id": bool(current_app.config.get("COS_SECRET_ID")),
+            "has_cos_secret_key": bool(current_app.config.get("COS_SECRET_KEY")),
+        }
+    )
+
+
 @health_bp.post("/init-demo-data")
 def init_demo_data():
     token = current_app.config.get("INIT_TOKEN")

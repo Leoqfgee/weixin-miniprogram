@@ -82,17 +82,26 @@ def test_product_review_flow():
     assert audit_response.status_code == 200
     assert audit_response.get_json()["data"]["status"] == "on_sale"
 
-    list_response = client.get(f"/api/v1/products?keyword={title}")
+    list_response = client.get(f"/api/v1/products?keyword={title}&mode=latest")
     items = list_response.get_json()["data"]["items"]
     assert len(items) == 1
     assert items[0]["title"] == title
     assert items[0]["cover_image"] == image_url
     assert items[0]["images"] == [image_url]
 
+    hot_response = client.get(f"/api/v1/products?keyword={title}&mode=hot")
+    assert hot_response.status_code == 200
+    assert hot_response.get_json()["data"]["items"][0]["id"] == product["id"]
+
     buyer_detail = client.get(f"/api/v1/products/{product['id']}", headers=auth_headers(buyer_token))
     actions = buyer_detail.get_json()["data"]["allowed_actions"]
     assert actions["can_buy"] is True
     assert "can_add_cart" not in actions
+    assert app.db.product_views.count_documents({"product_id": ObjectId(product["id"])}) == 1
+
+    recommend_response = client.get("/api/v1/products?mode=recommend", headers=auth_headers(buyer_token))
+    assert recommend_response.status_code == 200
+    assert recommend_response.get_json()["data"]["items"]
 
     favorite_response = client.post(
         "/api/v1/favorites",

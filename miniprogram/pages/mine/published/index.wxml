@@ -3,7 +3,7 @@
   <view wx:if="{{products.length}}" class="list">
     <view wx:for="{{products}}" wx:key="id" class="panel item">
       <view class="item-main" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.cover_image}}" class="thumb" src="{{item.cover_image}}" mode="aspectFill"></image>
+        <image wx:if="{{item.cover_image}}" class="thumb" src="{{item.cover_image}}" mode="aspectFill" data-index="{{index}}" binderror="onThumbError"></image>
         <view wx:else class="thumb placeholder">物</view>
         <view class="info">
           <view class="title small">{{item.title || '未填写标题的草稿'}}</view>

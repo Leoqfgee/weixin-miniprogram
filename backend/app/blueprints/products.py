@@ -9,7 +9,8 @@ products_bp = Blueprint("products", __name__)
 
 @products_bp.get("/products")
 def list_products():
-    data = ProductService(current_app.db).list_products(request.args)
+    current_user = get_current_user_from_request(required=False)
+    data = ProductService(current_app.db).list_products(request.args, current_user)
     return success_response(data)
 
 

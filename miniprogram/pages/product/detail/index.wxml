@@ -3,7 +3,7 @@
     <view class="cover-shell">
       <swiper wx:if="{{gallery.length}}" class="cover-swiper" current="{{currentImage}}" bindchange="onImageChange">
         <swiper-item wx:for="{{gallery}}" wx:key="*this">
-          <image class="cover-wrap" src="{{item}}" mode="aspectFill"></image>
+          <image class="cover-wrap" src="{{item}}" mode="aspectFill" data-index="{{index}}" binderror="onGalleryImageError"></image>
         </swiper-item>
       </swiper>
       <view wx:else class="cover-wrap placeholder"><view class="cover-tag">{{conditionText}}</view><view class="cover-title">{{coverText}}</view></view>
@@ -34,7 +34,7 @@
     </view>
 
     <view class="seller-card panel" bindtap="goSellerProfile">
-      <image class="seller-avatar" src="{{product.seller.avatar || product.seller.avatar_url || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+      <image class="seller-avatar" src="{{product.seller.avatar || product.seller.avatar_url || '/assets/tabbar/mine.png'}}" mode="aspectFill" binderror="onSellerAvatarError"></image>
       <view class="seller-main">
         <view class="seller-name">{{product.seller.nickname || '校园同学'}}</view>
         <view class="muted">{{product.seller.campus || product.campus || '校内交易'}}</view>

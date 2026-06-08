@@ -1,6 +1,7 @@
 const api = require('../../../utils/request')
 const { getUser, requireLogin } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
+const { normalizeImageUrl } = require('../../../utils/image')
 
 function displayTime(value) {
   if (!value) return ''
@@ -39,7 +40,7 @@ Page({
       product: {
         title: options.product_title ? decodeURIComponent(options.product_title) : '',
         price: options.product_price || '',
-        cover_image: options.product_cover ? decodeURIComponent(options.product_cover) : ''
+        cover_image: normalizeImageUrl(options.product_cover ? decodeURIComponent(options.product_cover) : '', 'product')
       }
     })
     if (options.support === '1') wx.setNavigationBarTitle({ title: '平台客服' })

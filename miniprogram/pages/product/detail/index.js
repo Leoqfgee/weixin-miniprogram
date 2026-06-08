@@ -1,5 +1,6 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
+const { DEFAULT_AVATAR_IMAGE, DEFAULT_PRODUCT_IMAGE, normalizeImageList, normalizeImageUrl } = require('../../../utils/image')
 
 Page({
   data: { id: '', product: null, gallery: [], currentImage: 0, conditionText: '', coverText: '闲置', quantity: 1, descExpanded: false },
@@ -15,7 +16,7 @@ Page({
       const conditionMap = { new: '全新', like_new: '几乎全新', good: '成色良好', fair: '有使用痕迹' }
       this.setData({
         product,
-        gallery: (product.images && product.images.length ? product.images : [product.cover_image]).filter(Boolean),
+        gallery: normalizeImageList(product.images && product.images.length ? product.images : [product.cover_image], 'product'),
         conditionText: conditionMap[product.condition] || '成色未填写',
         coverText: (product.title || '闲置好物').slice(0, 4)
       })
@@ -23,6 +24,18 @@ Page({
   },
   onImageChange(event) {
     this.setData({ currentImage: event.detail.current || 0 })
+  },
+  onGalleryImageError(event) {
+    const index = Number(event.currentTarget.dataset.index || 0)
+    const gallery = this.data.gallery.slice()
+    gallery[index] = DEFAULT_PRODUCT_IMAGE
+    this.setData({ gallery })
+  },
+  onSellerAvatarError() {
+    this.setData({
+      'product.seller.avatar': DEFAULT_AVATAR_IMAGE,
+      'product.seller.avatar_url': DEFAULT_AVATAR_IMAGE
+    })
   },
   toggleDescription() {
     this.setData({ descExpanded: !this.data.descExpanded })
@@ -36,7 +49,7 @@ Page({
   contactSeller() {
     if (!requireLogin()) return
     const product = this.data.product
-    wx.navigateTo({ url: `/pages/message/chat/index?receiver_id=${product.seller.id}&product_id=${product.id}&product_title=${encodeURIComponent(product.title || '')}&product_price=${product.price || ''}&product_cover=${encodeURIComponent(product.cover_image || '')}` })
+    wx.navigateTo({ url: `/pages/message/chat/index?receiver_id=${product.seller.id}&product_id=${product.id}&product_title=${encodeURIComponent(product.title || '')}&product_price=${product.price || ''}&product_cover=${encodeURIComponent(normalizeImageUrl(product.cover_image, 'product'))}` })
   },
   toggleFavorite() {
     if (!requireLogin()) return

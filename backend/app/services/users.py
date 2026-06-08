@@ -7,6 +7,7 @@ from ..adapters.wechat import WechatAuthAdapter
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, NotFoundError, UnauthorizedError, ValidationError
+from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.jwt import create_token
 from ..utils.serializers import serialize_doc, to_object_id
 
@@ -425,7 +426,7 @@ def build_user_summary(user, profile=None):
     profile = profile or {}
     profile_data = serialize_doc(profile) or {}
     nickname = profile_data.get("nickname") or user.get("nickname") or ""
-    avatar_url = profile_data.get("avatar_url") or profile_data.get("avatar") or user.get("avatar_url") or ""
+    avatar_url = normalize_image_url(profile_data.get("avatar_url") or profile_data.get("avatar") or user.get("avatar_url") or "")
     identity_type = profile_data.get("identity_type") or user.get("identity_type") or ""
     profile_completed = bool(nickname.strip() and avatar_url.strip())
     profile_data["nickname"] = nickname
@@ -465,7 +466,8 @@ def _public_product(product, profile):
         "id": str(product["_id"]),
         "title": product.get("title"),
         "price": product.get("price"),
-        "cover_image": product.get("cover_image"),
+        "cover_image": normalize_image_url(product.get("cover_image")) or (normalize_image_list(product.get("images") or [])[:1] or [""])[0],
+        "images": normalize_image_list(product.get("images") or []),
         "condition": product.get("condition"),
         "campus": product.get("campus") or profile.get("campus", ""),
         "status": product.get("status"),

@@ -1,7 +1,7 @@
 <view class="page home-page">
   <view class="brand-block">
     <view class="brand-title">校园<text>二手</text></view>
-    <view class="brand-sub">让闲置流转，让校园更美好</view>
+    <view class="brand-sub">让闲置流转，让校园更有爱</view>
   </view>
 
   <view class="search-panel">
@@ -14,7 +14,7 @@
     <view>
       <view class="hero-title">闲置不闲置 · 校园更有爱</view>
       <view class="hero-sub">校内面交更安全，低价好物在身边</view>
-      <button class="hero-btn" bindtap="goSearch">去逛逛 ›</button>
+      <button class="hero-btn" bindtap="goSearch">去逛逛</button>
     </view>
     <view class="hero-visual">
       <view class="bag"></view>
@@ -30,23 +30,24 @@
         <text>{{item.name}}</text>
       </button>
       <button class="category-item" bindtap="goSearch">
-        <view class="category-icon more">••</view>
+        <view class="category-icon more">···</view>
         <text>全部分类</text>
       </button>
     </view>
   </view>
 
-  <view class="filter-bar">
-    <view class="filter active">全部</view>
-    <view class="filter">距离⌄</view>
-    <view class="filter">价格⌄</view>
-    <view class="filter active-soft">最新发布</view>
-    <view class="filter right" bindtap="goSearch">筛选</view>
+  <view class="mode-panel">
+    <view class="mode-tabs">
+      <button wx:for="{{modeTabs}}" wx:key="value" class="mode-tab {{activeMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="switchMode">
+        {{item.label}}
+      </button>
+    </view>
+    <view wx:if="{{loading}}" class="mode-loading">加载中...</view>
   </view>
 
   <view wx:if="{{products.length}}" class="product-list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
   </view>
 
-  <empty-state wx:else title="暂无在售商品" description="换个关键词试试，或稍后刷新"></empty-state>
+  <empty-state wx:else title="{{emptyTitle}}" description="{{emptyDescription}}"></empty-state>
 </view>
