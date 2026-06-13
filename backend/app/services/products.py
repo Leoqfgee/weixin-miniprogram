@@ -69,13 +69,7 @@ class ProductService:
     def _list_recommended(self, filters, page, page_size, current_user=None):
         user_id = ObjectId(str(current_user["_id"])) if current_user and current_user.get("_id") else None
         query_filters = {**filters}
-        if user_id:
-            query_filters["exclude_seller_id"] = user_id
         items = self.products.list_public_all(query_filters)
-        include_self = False
-        if user_id and not items:
-            include_self = True
-            items = self.products.list_public_all({**filters})
 
         preferences = self._recommendation_preferences(user_id) if user_id else {
             "top_viewed_categories": set(),
@@ -84,7 +78,7 @@ class ProductService:
         }
         scored = []
         for item in items:
-            item["recommendation_score"] = self._recommendation_score(item, user_id, preferences, include_self)
+            item["recommendation_score"] = self._recommendation_score(item, user_id, preferences)
             scored.append(item)
         scored.sort(
             key=lambda item: (
@@ -129,7 +123,7 @@ class ProductService:
             "bought_categories": bought_categories,
         }
 
-    def _recommendation_score(self, product, user_id, preferences, include_self=False):
+    def _recommendation_score(self, product, user_id, preferences):
         score = 10.0
         category_id = product.get("category_id")
         if category_id in preferences["top_viewed_categories"]:
@@ -152,8 +146,8 @@ class ProductService:
             if age <= timedelta(days=1):
                 score += 10
 
-        if include_self and user_id and str(product.get("seller_id")) == str(user_id):
-            score -= 100
+        if user_id and str(product.get("seller_id")) == str(user_id):
+            score -= 30
         return round(score, 2)
 
     def list_my_products(self, user_id, args):

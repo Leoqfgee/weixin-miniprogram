@@ -3,8 +3,8 @@ const { getToken, getUser } = require('../../utils/auth')
 
 const EMPTY_TEXT = {
   recommend: {
-    title: '暂无匹配商品',
-    description: '换个关键词或查看最新商品'
+    title: '暂无推荐商品',
+    description: '先浏览几个商品，系统会逐步推荐更合适的内容'
   },
   latest: {
     title: '暂无最新商品',
@@ -23,14 +23,14 @@ Page({
     keyword: '',
     categories: [],
     authKey: '',
-    activeMode: 'recommend',
+    activeMode: 'latest',
     modeTabs: [
       { label: '推荐', value: 'recommend' },
       { label: '最新', value: 'latest' },
       { label: '热门', value: 'hot' }
     ],
-    emptyTitle: EMPTY_TEXT.recommend.title,
-    emptyDescription: EMPTY_TEXT.recommend.description
+    emptyTitle: EMPTY_TEXT.latest.title,
+    emptyDescription: EMPTY_TEXT.latest.description
   },
 
   onLoad() {
@@ -38,6 +38,7 @@ Page({
     this.loadProducts(this.data.activeMode)
     this.loadCategories()
   },
+
   onShow() {
     const authKey = this.getAuthKey()
     if (authKey !== this.data.authKey) {
@@ -46,6 +47,7 @@ Page({
     }
     this.loadProducts(this.data.activeMode)
   },
+
   getAuthKey() {
     const user = getUser() || {}
     return `${getToken() || ''}:${user.id || ''}`
@@ -62,13 +64,13 @@ Page({
     })
     this.loadProducts(mode)
   },
+
   loadProducts(mode, allowFallback = true) {
     const activeMode = mode || this.data.activeMode
     this.setData({ loading: true })
     api.get('/products', { page: 1, page_size: 10, mode: activeMode })
       .then((data) => {
         const items = data.items || []
-        console.info('[home products]', activeMode, items.length)
         if (activeMode === 'recommend' && !items.length && allowFallback) {
           wx.showToast({ title: '暂无推荐，已展示最新商品', icon: 'none' })
           this.setData({
@@ -91,6 +93,7 @@ Page({
         this.setData({ loading: false })
       })
   },
+
   loadCategories() {
     api.get('/categories')
       .then((data) => {
@@ -102,12 +105,15 @@ Page({
         })
       })
   },
+
   onKeywordInput(event) {
     this.setData({ keyword: event.detail.value })
   },
+
   goSearch() {
     wx.navigateTo({ url: `/pages/category/index?keyword=${encodeURIComponent(this.data.keyword || '')}` })
   },
+
   goCategory(event) {
     const id = event.currentTarget.dataset.id
     wx.navigateTo({ url: `/pages/category/index?category_id=${id}` })

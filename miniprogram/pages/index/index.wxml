@@ -5,7 +5,7 @@
   </view>
 
   <view class="search-panel">
-    <text class="search-icon">⌕</text>
+    <text class="search-icon">搜</text>
     <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索商品名称 / 分类 / 关键词" confirm-type="search" bindconfirm="goSearch" />
     <button class="primary-btn search-btn" bindtap="goSearch">搜索</button>
   </view>
@@ -30,7 +30,7 @@
         <text>{{item.name}}</text>
       </button>
       <button class="category-item" bindtap="goSearch">
-        <view class="category-icon more">···</view>
+        <view class="category-icon more">...</view>
         <text>全部分类</text>
       </button>
     </view>
