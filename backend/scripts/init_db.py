@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from bson import ObjectId
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import CollectionInvalid
 from werkzeug.security import generate_password_hash
@@ -74,7 +75,7 @@ TEST_USERS = [
         "phone": "18800000002",
         "password": "buyer123456",
         "roles": ["buyer", "seller"],
-        "nickname": "测试买家",
+        "nickname": "测试买家A",
         "campus": "东校区",
         "student_no": "B2026001",
         "verified_status": "approved",
@@ -88,6 +89,100 @@ TEST_USERS = [
         "campus": "西校区",
         "student_no": "B2026002",
         "verified_status": "approved",
+    },
+]
+
+
+DEMO_PRODUCTS = [
+    {
+        "seed_code": "demo_logitech_mouse",
+        "title": "罗技静音无线鼠标",
+        "description": "轻微使用痕迹，按键灵敏，适合宿舍学习和办公。",
+        "price": 39.0,
+        "original_price": 79.0,
+        "category_code": "digital",
+        "condition": "good",
+        "stock": 2,
+        "images": ["/assets/images/demo-mouse.png"],
+        "campus": "主校区",
+        "delivery_options": ["meetup"],
+        "view_count": 16,
+        "favorite_count": 2,
+    },
+    {
+        "seed_code": "demo_math_books",
+        "title": "高等数学教材套装",
+        "description": "高数上下册加习题册，笔记少，适合期末复习。",
+        "price": 35.0,
+        "original_price": 88.0,
+        "category_code": "book",
+        "condition": "fair",
+        "stock": 4,
+        "images": ["/assets/images/demo-books.png"],
+        "campus": "东校区",
+        "delivery_options": ["meetup"],
+        "view_count": 28,
+        "favorite_count": 4,
+    },
+    {
+        "seed_code": "demo_desk_lamp",
+        "title": "宿舍护眼台灯",
+        "description": "三档亮度，可 USB 供电，晚上看书不刺眼。",
+        "price": 42.0,
+        "original_price": 89.0,
+        "category_code": "daily",
+        "condition": "like_new",
+        "stock": 1,
+        "images": ["/assets/images/demo-lamp.png"],
+        "campus": "主校区",
+        "delivery_options": ["meetup", "express"],
+        "view_count": 19,
+        "favorite_count": 3,
+    },
+    {
+        "seed_code": "demo_basketball",
+        "title": "斯伯丁室外篮球",
+        "description": "手感好，气很足，适合操场和球场日常训练。",
+        "price": 58.0,
+        "original_price": 129.0,
+        "category_code": "sport",
+        "condition": "good",
+        "stock": 1,
+        "images": ["/assets/images/demo-basketball.png"],
+        "campus": "西校区",
+        "delivery_options": ["meetup"],
+        "view_count": 11,
+        "favorite_count": 1,
+    },
+    {
+        "seed_code": "demo_backpack",
+        "title": "通勤双肩背包",
+        "description": "容量大，可放电脑，拉链顺滑，适合上课和短途出行。",
+        "price": 49.0,
+        "original_price": 139.0,
+        "category_code": "clothing",
+        "condition": "good",
+        "stock": 1,
+        "images": ["/assets/images/demo-backpack.png"],
+        "campus": "主校区",
+        "delivery_options": ["meetup"],
+        "view_count": 24,
+        "favorite_count": 2,
+    },
+    {
+        "seed_code": "demo_headphones",
+        "title": "头戴式蓝牙耳机",
+        "description": "续航正常，耳罩干净，适合自习室听课和通勤。",
+        "price": 75.0,
+        "original_price": 199.0,
+        "category_code": "digital",
+        "condition": "good",
+        "stock": 1,
+        "images": ["/assets/images/demo-headphones.png"],
+        "campus": "东校区",
+        "delivery_options": ["meetup", "express"],
+        "view_count": 31,
+        "favorite_count": 5,
     },
 ]
 
@@ -109,11 +204,9 @@ def ensure_collections(db):
 
 
 def ensure_indexes(db):
-    # 旧版 sparse 唯一索引会把显式 null 纳入唯一约束；幂等键只在字符串存在时唯一。
     _drop_index_if_exists(db.orders, "idempotency_key_1")
     _drop_index_if_exists(db.payments, "idempotency_key_1")
 
-    # 用户与资料
     db.users.create_index([("openid", ASCENDING)], unique=True, sparse=True)
     db.users.create_index([("phone", ASCENDING)], unique=True, sparse=True)
     db.users.create_index([("status", ASCENDING)])
@@ -121,15 +214,10 @@ def ensure_indexes(db):
     db.user_profiles.create_index([("verified_status", ASCENDING)])
     db.addresses.create_index([("user_id", ASCENDING), ("is_default", DESCENDING), ("created_at", DESCENDING)])
 
-    # 商品、分类、收藏
     db.categories.create_index([("code", ASCENDING)], unique=True)
     db.categories.create_index([("parent_id", ASCENDING), ("sort", ASCENDING)])
-    db.products.create_index(
-        [("seller_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)]
-    )
-    db.products.create_index(
-        [("category_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)]
-    )
+    db.products.create_index([("seller_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
+    db.products.create_index([("category_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.products.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
     db.products.create_index([("status", ASCENDING), ("price", ASCENDING)])
     db.products.create_index([("status", ASCENDING), ("campus", ASCENDING)])
@@ -138,7 +226,6 @@ def ensure_indexes(db):
     db.products.create_index([("seed_code", ASCENDING)], unique=True, sparse=True)
     db.favorites.create_index([("user_id", ASCENDING), ("product_id", ASCENDING)], unique=True)
 
-    # 订单、支付、交付
     db.orders.create_index([("buyer_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.orders.create_index([("seller_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.orders.create_index([("product_id", ASCENDING)])
@@ -164,7 +251,6 @@ def ensure_indexes(db):
     _drop_index_if_exists(db.deliveries, "order_id_1")
     db.deliveries.create_index([("order_id", ASCENDING)], unique=True, name="uniq_delivery_order_id")
 
-    # 消息、评价、退款、申诉、日志
     db.messages.create_index([("conversation_id", ASCENDING), ("created_at", ASCENDING)])
     db.messages.create_index([("receiver_id", ASCENDING), ("read_at", ASCENDING)])
     db.reviews.create_index([("order_id", ASCENDING), ("reviewer_id", ASCENDING)], unique=True)
@@ -251,82 +337,66 @@ def seed_users(db):
         print(f"{action} user: {item['nickname']} / {item['phone']}")
 
 
-def seed_products(db):
+def reset_demo_products(db):
+    seed_codes = [item["seed_code"] for item in DEMO_PRODUCTS]
+    legacy_query = {
+        "$or": [
+            {"seed_code": {"$exists": True}},
+            {"title": {"$regex": r"^COS", "$options": "i"}},
+            {"title": {"$regex": r"^pytest-", "$options": "i"}},
+        ]
+    }
+    legacy_products = list(db.products.find(legacy_query))
+    legacy_ids = [item["_id"] for item in legacy_products]
+    deleted_products = db.products.delete_many({"_id": {"$in": legacy_ids}}).deleted_count if legacy_ids else 0
+    if legacy_ids:
+        db.favorites.delete_many({"product_id": {"$in": legacy_ids}})
+        db.product_views.delete_many({"product_id": {"$in": legacy_ids}})
+    seed_products(db, seed_codes=seed_codes)
+    return {"deleted_products": deleted_products, "created_or_updated_products": len(seed_codes)}
+
+
+def seed_products(db, seed_codes=None):
     seller = db.users.find_one({"openid": "mock_seller_openid"})
     admin = db.users.find_one({"openid": "mock_admin_openid"})
     if not seller:
         print("skip products: seller user not found")
         return
 
+    selected_codes = set(seed_codes or [item["seed_code"] for item in DEMO_PRODUCTS])
     categories = {item["code"]: item for item in db.categories.find({"enabled": True})}
-    demo_products = [
-        {
-            "seed_code": "demo_keyboard",
-            "title": "九成新机械键盘",
-            "description": "青轴机械键盘，按键灵敏，适合宿舍学习和编程使用。",
-            "price": 99.0,
-            "original_price": 199.0,
-            "category_code": "digital",
-            "condition": "good",
-            "stock": 3,
-            "images": [],
-            "campus": "主校区",
-            "delivery_options": ["meetup", "express"],
-            "status": "on_sale",
-        },
-        {
-            "seed_code": "demo_math_books",
-            "title": "高等数学教材套装",
-            "description": "高数上下册加习题册，书页完整，适合期末复习。",
-            "price": 35.0,
-            "original_price": 88.0,
-            "category_code": "book",
-            "condition": "fair",
-            "stock": 5,
-            "images": [],
-            "campus": "东校区",
-            "delivery_options": ["meetup"],
-            "status": "on_sale",
-        },
-        {
-            "seed_code": "demo_pending_lamp",
-            "title": "宿舍护眼台灯",
-            "description": "三档亮度，可 USB 供电，待管理员审核演示使用。",
-            "price": 45.0,
-            "original_price": 79.0,
-            "category_code": "daily",
-            "condition": "like_new",
-            "stock": 2,
-            "images": [],
-            "campus": "主校区",
-            "delivery_options": ["meetup"],
-            "status": "pending_review",
-        },
-    ]
-
     count = 0
-    for item in demo_products:
-        category = categories.get(item.pop("category_code"))
+    for item in DEMO_PRODUCTS:
+        if item["seed_code"] not in selected_codes:
+            continue
+        category = categories.get(item["category_code"])
         if not category:
             continue
-        status = item["status"]
-        review = {"result": "", "reason": "", "audited_by": None, "audited_at": None}
-        if status == "on_sale":
-            review = {
+        images = list(item["images"])
+        product_doc = {
+            "seed_code": item["seed_code"],
+            "title": item["title"],
+            "description": item["description"],
+            "price": item["price"],
+            "original_price": item["original_price"],
+            "category_id": category["_id"],
+            "condition": item["condition"],
+            "stock": item["stock"],
+            "images": images,
+            "cover_image": images[0] if images else "",
+            "campus": item["campus"],
+            "delivery_options": item["delivery_options"],
+            "status": "on_sale",
+            "review": {
                 "result": "approved",
                 "reason": "初始化演示数据",
                 "audited_by": admin["_id"] if admin else None,
                 "audited_at": now(),
-            }
-        product_doc = {
-            **item,
+            },
             "seller_id": seller["_id"],
-            "category_id": category["_id"],
-            "cover_image": item["images"][0] if item["images"] else "",
-            "review": review,
             "sold_count": 0,
-            "view_count": item.get("view_count", 0),
-            "favorite_count": item.get("favorite_count", 0),
+            "view_count": item["view_count"],
+            "favorite_count": item["favorite_count"],
             "updated_at": now(),
         }
         db.products.update_one(
@@ -338,11 +408,11 @@ def seed_products(db):
     print(f"seeded demo products: {count}")
 
 
-def main():
+def get_db():
     if Config.DB_BACKEND == "mysql":
         from app.mysql_document import MySQLDocumentDB
 
-        db = MySQLDocumentDB(
+        return MySQLDocumentDB(
             {
                 "MYSQL_HOST": Config.MYSQL_HOST,
                 "MYSQL_PORT": Config.MYSQL_PORT,
@@ -350,33 +420,44 @@ def main():
                 "MYSQL_PASSWORD": Config.MYSQL_PASSWORD,
                 "MYSQL_DATABASE": Config.MYSQL_DATABASE,
             }
-        )
-        try:
-            db.command("ping")
-            ensure_collections(db)
-            ensure_indexes(db)
-            seed_categories(db)
-            seed_users(db)
-            seed_products(db)
-            print(f"database initialized: mysql/{Config.MYSQL_DATABASE}")
-        finally:
-            db.close()
-        return
+        ), None
 
     mongo_uri = os.getenv("MONGO_URI", Config.MONGO_URI)
     db_name = os.getenv("MONGO_DB_NAME", Config.MONGO_DB_NAME)
     client = MongoClient(mongo_uri)
+    return client[db_name], client
+
+
+def close_db(db, client=None):
+    if client:
+        client.close()
+        return
+    close = getattr(type(db), "close", None)
+    if callable(close):
+        db.close()
+
+
+def initialize_database(reset_demo=False):
+    db, client = get_db()
     try:
-        db = client[db_name]
         db.command("ping")
         ensure_collections(db)
         ensure_indexes(db)
         seed_categories(db)
         seed_users(db)
-        seed_products(db)
-        print(f"database initialized: {db_name}")
+        result = reset_demo_products(db) if reset_demo else {"created_or_updated_products": 0}
+        if not reset_demo:
+            seed_products(db)
+        backend_name = Config.MYSQL_DATABASE if Config.DB_BACKEND == "mysql" else Config.MONGO_DB_NAME
+        print(f"database initialized: {Config.DB_BACKEND}/{backend_name}")
+        return result
     finally:
-        client.close()
+        close_db(db, client)
+
+
+def main():
+    reset_demo = "--reset-demo" in sys.argv
+    initialize_database(reset_demo=reset_demo)
 
 
 if __name__ == "__main__":

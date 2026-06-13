@@ -14,6 +14,7 @@ Page({
       { key: 'admin', label: '测试管理员' }
     ]
   },
+
   afterLogin(data) {
     saveAuth(data.token, data.user)
     wx.showToast({ title: '登录成功', icon: 'success' })
@@ -23,17 +24,21 @@ Page({
       wx.redirectTo({ url: '/pages/profile/edit/index?mode=complete' })
       return
     }
-    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
+    wx.switchTab({ url: '/pages/index/index' })
   },
+
   onPhoneInput(event) {
     this.setData({ phone: event.detail.value })
   },
+
   onPasswordInput(event) {
     this.setData({ password: event.detail.value })
   },
+
   togglePasswordLogin() {
     this.setData({ showPasswordLogin: !this.data.showPasswordLogin })
   },
+
   onWechatLogin() {
     wx.login({
       success: (res) => {
@@ -41,17 +46,17 @@ Page({
           wx.showToast({ title: '未获取到微信登录凭证', icon: 'none' })
           return
         }
-        api.post('/auth/wechat-login', {
-          code: res.code
-        }, { loading: true, loadingText: '微信登录中' }).then((data) => {
-          this.afterLogin(data)
-        })
+        api.post('/auth/wechat-login', { code: res.code }, { loading: true, loadingText: '微信登录中' })
+          .then((data) => {
+            this.afterLogin(data)
+          })
       },
       fail: () => {
         wx.showToast({ title: '微信登录失败', icon: 'none' })
       }
     })
   },
+
   onLogin() {
     api.post('/auth/password-login', {
       phone: this.data.phone,
@@ -60,6 +65,7 @@ Page({
       this.afterLogin(data)
     })
   },
+
   onDevLogin(event) {
     clearAuth()
     this.setData({ phone: '', password: '', showPasswordLogin: false })
@@ -69,5 +75,4 @@ Page({
       this.afterLogin(data)
     })
   }
-}
-)
+})

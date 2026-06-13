@@ -146,8 +146,6 @@ class ProductService:
             if age <= timedelta(days=1):
                 score += 10
 
-        if user_id and str(product.get("seller_id")) == str(user_id):
-            score -= 30
         return round(score, 2)
 
     def list_my_products(self, user_id, args):

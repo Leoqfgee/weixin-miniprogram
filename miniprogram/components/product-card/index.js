@@ -1,5 +1,5 @@
 const { DEFAULT_PRODUCT_IMAGE, normalizeImageMeta } = require('../../utils/image')
-const IMAGE_GUARD_VERSION = '20260608-legacy-upload-guard'
+const IMAGE_GUARD_VERSION = '20260613-demo-data-cleanup'
 
 function isLegacyUploadUrl(url) {
   const value = String(url || '')

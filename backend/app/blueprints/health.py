@@ -2,41 +2,51 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, request
 
-from ..utils.response import success_response
 from ..utils.errors import UnauthorizedError
+from ..utils.response import success_response
 
 health_bp = Blueprint("health", __name__)
 
 
+def _database_name():
+    if current_app.config["DB_BACKEND"] == "mysql":
+        return current_app.config["MYSQL_DATABASE"]
+    return current_app.config["MONGO_DB_NAME"]
+
+
+def _require_init_token():
+    token = current_app.config.get("INIT_TOKEN")
+    if not token or request.headers.get("X-Init-Token") != token:
+        raise UnauthorizedError("初始化口令无效")
+
+
 @health_bp.get("/health")
 def health_check():
-    """健康检查：验证 Flask 与 MongoDB 基础连通性。"""
     db_status = "ok"
     db_error = None
     try:
         current_app.db.command("ping")
-    except Exception as exc:  # pragma: no cover - 真实环境中用于暴露连接问题
+    except Exception as exc:  # pragma: no cover
         db_status = "error"
         db_error = str(exc)
 
-    data = {
-        "service": current_app.config["APP_NAME"],
-        "status": "ok" if db_status == "ok" else "degraded",
-        "database": {
-            "backend": current_app.config["DB_BACKEND"],
-            "name": current_app.config["MYSQL_DATABASE"]
-            if current_app.config["DB_BACKEND"] == "mysql"
-            else current_app.config["MONGO_DB_NAME"],
-            "status": db_status,
-            "error": db_error,
-        },
-        "external_capabilities": {
-            "payment": current_app.config["PAYMENT_MODE"],
-            "ai": current_app.config["AI_MODE"],
-        },
-        "time": datetime.now(timezone.utc).isoformat(),
-    }
-    return success_response(data)
+    return success_response(
+        {
+            "service": current_app.config["APP_NAME"],
+            "status": "ok" if db_status == "ok" else "degraded",
+            "database": {
+                "backend": current_app.config["DB_BACKEND"],
+                "name": _database_name(),
+                "status": db_status,
+                "error": db_error,
+            },
+            "external_capabilities": {
+                "payment": current_app.config["PAYMENT_MODE"],
+                "ai": current_app.config["AI_MODE"],
+            },
+            "time": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
 
 @health_bp.get("/health/db")
@@ -47,9 +57,7 @@ def health_db_check():
     return success_response(
         {
             "backend": current_app.config["DB_BACKEND"],
-            "database": current_app.config["MYSQL_DATABASE"]
-            if current_app.config["DB_BACKEND"] == "mysql"
-            else current_app.config["MONGO_DB_NAME"],
+            "database": _database_name(),
             "result": result,
             "latency_ms": latency_ms,
         }
@@ -74,9 +82,7 @@ def debug_storage():
 
 @health_bp.post("/init-demo-data")
 def init_demo_data():
-    token = current_app.config.get("INIT_TOKEN")
-    if not token or request.headers.get("X-Init-Token") != token:
-        raise UnauthorizedError("初始化口令无效")
+    _require_init_token()
 
     from scripts.init_db import ensure_collections, ensure_indexes, seed_categories, seed_products, seed_users
 
@@ -86,3 +92,17 @@ def init_demo_data():
     seed_users(current_app.db)
     seed_products(current_app.db)
     return success_response({"initialized": True})
+
+
+@health_bp.post("/debug/demo-products/reset")
+def reset_demo_products_endpoint():
+    _require_init_token()
+
+    from scripts.init_db import ensure_collections, ensure_indexes, reset_demo_products, seed_categories, seed_users
+
+    ensure_collections(current_app.db)
+    ensure_indexes(current_app.db)
+    seed_categories(current_app.db)
+    seed_users(current_app.db)
+    result = reset_demo_products(current_app.db)
+    return success_response(result)

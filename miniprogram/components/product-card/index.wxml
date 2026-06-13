@@ -15,7 +15,7 @@
       <status-badge status="{{product.status || 'on_sale'}}"></status-badge>
     </view>
     <view class="bottom">
-      <text class="price">￥{{product.price || '0.00'}}</text>
+      <text class="price">¥{{product.price || '0.00'}}</text>
       <text class="seller">{{product.seller ? product.seller.nickname : '校内同学'}}</text>
     </view>
   </view>
