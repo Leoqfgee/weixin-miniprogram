@@ -22,6 +22,7 @@
     "pages/order/confirm/index",
     "pages/order/detail/index",
     "pages/refund/list/index",
+    "pages/refund/detail/index",
     "pages/refund/apply/index",
     "pages/appeal/apply/index",
     "pages/delivery/form/index",

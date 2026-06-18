@@ -2,15 +2,15 @@
   <view class="page-head">
     <view>
       <view class="title">收货地址</view>
-      <view class="muted">下单快递配送时可直接选择</view>
+      <view class="muted">下单配送时可直接选择</view>
     </view>
     <button class="primary-btn compact" bindtap="addAddress">新增</button>
   </view>
 
   <view wx:if="{{editing}}" class="panel form">
     <input value="{{form.name}}" data-field="name" bindinput="setField" placeholder="收货人姓名" />
-    <input value="{{form.phone}}" data-field="phone" bindinput="setField" type="number" placeholder="手机号" />
-    <textarea value="{{form.address}}" data-field="address" bindinput="setField" placeholder="详细收货地址"></textarea>
+    <input value="{{form.phone}}" data-field="phone" bindinput="setField" type="number" maxlength="11" placeholder="手机号" />
+    <textarea value="{{form.address}}" data-field="address" bindinput="setField" placeholder="省市区和详细收货地址"></textarea>
     <label class="default-row"><switch checked="{{form.is_default}}" bindchange="toggleDefault" color="#1f7a68" />设为默认地址</label>
     <view class="actions">
       <button class="ghost-btn" bindtap="cancelEdit">取消</button>
@@ -32,5 +32,5 @@
       </view>
     </view>
   </view>
-  <empty-state wx:elif="{{!editing}}" title="还没有收货地址" description="新增地址后，快递下单会更方便"></empty-state>
+  <empty-state wx:elif="{{!editing}}" title="还没有收货地址" description="新增地址后，下单会更方便"></empty-state>
 </view>

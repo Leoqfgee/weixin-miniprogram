@@ -21,11 +21,18 @@ function validateImages(images, maxCount) {
 
 function validateProductForm(form) {
   const errors = {}
-  if (!required(form.title) || form.title.length < 2 || form.title.length > 50) {
+  if (!required(form.title)) {
+    errors.title = '标题不能为空'
+  } else if (String(form.title).trim().length < 2 || String(form.title).trim().length > 50) {
     errors.title = '标题需为 2-50 字'
   }
-  if (!validatePrice(form.price)) {
-    errors.price = '价格必须大于 0'
+  if (!required(form.price)) {
+    errors.price = '价格不能为空'
+  } else if (!validatePrice(form.price)) {
+    errors.price = '价格格式不正确'
+  }
+  if (!required(form.description)) {
+    errors.description = '商品描述不能为空'
   }
   if (!validateStock(Number(form.stock))) {
     errors.stock = '库存必须是非负整数'
@@ -39,10 +46,16 @@ function validateProductForm(form) {
   }
 }
 
+function firstError(errors, fallback) {
+  const keys = Object.keys(errors || {})
+  return keys.length ? errors[keys[0]] : fallback
+}
+
 module.exports = {
   required,
   validatePrice,
   validateStock,
   validateImages,
-  validateProductForm
+  validateProductForm,
+  firstError
 }

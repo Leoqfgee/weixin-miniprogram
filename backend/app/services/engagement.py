@@ -20,6 +20,32 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
+REFUND_STATUS_META = {
+    "requested": {"text": "待处理", "group": "pending"},
+    "seller_agreed": {"text": "退款中", "group": "refunding"},
+    "refunding": {"text": "退款中", "group": "refunding"},
+    "refunded": {"text": "已退款", "group": "refunded"},
+    "partial_refunded": {"text": "已退款", "group": "refunded"},
+    "seller_rejected": {"text": "已拒绝", "group": "rejected"},
+    "rejected": {"text": "已拒绝", "group": "rejected"},
+    "closed": {"text": "已关闭", "group": "closed"},
+}
+
+REFUND_TYPE_TEXT = {
+    "refund_only": "仅退款",
+    "return_and_refund": "退货退款",
+}
+
+REFUND_STATUS_QUERY = {
+    "pending": {"requested"},
+    "requested": {"requested"},
+    "refunding": {"seller_agreed", "refunding"},
+    "refunded": {"refunded", "partial_refunded"},
+    "rejected": {"seller_rejected", "rejected"},
+    "closed": {"closed"},
+}
+
+
 class MessageService:
     def __init__(self, db):
         self.db = db
@@ -289,7 +315,7 @@ class RefundService:
             raise ValidationError("参数校验失败", [{"field": "reason", "message": "退款原因不能为空"}])
         existing = self.db.refunds.find_one({"order_id": order_id, "status": {"$nin": ["refunded", "closed"]}})
         if existing:
-            return serialize_doc(existing)
+            return self._present_refund(existing, ObjectId(str(buyer_id)))
         self.orders.update_fields(order_id, {"status": "refunding", "pre_refund_status": order["status"]})
         doc = {
             "order_id": order_id,
@@ -324,18 +350,41 @@ class RefundService:
 
     def list_refunds(self, user, args):
         status = args.get("status")
+        role = (args.get("role") or "").strip()
+        order_id = args.get("order_id")
+        page = max(int(args.get("page", 1) or 1), 1)
+        page_size = min(max(int(args.get("page_size") or args.get("pageSize") or 20), 1), 50)
         query = {}
         if status:
-            query["status"] = status
+            statuses = REFUND_STATUS_QUERY.get(status, {status})
+            query["status"] = {"$in": list(statuses)}
+        if order_id:
+            query["order_id"] = to_object_id(order_id, "order_id")
         if "admin" not in user.get("roles", []):
-            query["$or"] = [{"buyer_id": user["_id"]}, {"seller_id": user["_id"]}]
-        items = list(self.db.refunds.find(query).sort("created_at", DESCENDING).limit(50))
-        return {"items": [serialize_doc(item) for item in items]}
+            if role == "seller":
+                query["seller_id"] = user["_id"]
+            elif role == "buyer":
+                query["buyer_id"] = user["_id"]
+            else:
+                query["$or"] = [{"buyer_id": user["_id"]}, {"seller_id": user["_id"]}]
+        total = self.db.refunds.count_documents(query)
+        items = list(
+            self.db.refunds.find(query)
+            .sort("created_at", DESCENDING)
+            .skip((page - 1) * page_size)
+            .limit(page_size)
+        )
+        self._mark_refund_messages_read([item["_id"] for item in items], user["_id"])
+        return {
+            "items": [self._present_refund(item, user["_id"], user) for item in items],
+            "pagination": {"page": page, "page_size": page_size, "total": total},
+        }
 
     def get_refund(self, refund_id, user):
         refund = self._get_refund(refund_id)
         if "admin" not in user.get("roles", []) and str(user["_id"]) not in {str(refund["buyer_id"]), str(refund["seller_id"])}:
             raise ForbiddenError("无权限查看该退款")
+        self._mark_refund_messages_read([refund["_id"]], user["_id"])
         return self._present_refund(refund, user["_id"], user)
 
     def seller_agree(self, refund_id, seller_id, payload=None):
@@ -344,6 +393,7 @@ class RefundService:
             raise ForbiddenError("只有卖家可以处理售后")
         if refund["status"] != "requested":
             raise ConflictError("当前退款状态不允许卖家处理")
+        self._mark_refund_messages_read([refund["_id"]], ObjectId(str(seller_id)))
         order = self.orders.find_by_id(refund["order_id"])
         self.db.refunds.update_one(
             {"_id": refund["_id"]},
@@ -370,28 +420,32 @@ class RefundService:
             raise ForbiddenError("只有卖家可以处理售后")
         if refund["status"] != "requested":
             raise ConflictError("当前退款状态不允许卖家处理")
+        reason = ((payload or {}).get("reason") or "").strip()
+        if not reason:
+            raise ValidationError("参数校验失败", [{"field": "reason", "message": "请填写拒绝原因"}])
+        self._mark_refund_messages_read([refund["_id"]], ObjectId(str(seller_id)))
         self.db.refunds.update_one(
             {"_id": refund["_id"]},
             {
                 "$set": {
                     "status": "seller_rejected",
                     "seller_result": "rejected",
-                    "seller_reason": ((payload or {}).get("reason") or "").strip(),
-                    "seller_response": ((payload or {}).get("reason") or "").strip(),
+                    "seller_reason": reason,
+                    "seller_response": reason,
                     "seller_handled_at": utc_now(),
                     "updated_at": utc_now(),
                 }
             },
         )
-        self.logs.create("seller_reject_refund", "refund", refund["_id"], ObjectId(str(seller_id)), "seller", "requested", "seller_rejected", ((payload or {}).get("reason") or ""))
-        self._append_refund_system_message(self.orders.find_by_id(refund["order_id"]), refund, refund["buyer_id"], "卖家已拒绝售后申请，可申请平台介入", "refund_seller_rejected")
+        self.logs.create("seller_reject_refund", "refund", refund["_id"], ObjectId(str(seller_id)), "seller", "requested", "seller_rejected", reason)
+        self._append_refund_system_message(self.orders.find_by_id(refund["order_id"]), refund, refund["buyer_id"], f"卖家拒绝了退款申请：{reason}", "refund_seller_rejected")
         return self._present_refund(self._get_refund(refund["_id"]), ObjectId(str(seller_id)))
 
     def seller_handle(self, refund_id, seller_id, payload):
-        result = payload.get("result")
-        if result == "approved":
+        result = payload.get("action") or payload.get("result")
+        if result in {"agree", "approved"}:
             return self.seller_agree(refund_id, seller_id, payload)
-        if result == "rejected":
+        if result in {"refuse", "reject", "rejected"}:
             return self.seller_reject(refund_id, seller_id, payload)
         if result == "partial_refund":
             return self.seller_partial_refund(refund_id, seller_id, payload)
@@ -486,25 +540,46 @@ class RefundService:
         data = serialize_doc(refund)
         order = self.orders.find_by_id(refund["order_id"])
         items = list(self.db.order_items.find({"order_id": refund["order_id"]}))
-        product_snapshot = (items[0] if items else {}).get("product_snapshot", {})
+        first_item = items[0] if items else {}
+        product_snapshot = first_item.get("product_snapshot", {})
         product = self.products.find_by_id(refund.get("product_id")) if refund.get("product_id") else None
-        data["refund_no"] = f"RF{str(refund['_id'])[-10:].upper()}"
-        data["order"] = serialize_doc(order) if order else {}
+        status_meta = REFUND_STATUS_META.get(refund.get("status"), {"text": refund.get("status", ""), "group": refund.get("status", "")})
+        data["refund_no"] = self._readable_refund_no(refund)
+        data["after_sale_no"] = data["refund_no"]
+        data["status_text"] = status_meta["text"]
+        data["status_group"] = status_meta["group"]
+        data["refund_type_text"] = REFUND_TYPE_TEXT.get(refund.get("refund_type"), refund.get("refund_type", ""))
+        data["order"] = {
+            "id": str((order or {}).get("_id") or ""),
+            "order_no": (order or {}).get("order_no", ""),
+            "status": (order or {}).get("status", ""),
+            "pay_amount": (order or {}).get("pay_amount", 0),
+            "total_amount": (order or {}).get("total_amount", 0),
+        }
         data["order_no"] = (order or {}).get("order_no", "")
+        condition = (product or {}).get("condition") or product_snapshot.get("condition") or ""
+        spec = product_snapshot.get("spec") or product_snapshot.get("sku_text") or condition
         data["product"] = {
             "id": str((product or {}).get("_id") or product_snapshot.get("product_id") or ""),
             "title": (product or {}).get("title") or product_snapshot.get("title", ""),
             "cover_image": normalize_image_url((product or {}).get("cover_image") or product_snapshot.get("cover_image", "")),
             "price": (product or {}).get("price") or product_snapshot.get("price", 0),
+            "quantity": first_item.get("quantity", 1),
+            "condition": condition,
+            "condition_text": condition,
+            "spec": spec,
+            "spec_text": spec,
             "status": (product or {}).get("status") or "",
         }
         data["buyer"] = self._party(refund["buyer_id"])
         data["seller"] = self._party(refund["seller_id"])
-        data["applicant"] = self._party(refund.get("applicant_id") or refund["buyer_id"])
         data["request_amount"] = refund.get("request_amount", refund.get("amount"))
         data["final_refund_amount"] = refund.get("final_refund_amount")
+        data["display_amount"] = refund.get("final_refund_amount") or refund.get("request_amount") or refund.get("amount")
+        data["reason_text"] = refund.get("reason", "")
         data["seller_response"] = refund.get("seller_response") or refund.get("seller_reason", "")
         data["admin_decision"] = refund.get("admin_decision") or refund.get("admin_result", "")
+        data["delivery"] = self._refund_delivery(refund["order_id"])
         data["timeline"] = self._refund_timeline(refund)
         user_id = str(current_user_id or "")
         is_admin = current_user and "admin" in current_user.get("roles", [])
@@ -517,12 +592,55 @@ class RefundService:
 
     def _party(self, user_id):
         profile = self.users.find_profile(user_id) or {}
+        user = self.users.find_by_id(user_id) or {}
+        phone = user.get("phone") or profile.get("contact_phone") or ""
         return {
             "id": str(user_id),
             "nickname": profile.get("nickname", "校园同学"),
             "avatar": normalize_image_url(profile.get("avatar") or profile.get("avatar_url", "")),
             "campus": profile.get("campus", ""),
+            "phone": phone,
+            "phone_masked": self._mask_phone(phone),
         }
+
+    def _readable_refund_no(self, refund):
+        created = refund.get("created_at") or utc_now()
+        if hasattr(created, "strftime"):
+            day = created.strftime("%Y%m%d")
+        else:
+            day = str(created)[:10].replace("-", "") or utc_now().strftime("%Y%m%d")
+        return f"SH{day}{str(refund['_id'])[-4:].upper()}"
+
+    def _mask_phone(self, phone):
+        value = str(phone or "")
+        if len(value) < 7:
+            return value
+        return f"{value[:3]}****{value[-4:]}"
+
+    def _refund_delivery(self, order_id):
+        delivery = self.db.deliveries.find_one({"order_id": order_id}, sort=[("created_at", DESCENDING)])
+        if not delivery:
+            return {}
+        data = serialize_doc(delivery)
+        return {
+            "delivery_type": data.get("delivery_type", ""),
+            "express_company": data.get("express_company") or data.get("company") or "",
+            "tracking_no": data.get("tracking_no") or data.get("tracking_number") or "",
+            "meet_location": data.get("meet_location", ""),
+        }
+
+    def _mark_refund_messages_read(self, refund_ids, user_id):
+        ids = [item if isinstance(item, ObjectId) else ObjectId(str(item)) for item in refund_ids if item]
+        if not ids or not user_id:
+            return
+        self.db.messages.update_many(
+            {
+                "refund_id": {"$in": ids},
+                "receiver_id": user_id if isinstance(user_id, ObjectId) else ObjectId(str(user_id)),
+                "read_at": None,
+            },
+            {"$set": {"read_at": utc_now()}},
+        )
 
     def _refund_timeline(self, refund):
         items = [{"label": "提交售后申请", "time": refund.get("created_at"), "status": "done"}]

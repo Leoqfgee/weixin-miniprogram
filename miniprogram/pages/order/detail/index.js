@@ -84,7 +84,13 @@ Page({
     wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount}` })
   },
   viewRefund() {
-    wx.navigateTo({ url: `/pages/refund/list/index?order_id=${this.data.id}` })
+    const refund = this.data.order && this.data.order.refund
+    if (refund && refund.id) {
+      wx.navigateTo({ url: `/pages/refund/detail/index?id=${refund.id}` })
+      return
+    }
+    const role = (this.data.actionMap.agree_refund || this.data.actionMap.reject_refund || this.data.actionMap.seller_deliver) ? 'seller' : 'buyer'
+    wx.navigateTo({ url: `/pages/refund/list/index?role=${role}&order_id=${this.data.id}` })
   },
   applyAppeal() {
     const refund = this.data.order && this.data.order.refund

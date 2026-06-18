@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -16,12 +17,27 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
+PHONE_RE = re.compile(r"^1[3-9]\d{9}$")
+
+
+def _validate_phone(phone):
+    value = (phone or "").strip()
+    if not value:
+        raise ValidationError("参数校验失败", [{"field": "phone", "message": "手机号不能为空"}])
+    if not PHONE_RE.match(value):
+        raise ValidationError("参数校验失败", [{"field": "phone", "message": "手机号格式不正确"}])
+    return value
+
+
 class AuthService:
     def __init__(self, db):
         self.users = UserRepository(db)
         self.wechat = WechatAuthAdapter()
 
     def password_login(self, phone, password):
+        phone = _validate_phone(phone)
+        if not (password or "").strip():
+            raise ValidationError("参数校验失败", [{"field": "password", "message": "密码不能为空"}])
         user = self.users.find_by_phone(phone)
         if not user or not check_password_hash(user.get("password_hash", ""), password):
             raise UnauthorizedError("手机号或密码错误")
@@ -143,7 +159,7 @@ class AuthService:
         }
 
     def register(self, payload):
-        phone = _required_str(payload, "phone", "手机号不能为空")
+        phone = _validate_phone(payload.get("phone"))
         password = _required_str(payload, "password", "密码不能为空")
         if len(password) < 6:
             raise ValidationError("参数校验失败", [{"field": "password", "message": "密码至少 6 位"}])
@@ -186,7 +202,7 @@ class AuthService:
         return {"token": token, "user": build_user_summary(user, profile)}
 
     def bind_phone(self, user_id, payload):
-        phone = _required_str(payload, "phone", "手机号不能为空")
+        phone = _validate_phone(payload.get("phone"))
         password = payload.get("password") or ""
         existing = self.users.find_by_phone(phone)
         if existing and str(existing["_id"]) != str(user_id):
@@ -413,8 +429,8 @@ class AddressService:
         errors = []
         if not name:
             errors.append({"field": "name", "message": "请填写收货人名称"})
-        if len(phone) < 7 or len(phone) > 20:
-            errors.append({"field": "phone", "message": "请填写有效手机号"})
+        if not PHONE_RE.match(phone):
+            errors.append({"field": "phone", "message": "手机号格式不正确"})
         if not address:
             errors.append({"field": "address", "message": "请填写详细地址"})
         if errors:

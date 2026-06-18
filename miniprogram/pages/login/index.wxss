@@ -1,5 +1,5 @@
 .login-page {
-  padding-top: 70rpx;
+  padding-top: 72rpx;
 }
 
 .login-hero {
@@ -22,37 +22,28 @@
   padding: 30rpx;
 }
 
-.role-row {
-  display: flex;
-  gap: 14rpx;
-  margin-top: 24rpx;
-}
-
-.role-card {
-  flex: 1;
-  height: 118rpx;
-  padding: 16rpx 10rpx;
-  color: #1f7a68;
-  background: #f1faf6;
-  border: 1rpx solid #c9eadf;
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 8rpx;
+  background: #eef5f1;
   border-radius: 8rpx;
-  line-height: 1.3;
 }
 
-.role-name,
-.role-phone {
-  display: block;
-}
-
-.role-name {
-  font-size: 26rpx;
+.mode-tab {
+  height: 72rpx;
+  line-height: 72rpx;
+  color: #667281;
+  text-align: center;
+  border-radius: 6rpx;
+  font-size: 27rpx;
   font-weight: 800;
 }
 
-.role-phone {
-  margin-top: 8rpx;
-  font-size: 20rpx;
-  color: #6b7b75;
+.mode-tab.active {
+  color: #0f8f52;
+  background: #ffffff;
+  box-shadow: 0 8rpx 18rpx rgba(15, 143, 82, 0.12);
 }
 
 .field {
@@ -72,7 +63,7 @@ input {
   color: #17202a;
   background: #fbfcfb;
   border: 1rpx solid #e1e7e1;
-  border-radius: 18rpx;
+  border-radius: 8rpx;
   font-size: 28rpx;
 }
 
@@ -113,6 +104,6 @@ input {
   line-height: 70rpx;
   color: #16a45a;
   background: #eaf8ef;
-  border-radius: 999rpx;
+  border-radius: 8rpx;
   font-size: 24rpx;
 }

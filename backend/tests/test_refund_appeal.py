@@ -54,6 +54,115 @@ def test_refund_apply_evidence_images_are_saved():
     assert refund.get_json()["data"]["evidence_images"] == evidence
 
 
+def test_refund_list_detail_and_unread_badge_flow():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "amount": 20, "reason": "商品有瑕疵", "refund_type": "return_and_refund"},
+    )
+    assert refund.status_code == 201
+    refund_id = refund.get_json()["data"]["id"]
+
+    refund_doc = app.db.refunds.find_one({"_id": ObjectId(refund_id)})
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["buyer_id"],
+        "system_action": "refund_requested",
+        "read_at": None,
+    }) == 0
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["seller_id"],
+        "system_action": "refund_requested",
+        "read_at": None,
+    }) == 1
+
+    seller_list = client.get("/api/v1/refunds?role=seller&status=pending", headers=auth_headers(seller_token))
+    assert seller_list.status_code == 200
+    item = seller_list.get_json()["data"]["items"][0]
+    assert item["id"] == refund_id
+    assert item["status_text"] == "待处理"
+    assert item["status_group"] == "pending"
+    assert item["after_sale_no"].startswith("SH")
+    assert item["product"]["title"]
+    assert item["buyer"]["nickname"]
+    assert "phone_masked" in item["buyer"]
+    assert "applicant" not in item
+
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["seller_id"],
+        "system_action": "refund_requested",
+        "read_at": None,
+    }) == 0
+
+    reject_missing_reason = client.post(
+        f"/api/v1/refunds/{refund_id}/seller-handle",
+        headers=auth_headers(seller_token),
+        json={"action": "refuse"},
+    )
+    assert reject_missing_reason.status_code == 422
+
+    reject = client.post(
+        f"/api/v1/refunds/{refund_id}/seller-handle",
+        headers=auth_headers(seller_token),
+        json={"action": "refuse", "reason": "商品已当面验收"},
+    )
+    assert reject.status_code == 200
+    assert reject.get_json()["data"]["status_text"] == "已拒绝"
+
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["buyer_id"],
+        "system_action": "refund_seller_rejected",
+        "read_at": None,
+    }) == 1
+    buyer_detail = client.get(f"/api/v1/refunds/{refund_id}", headers=auth_headers(buyer_token))
+    assert buyer_detail.status_code == 200
+    assert buyer_detail.get_json()["data"]["status_text"] == "已拒绝"
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["buyer_id"],
+        "system_action": "refund_seller_rejected",
+        "read_at": None,
+    }) == 0
+
+
+def test_refund_agree_notifies_buyer_only():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "amount": 20, "reason": "商品与描述不符", "refund_type": "refund_only"},
+    )
+    assert refund.status_code == 201
+    refund_id = refund.get_json()["data"]["id"]
+    refund_doc = app.db.refunds.find_one({"_id": ObjectId(refund_id)})
+
+    agree = client.post(
+        f"/api/v1/refunds/{refund_id}/seller-handle",
+        headers=auth_headers(seller_token),
+        json={"action": "agree", "reason": "卖家同意退款"},
+    )
+    assert agree.status_code == 200
+    assert agree.get_json()["data"]["status_text"] == "已退款"
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["buyer_id"],
+        "system_action": "refund_seller_agreed",
+        "read_at": None,
+    }) == 1
+    assert app.db.messages.count_documents({
+        "refund_id": refund_doc["_id"],
+        "receiver_id": refund_doc["seller_id"],
+        "system_action": "refund_seller_agreed",
+        "read_at": None,
+    }) == 0
+
+
 def test_seller_cancel_and_refund_creates_refund_and_refunds_payment():
     app, client, seller_token, buyer_token, admin_token = setup_flow()
     product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)

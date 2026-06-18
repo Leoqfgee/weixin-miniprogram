@@ -1,34 +1,64 @@
-<view class="page">
-  <view wx:if="{{refunds.length}}" class="list">
-    <view wx:for="{{refunds}}" wx:key="id" class="panel item">
-      <view class="title small">售后 {{item.refund_no || item.id}}</view>
-      <view class="muted">订单：{{item.order_no || item.order_id}}</view>
-      <view class="product-line">
-        <image wx:if="{{item.product.cover_image}}" class="thumb" src="{{item.product.cover_image}}" mode="aspectFill"></image>
-        <view wx:else class="thumb placeholder">售</view>
-        <view>
-          <view class="text-strong">{{item.product.title || '售后商品'}}</view>
-          <view class="muted">申请金额：￥{{item.request_amount || item.amount}} · 状态：{{item.status}}</view>
-          <view wx:if="{{item.final_refund_amount}}" class="muted">最终退款：￥{{item.final_refund_amount}}</view>
+<view class="refund-page">
+  <view class="top-bar">
+    <view class="back-btn" bindtap="goBack">‹</view>
+    <view class="nav-title">售后管理</view>
+  </view>
+
+  <scroll-view scroll-x class="tabs">
+    <view class="tabs-inner">
+      <view wx:for="{{tabs}}" wx:key="value" class="tab {{index === activeTab ? 'active' : ''}}" data-index="{{index}}" bindtap="selectTab">
+        {{item.label}}
+        <text wx:if="{{item.value === 'pending' && pendingCount > 0}}" class="tab-badge">{{pendingCount}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="hint-row">
+    <text class="hint-icon">✓</text>
+    <text>仅显示当前账号相关的售后单，可在此处理售后申请</text>
+  </view>
+
+  <view wx:if="{{loadError && !refunds.length}}" class="error-panel">售后列表加载失败，请下拉重试</view>
+
+  <view wx:if="{{refunds.length}}" class="refund-list">
+    <view wx:for="{{refunds}}" wx:key="id" class="refund-card" data-id="{{item.id}}" bindtap="goDetail">
+      <view class="card-head">
+        <view class="refund-no">
+          <text>售后单号：{{item.after_sale_no || item.refund_no}}</text>
+          <text class="copy" data-no="{{item.after_sale_no || item.refund_no}}" catchtap="copyNo">复制</text>
+        </view>
+        <text class="status status-{{item.status_group}}">{{item.status_text}}</text>
+      </view>
+
+      <view class="product-row">
+        <image wx:if="{{item.product.cover_image}}" class="product-img" src="{{item.product.cover_image}}" mode="aspectFill"></image>
+        <view wx:else class="product-img placeholder">图</view>
+        <view class="product-info">
+          <view class="product-title">{{item.product.title || '售后商品'}}</view>
+          <view class="product-spec">{{item.product.spec_text || item.product.condition_text || '规格/成色暂无'}}</view>
+          <view class="amount-line">退款金额：<text>￥{{item.display_amount || item.request_amount || item.amount}}</text></view>
         </view>
       </view>
-      <view class="reason">原因：{{item.reason}}</view>
-      <view wx:if="{{item.description}}" class="muted">说明：{{item.description}}</view>
-      <view class="muted">申请人：{{item.applicant.nickname}} · 买家：{{item.buyer.nickname}} · 卖家：{{item.seller.nickname}}</view>
-      <view wx:if="{{item.seller_response}}" class="muted">卖家处理：{{item.seller_response}}</view>
-      <view wx:if="{{item.admin_reason}}" class="muted">平台处理：{{item.admin_decision}} {{item.admin_reason}}</view>
-      <view class="timeline">
-        <view wx:for="{{item.timeline}}" wx:key="label" wx:for-item="step" class="muted">{{step.label}} {{step.time || ''}}</view>
+
+      <view class="buyer-row">
+        <image class="avatar" src="{{item.buyer.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+        <text class="buyer-name">{{item.buyer.nickname || '校园同学'}}</text>
+        <text class="phone">☎ {{item.buyer.phone_masked || '未留手机号'}}</text>
+        <text class="apply-time">申请时间：{{item.created_at}}</text>
       </view>
-      <view class="actions">
-        <button wx:if="{{item.permissions.can_seller_handle}}" class="ghost-btn" data-id="{{item.id}}" data-result="rejected" bindtap="sellerHandle">拒绝售后</button>
-        <button wx:if="{{item.permissions.can_seller_handle}}" class="ghost-btn" data-id="{{item.id}}" data-result="partial_refund" bindtap="sellerHandle">部分退款</button>
-        <button wx:if="{{item.permissions.can_seller_handle}}" class="primary-btn" data-id="{{item.id}}" data-result="approved" bindtap="sellerHandle">同意全额退款</button>
-        <button wx:if="{{isAdmin && item.permissions.can_admin_arbitrate}}" class="ghost-btn" data-id="{{item.id}}" data-result="rejected" bindtap="arbitrate">支持卖家拒绝</button>
-        <button wx:if="{{isAdmin && item.permissions.can_admin_arbitrate}}" class="ghost-btn" data-id="{{item.id}}" data-result="partial_refund" bindtap="arbitrate">部分退款</button>
-        <button wx:if="{{isAdmin && item.permissions.can_admin_arbitrate}}" class="primary-btn" data-id="{{item.id}}" data-result="approved" bindtap="arbitrate">支持买家退款</button>
+
+      <view class="reason-row">
+        <text>售后类型：{{item.refund_type_text || '仅退款'}}</text>
+        <text>退款原因：{{item.reason_text || item.reason || '未填写'}}</text>
+      </view>
+
+      <view class="card-actions">
+        <button class="ghost-btn" data-id="{{item.id}}" catchtap="goDetail">查看详情</button>
+        <button wx:if="{{item.permissions.can_seller_handle}}" class="primary-btn" data-id="{{item.id}}" catchtap="goDetail">去处理</button>
       </view>
     </view>
   </view>
-  <empty-state wx:else title="暂无售后记录" description="订单详情页可申请售后"></empty-state>
+
+  <empty-state wx:elif="{{!loading && !loadError}}" title="暂无售后申请" description="有买家申请售后后会显示在这里"></empty-state>
+  <view wx:if="{{finished && refunds.length}}" class="bottom-text">没有更多了</view>
 </view>

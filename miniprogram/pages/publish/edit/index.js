@@ -1,6 +1,6 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
-const { validateProductForm } = require('../../../utils/validator')
+const { validateProductForm, firstError } = require('../../../utils/validator')
 const { CONDITION_OPTIONS } = require('../../../utils/constants')
 
 const blankForm = () => ({
@@ -77,6 +77,8 @@ Page({
       loading: true
     }))).then((items) => {
       this.setData({ 'form.images': this.data.form.images.concat(items.map((item) => item.url)) })
+    }).catch(() => {
+      wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' })
     })
   },
   removeImage(event) {
@@ -133,7 +135,7 @@ Page({
       const result = validateProductForm(form)
       this.setData({ errors: result.errors })
       if (!result.valid) {
-        wx.showToast({ title: '请补全标题、价格和库存', icon: 'none' })
+        wx.showToast({ title: firstError(result.errors, '请检查商品信息'), icon: 'none' })
         return
       }
     }
@@ -153,6 +155,8 @@ Page({
       } else {
         wx.redirectTo({ url: `/pages/product/detail/index?id=${product.id}` })
       }
+    }).catch(() => {
+      wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' })
     })
   }
 })

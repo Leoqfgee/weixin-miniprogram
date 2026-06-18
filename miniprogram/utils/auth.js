@@ -28,6 +28,10 @@ function saveAuth(token, user) {
 function clearAuth() {
   wx.removeStorageSync(STORAGE_KEYS.token)
   wx.removeStorageSync(STORAGE_KEYS.user)
+  const app = getApp()
+  if (app && app.refreshAuth) {
+    app.refreshAuth('', null)
+  }
 }
 
 function requireLogin() {

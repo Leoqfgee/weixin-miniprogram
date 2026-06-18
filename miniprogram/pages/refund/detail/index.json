@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "售后管理",
+  "navigationBarTitleText": "售后详情",
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,
   "usingComponents": {

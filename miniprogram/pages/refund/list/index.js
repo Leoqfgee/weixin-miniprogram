@@ -1,88 +1,104 @@
 const api = require('../../../utils/request')
 const { requireLogin, hasRole } = require('../../../utils/auth')
+const { refreshUnreadBadge } = require('../../../utils/unread')
+
+const TABS = [
+  { label: '全部', value: '' },
+  { label: '待处理', value: 'pending' },
+  { label: '退款中', value: 'refunding' },
+  { label: '已退款', value: 'refunded' },
+  { label: '已拒绝', value: 'rejected' }
+]
 
 Page({
   data: {
+    tabs: TABS,
+    activeTab: 0,
     refunds: [],
-    isAdmin: false,
+    role: 'seller',
     orderId: '',
-    role: '',
-    partialAmount: ''
+    isAdmin: false,
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    loading: false,
+    loadError: false,
+    finished: false,
+    pendingCount: 0
   },
   onLoad(options) {
     this.setData({
-      orderId: options.order_id || '',
-      role: options.role || ''
+      role: options.role || 'seller',
+      orderId: options.order_id || ''
     })
   },
   onShow() {
     if (!requireLogin()) return
     this.setData({ isAdmin: hasRole('admin') })
-    this.loadRefunds()
+    this.refreshList()
   },
-  loadRefunds() {
-    api.get(this.data.isAdmin ? '/admin/refunds' : '/refunds').then((data) => {
-      let refunds = data.items || []
-      if (this.data.orderId) {
-        refunds = refunds.filter((item) => item.order_id === this.data.orderId || (item.order && item.order.id === this.data.orderId))
-      }
-      this.setData({ refunds })
-    })
+  onPullDownRefresh() {
+    this.refreshList().finally(() => wx.stopPullDownRefresh())
   },
-  sellerHandle(event) {
-    const id = event.currentTarget.dataset.id
-    const result = event.currentTarget.dataset.result
-    if (result === 'partial_refund') {
-      this.openPartialRefund(id)
-      return
+  onReachBottom() {
+    if (!this.data.finished && !this.data.loading) {
+      this.loadRefunds(false)
     }
-    const url = result === 'approved' ? `/refunds/${id}/seller-agree` : `/refunds/${id}/seller-reject`
-    api.post(url, {
-      reason: result === 'approved' ? '卖家同意售后' : '卖家拒绝售后'
-    }, { loading: true }).then(() => this.loadRefunds())
   },
-  openPartialRefund(id) {
-    wx.showModal({
-      title: '部分退款',
-      editable: true,
-      placeholderText: '输入最终退款金额',
-      success: (res) => {
-        if (!res.confirm) return
-        const amount = Number(res.content)
-        if (!amount || amount <= 0) {
-          wx.showToast({ title: '请填写有效金额', icon: 'none' })
-          return
-        }
-        api.post(`/refunds/${id}/seller-handle`, {
-          result: 'partial_refund',
-          final_refund_amount: amount,
-          reason: '卖家提出部分退款'
-        }, { loading: true }).then(() => this.loadRefunds())
-      }
-    })
+  selectTab(event) {
+    this.setData({ activeTab: Number(event.currentTarget.dataset.index) })
+    this.refreshList()
   },
-  arbitrate(event) {
-    const id = event.currentTarget.dataset.id
-    const result = event.currentTarget.dataset.result
-    if (result === 'partial_refund') {
-      wx.showModal({
-        title: '平台部分退款',
-        editable: true,
-        placeholderText: '输入最终退款金额',
-        success: (res) => {
-          if (!res.confirm) return
-          api.post(`/admin/refunds/${id}/arbitrate`, {
-            result: 'partial_refund',
-            final_refund_amount: Number(res.content),
-            reason: '平台裁定部分退款'
-          }, { loading: true }).then(() => this.loadRefunds())
-        }
+  refreshList() {
+    this.setData({ page: 1, refunds: [], finished: false, loadError: false })
+    return this.loadRefunds(true)
+  },
+  loadRefunds(reset) {
+    const tab = this.data.tabs[this.data.activeTab]
+    const params = {
+      role: this.data.role,
+      page: this.data.page,
+      page_size: this.data.pageSize
+    }
+    if (tab.value) params.status = tab.value
+    if (this.data.orderId) params.order_id = this.data.orderId
+    const url = this.data.isAdmin ? '/admin/refunds' : '/refunds'
+    this.setData({ loading: true, loadError: false })
+    return api.get(url, params, { loading: reset, loadingText: '加载售后' }).then((data) => {
+      const items = data.items || []
+      const pagination = data.pagination || {}
+      const refunds = reset ? items : this.data.refunds.concat(items)
+      const total = Number(pagination.total || refunds.length)
+      this.setData({
+        refunds,
+        total,
+        page: this.data.page + 1,
+        finished: refunds.length >= total || items.length < this.data.pageSize,
+        pendingCount: refunds.filter((item) => item.status_group === 'pending').length
       })
-      return
+      refreshUnreadBadge()
+    }).catch(() => {
+      this.setData({ loadError: true })
+      wx.showToast({ title: '售后列表加载失败，请下拉重试', icon: 'none' })
+    }).finally(() => {
+      this.setData({ loading: false })
+    })
+  },
+  goDetail(event) {
+    const id = event.currentTarget.dataset.id
+    if (!id) return
+    wx.navigateTo({ url: `/pages/refund/detail/index?id=${id}` })
+  },
+  copyNo(event) {
+    const no = event.currentTarget.dataset.no
+    if (!no) return
+    wx.setClipboardData({ data: no })
+  },
+  goBack() {
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack()
+    } else {
+      wx.switchTab({ url: '/pages/mine/index/index' })
     }
-    api.post(`/admin/refunds/${id}/arbitrate`, {
-      result,
-      reason: result === 'approved' ? '平台支持买家售后' : '平台支持卖家拒绝'
-    }, { loading: true }).then(() => this.loadRefunds())
   }
 })

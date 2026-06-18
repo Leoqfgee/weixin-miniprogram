@@ -1,0 +1,270 @@
+.detail-page {
+  min-height: 100vh;
+  padding-bottom: 32rpx;
+  background: #f5f7f5;
+  color: #202733;
+}
+
+.top-bar {
+  position: relative;
+  height: 138rpx;
+  padding-top: 54rpx;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #0a9d58, #12b872);
+}
+
+.back-btn {
+  position: absolute;
+  left: 26rpx;
+  top: 52rpx;
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 58rpx;
+  color: #ffffff;
+  text-align: center;
+  font-size: 56rpx;
+  font-weight: 300;
+}
+
+.nav-title {
+  color: #ffffff;
+  text-align: center;
+  font-size: 34rpx;
+  font-weight: 800;
+}
+
+.status-tip {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  margin: 18rpx 24rpx;
+  padding: 22rpx;
+  border: 1rpx solid #ffd8b8;
+  border-radius: 8rpx;
+  color: #26303b;
+  background: #fff8ef;
+  font-size: 26rpx;
+}
+
+.status-text {
+  color: #ff5a1f;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.status-refunded .status-text {
+  color: #12a05b;
+}
+
+.status-rejected .status-text,
+.status-closed .status-text {
+  color: #697386;
+}
+
+.section {
+  margin: 18rpx 24rpx;
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 8rpx;
+  box-shadow: 0 10rpx 26rpx rgba(26, 39, 50, 0.06);
+}
+
+.section-title {
+  margin-bottom: 22rpx;
+  color: #151b24;
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 26rpx;
+  margin-top: 16rpx;
+  color: #4b5563;
+  font-size: 27rpx;
+  line-height: 1.45;
+}
+
+.kv > text:first-child {
+  flex: none;
+  color: #697386;
+}
+
+.kv > text:last-child,
+.kv > view {
+  text-align: right;
+  word-break: break-all;
+}
+
+.kv.block {
+  align-items: flex-start;
+}
+
+.copy {
+  margin-left: 12rpx;
+  color: #6b7280;
+  font-size: 23rpx;
+}
+
+.state {
+  color: #ff5a1f;
+  font-weight: 800;
+}
+
+.product-row {
+  display: flex;
+  gap: 22rpx;
+}
+
+.product-img {
+  width: 150rpx;
+  height: 150rpx;
+  flex: none;
+  border-radius: 8rpx;
+  background: #edf1f5;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #16b85e;
+  font-weight: 900;
+}
+
+.product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-title {
+  color: #202733;
+  font-size: 30rpx;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.product-spec {
+  margin-top: 12rpx;
+  color: #6b7280;
+  font-size: 25rpx;
+}
+
+.product-price {
+  margin-top: 18rpx;
+  color: #ff1f2d;
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.product-price text {
+  float: right;
+  color: #4b5563;
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.buyer-info {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.buyer-avatar {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: #edf1f5;
+}
+
+.buyer-main {
+  flex: 1;
+  min-width: 0;
+  color: #202733;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.buyer-phone {
+  margin-top: 8rpx;
+  color: #596272;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.contact-btn {
+  width: 170rpx;
+  height: 70rpx;
+  line-height: 68rpx;
+  margin: 0;
+  color: #0f9f5b;
+  background: #ffffff;
+  border: 1rpx solid #13b86b;
+  border-radius: 8rpx;
+  font-size: 25rpx;
+}
+
+.amount {
+  color: #ff1f2d;
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.evidence {
+  margin-top: 16rpx;
+}
+
+.label {
+  color: #697386;
+  font-size: 27rpx;
+}
+
+.evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 14rpx;
+}
+
+.evidence-img {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 8rpx;
+  background: #edf1f5;
+}
+
+.action-bar {
+  margin: 20rpx 24rpx 0;
+  padding: 22rpx;
+  background: #ffffff;
+  border-radius: 8rpx;
+  box-shadow: 0 10rpx 26rpx rgba(26, 39, 50, 0.06);
+}
+
+.action-bar button {
+  display: inline-block;
+  width: calc(50% - 12rpx);
+  height: 82rpx;
+  line-height: 82rpx;
+  margin: 0;
+  border-radius: 8rpx;
+  font-size: 29rpx;
+  font-weight: 900;
+}
+
+.refuse {
+  margin-right: 20rpx !important;
+}
+
+.agree {
+  margin-left: 0;
+}
+
+.action-hint {
+  margin-top: 18rpx;
+  color: #798391;
+  text-align: center;
+  font-size: 24rpx;
+}

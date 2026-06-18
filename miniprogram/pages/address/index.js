@@ -5,6 +5,10 @@ function emptyForm() {
   return { id: '', name: '', phone: '', address: '', is_default: false }
 }
 
+function validPhone(phone) {
+  return /^1[3-9]\d{9}$/.test(String(phone || '').trim())
+}
+
 Page({
   data: {
     addresses: [],
@@ -15,8 +19,10 @@ Page({
     if (requireLogin()) this.loadAddresses()
   },
   loadAddresses() {
-    api.get('/addresses', {}, { loading: true }).then((data) => {
+    api.get('/addresses', {}, { loading: true, loadingText: '加载地址' }).then((data) => {
       this.setData({ addresses: data.items || [] })
+    }).catch(() => {
+      wx.showToast({ title: '地址加载失败，请下拉重试', icon: 'none' })
     })
   },
   addAddress() {
@@ -35,12 +41,21 @@ Page({
   toggleDefault(event) {
     this.setData({ 'form.is_default': event.detail.value })
   },
-  saveAddress() {
+  validateForm() {
     const form = this.data.form
-    if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
-      wx.showToast({ title: '请填写完整地址信息', icon: 'none' })
+    if (!form.name.trim()) return '收货人不能为空'
+    if (!form.phone.trim()) return '手机号不能为空'
+    if (!validPhone(form.phone)) return '手机号格式不正确'
+    if (!form.address.trim()) return '详细地址不能为空'
+    return ''
+  },
+  saveAddress() {
+    const error = this.validateForm()
+    if (error) {
+      wx.showToast({ title: error, icon: 'none' })
       return
     }
+    const form = this.data.form
     const body = {
       name: form.name.trim(),
       phone: form.phone.trim(),
@@ -48,17 +63,22 @@ Page({
       is_default: form.is_default
     }
     const promise = form.id
-      ? api.put(`/addresses/${form.id}`, body, { loading: true })
-      : api.post('/addresses', body, { loading: true })
+      ? api.put(`/addresses/${form.id}`, body, { loading: true, loadingText: '保存中' })
+      : api.post('/addresses', body, { loading: true, loadingText: '保存中' })
     promise.then(() => {
       wx.showToast({ title: '地址已保存', icon: 'success' })
       this.cancelEdit()
       this.loadAddresses()
+    }).catch(() => {
+      wx.showToast({ title: '地址保存失败，请稍后重试', icon: 'none' })
     })
   },
   setDefault(event) {
-    api.post(`/addresses/${event.currentTarget.dataset.id}/default`, {}, { loading: true }).then(() => {
+    api.post(`/addresses/${event.currentTarget.dataset.id}/default`, {}, { loading: true, loadingText: '设置中' }).then(() => {
+      wx.showToast({ title: '已设为默认地址', icon: 'success' })
       this.loadAddresses()
+    }).catch(() => {
+      wx.showToast({ title: '设置默认地址失败', icon: 'none' })
     })
   },
   removeAddress(event) {
@@ -68,7 +88,12 @@ Page({
       content: '确定删除这个收货地址吗？',
       success: (res) => {
         if (!res.confirm) return
-        api.del(`/addresses/${id}`, {}, { loading: true }).then(() => this.loadAddresses())
+        api.del(`/addresses/${id}`, {}, { loading: true, loadingText: '删除中' }).then(() => {
+          wx.showToast({ title: '地址已删除', icon: 'success' })
+          this.loadAddresses()
+        }).catch(() => {
+          wx.showToast({ title: '删除地址失败', icon: 'none' })
+        })
       }
     })
   }

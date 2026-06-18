@@ -36,7 +36,7 @@ Page({
     wx.navigateTo({ url: '/pages/admin/reports/index' })
   },
   goRefunds() {
-    wx.navigateTo({ url: '/pages/refund/list/index' })
+    wx.navigateTo({ url: '/pages/refund/list/index?role=seller' })
   },
   goPublished() {
     wx.navigateTo({ url: '/pages/mine/published/index' })
