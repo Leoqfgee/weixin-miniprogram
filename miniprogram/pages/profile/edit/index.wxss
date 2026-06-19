@@ -33,11 +33,6 @@
   font-size: 24rpx;
 }
 
-.compact.light {
-  color: #56616d;
-  background: #f5f7fa;
-}
-
 .uploading {
   color: #16a45a;
   font-size: 24rpx;
@@ -77,43 +72,4 @@ textarea {
 
 textarea {
   min-height: 160rpx;
-}
-
-.avatar-sheet-mask {
-  position: fixed;
-  z-index: 90;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: flex-end;
-  background: rgba(0, 0, 0, 0.55);
-}
-
-.avatar-sheet {
-  width: 100%;
-  overflow: hidden;
-  background: #ffffff;
-  border-radius: 16rpx 16rpx 0 0;
-}
-
-.sheet-item {
-  width: 100%;
-  height: 104rpx;
-  line-height: 104rpx;
-  margin: 0;
-  color: #111827;
-  background: #ffffff;
-  border-radius: 0;
-  font-size: 30rpx;
-}
-
-.sheet-item::after {
-  border: 0;
-  border-bottom: 1rpx solid #eef0f2;
-}
-
-.sheet-item.cancel {
-  margin-top: 12rpx;
 }

@@ -6,7 +6,8 @@
       <image wx:if="{{form.avatar}}" class="avatar" src="{{form.avatar}}" mode="aspectFill"></image>
       <view wx:else class="avatar placeholder">头像</view>
       <view class="avatar-actions">
-        <button class="ghost-btn compact" bindtap="openAvatarSheet">设置头像</button>
+        <button wx:if="{{canUseWechatAvatar}}" class="ghost-btn compact" open-type="chooseAvatar" bindchooseavatar="onChooseWechatAvatar">设置头像</button>
+        <button wx:else class="ghost-btn compact" bindtap="openAvatarSheet">设置头像</button>
         <view wx:if="{{avatarUploading}}" class="uploading">头像上传中</view>
       </view>
     </view>
@@ -31,14 +32,5 @@
       <textarea value="{{form.bio}}" data-field="bio" bindinput="onInput" maxlength="120" placeholder="一句话介绍自己"></textarea>
     </view>
     <button class="primary-btn" bindtap="saveProfile">保存</button>
-  </view>
-
-  <view wx:if="{{showAvatarSheet}}" class="avatar-sheet-mask" bindtap="closeAvatarSheet">
-    <view class="avatar-sheet" catchtap="noop">
-      <button wx:if="{{canUseWechatAvatar}}" class="sheet-item" open-type="chooseAvatar" bindchooseavatar="onChooseWechatAvatar">使用微信头像</button>
-      <button class="sheet-item" data-source="album" bindtap="chooseAvatarFromSheet">从相册选择</button>
-      <button class="sheet-item" data-source="camera" bindtap="chooseAvatarFromSheet">拍照</button>
-      <button class="sheet-item cancel" bindtap="closeAvatarSheet">取消</button>
-    </view>
   </view>
 </view>

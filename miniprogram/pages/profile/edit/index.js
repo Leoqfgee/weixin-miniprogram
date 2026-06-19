@@ -14,7 +14,6 @@ Page({
       identity_type: 'custom'
     },
     canUseWechatAvatar: false,
-    showAvatarSheet: false,
     avatarUploading: false,
     avatarUploadError: false
   },
@@ -28,7 +27,6 @@ Page({
     const loginType = getLoginType()
     this.setData({
       canUseWechatAvatar: loginType === 'wechat',
-      showAvatarSheet: false,
       avatarUploading: false,
       avatarUploadError: false,
       form: {
@@ -60,7 +58,6 @@ Page({
     this.setData({
       'form.avatar': filePath,
       'form.identity_type': 'wechat',
-      showAvatarSheet: false,
       avatarUploading: true,
       avatarUploadError: false
     })
@@ -77,17 +74,14 @@ Page({
     })
   },
   openAvatarSheet() {
-    this.setData({ showAvatarSheet: true })
-  },
-  closeAvatarSheet() {
-    this.setData({ showAvatarSheet: false })
-  },
-  noop() {},
-  chooseAvatarFromSheet(event) {
-    this.chooseAvatar(event.currentTarget.dataset.source || 'album')
+    wx.showActionSheet({
+      itemList: ['从相册选择', '拍照'],
+      success: (res) => {
+        this.chooseAvatar(res.tapIndex === 1 ? 'camera' : 'album')
+      }
+    })
   },
   chooseAvatar(sourceType) {
-    this.setData({ showAvatarSheet: false })
     wx.chooseMedia({
       count: 1,
       mediaType: ['image'],
