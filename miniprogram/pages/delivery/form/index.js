@@ -43,6 +43,7 @@ Page({
     wx.chooseMedia({
       count: remain,
       mediaType: ['image'],
+      sizeType: ['compressed'],
       success: (res) => this.uploadProof(res.tempFiles || [])
     })
   },

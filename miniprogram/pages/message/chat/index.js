@@ -124,6 +124,7 @@ Page({
     wx.chooseMedia({
       count: 1,
       mediaType: ['image', 'video'],
+      sizeType: ['compressed'],
       sourceType: [sourceType],
       success: (res) => {
         const file = res.tempFiles[0]

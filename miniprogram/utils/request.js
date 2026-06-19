@@ -92,18 +92,33 @@ function request(options) {
 }
 
 function uploadFile(options) {
-  if (options.useMultipart !== true) {
+  const initialMimeType = options.mimeType || mimeFromPath(options.filePath)
+  if (options.useMultipart !== true && isImageMime(initialMimeType)) {
     const formData = options.formData || {}
-    return uploadImageBase64({
+    const usage = formData.usage || options.usage || 'product'
+    const baseOptions = {
       url: options.base64Url || '/files/upload-base64',
       filePath: options.filePath,
       filename: options.filename || filenameFromPath(options.filePath),
-      mimeType: options.mimeType || mimeFromPath(options.filePath),
-      usage: formData.usage || options.usage || 'product',
+      mimeType: initialMimeType,
+      usage,
       loading: options.loading,
       loadingText: options.loadingText || '上传中',
-      silentError: options.silentError
-    })
+      silentError: true
+    }
+    return prepareUploadFilePath(options.filePath, baseOptions.mimeType)
+      .then((filePath) => uploadImageBase64(Object.assign({}, baseOptions, {
+        filePath,
+        filename: options.filename || filenameFromPath(filePath)
+      })))
+      .catch((base64Error) => uploadCloudFile(Object.assign({}, options, {
+        usage,
+        originalError: base64Error
+      })))
+      .catch((err) => {
+        if (!options.silentError) wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' })
+        throw err
+      })
   }
   const token = getToken()
   const header = Object.assign({ 'X-Trace-Id': buildTraceId() }, options.header || {})
@@ -144,6 +159,57 @@ function uploadFile(options) {
         if (options.loading) {
           wx.hideLoading()
         }
+      }
+    })
+  })
+}
+
+function prepareUploadFilePath(filePath, mimeType) {
+  if (!isImageMime(mimeType) || !wx.compressImage) {
+    return Promise.resolve(filePath)
+  }
+  return new Promise((resolve) => {
+    wx.compressImage({
+      src: filePath,
+      quality: 65,
+      success(res) {
+        resolve(res.tempFilePath || filePath)
+      },
+      fail() {
+        resolve(filePath)
+      }
+    })
+  })
+}
+
+function uploadCloudFile(options) {
+  if (!wx.cloud || !wx.cloud.uploadFile) {
+    return Promise.reject(options.originalError || new Error('cloud upload unavailable'))
+  }
+  const filePath = options.filePath
+  const usage = options.usage || 'product'
+  const cloudPath = `${usage}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extensionFromPath(filePath)}`
+  return new Promise((resolve, reject) => {
+    wx.cloud.uploadFile({
+      cloudPath,
+      filePath,
+      success(res) {
+        const fileID = res.fileID || ''
+        if (!fileID) {
+          reject(options.originalError || new Error('empty cloud file id'))
+          return
+        }
+        resolve({
+          id: fileID,
+          url: fileID,
+          object_key: cloudPath,
+          relative_path: cloudPath,
+          storage_backend: 'cloudbase',
+          usage
+        })
+      },
+      fail(err) {
+        reject(err || options.originalError)
       }
     })
   })
@@ -191,7 +257,24 @@ function mimeFromPath(filePath) {
   if (filename.endsWith('.png')) return 'image/png'
   if (filename.endsWith('.webp')) return 'image/webp'
   if (filename.endsWith('.gif')) return 'image/gif'
+  if (filename.endsWith('.mp4') || filename.endsWith('.m4v')) return 'video/mp4'
+  if (filename.endsWith('.mov')) return 'video/quicktime'
+  if (filename.endsWith('.mp3')) return 'audio/mpeg'
+  if (filename.endsWith('.aac')) return 'audio/aac'
+  if (filename.endsWith('.wav')) return 'audio/wav'
   return 'image/jpeg'
+}
+
+function extensionFromPath(filePath) {
+  const filename = filenameFromPath(filePath).toLowerCase()
+  if (filename.endsWith('.png')) return 'png'
+  if (filename.endsWith('.webp')) return 'webp'
+  if (filename.endsWith('.gif')) return 'gif'
+  return 'jpg'
+}
+
+function isImageMime(mimeType) {
+  return String(mimeType || '').indexOf('image/') === 0
 }
 
 module.exports = {

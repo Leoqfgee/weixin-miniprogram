@@ -67,6 +67,7 @@ Page({
     wx.chooseMedia({
       count: 9 - this.data.form.images.length,
       mediaType: ['image'],
+      sizeType: ['compressed'],
       success: (res) => this.uploadImages(res.tempFiles || [])
     })
   },
