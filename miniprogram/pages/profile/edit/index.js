@@ -13,7 +13,6 @@ Page({
       contact_wechat: '',
       identity_type: 'custom'
     },
-    showWechatAvatarPicker: false,
     canUseWechatAvatar: false
   },
   onLoad(options) {
@@ -26,7 +25,6 @@ Page({
     const loginType = getLoginType()
     this.setData({
       canUseWechatAvatar: loginType === 'wechat',
-      showWechatAvatarPicker: false,
       form: {
         avatar: profile.avatar || profile.avatar_url || '',
         nickname: profile.nickname || '',
@@ -56,24 +54,15 @@ Page({
     api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
       this.setData({
         'form.avatar': data.url,
-        'form.identity_type': 'wechat',
-        showWechatAvatarPicker: false
+        'form.identity_type': 'wechat'
       })
     })
   },
   openAvatarSheet() {
-    const itemList = this.data.canUseWechatAvatar ? ['使用微信头像', '从相册选择', '拍照'] : ['从相册选择', '拍照']
     wx.showActionSheet({
-      itemList,
+      itemList: ['从相册选择', '拍照'],
       success: (res) => {
-        if (this.data.canUseWechatAvatar && res.tapIndex === 0) {
-          this.setData({ showWechatAvatarPicker: true })
-          wx.showToast({ title: '请确认使用微信头像', icon: 'none' })
-          return
-        }
-        this.setData({ showWechatAvatarPicker: false })
-        const cameraIndex = this.data.canUseWechatAvatar ? 2 : 1
-        this.chooseAvatar(res.tapIndex === cameraIndex ? 'camera' : 'album')
+        this.chooseAvatar(res.tapIndex === 1 ? 'camera' : 'album')
       }
     })
   },
