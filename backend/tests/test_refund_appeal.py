@@ -54,6 +54,26 @@ def test_refund_apply_evidence_images_are_saved():
     assert refund.get_json()["data"]["evidence_images"] == evidence
 
 
+def test_buyer_can_apply_after_sale_after_confirm_receive():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+    order = create_refundable_order(client, seller_token, buyer_token, admin_token)
+
+    confirm = client.post(f"/api/v1/deliveries/{order['id']}/buyer-confirm", headers=auth_headers(buyer_token))
+    assert confirm.status_code == 200
+
+    detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
+    assert detail["status"] == "pending_review"
+    assert detail["allowed_actions"]["can_apply_refund"] is True
+
+    refund = client.post(
+        "/api/v1/refunds",
+        headers=auth_headers(buyer_token),
+        json={"order_id": order["id"], "amount": 20, "reason": "收货后发现问题", "refund_type": "refund_only"},
+    )
+    assert refund.status_code == 201
+    assert refund.get_json()["data"]["status_text"] == "待处理"
+
+
 def test_refund_list_detail_and_unread_badge_flow():
     app, client, seller_token, buyer_token, admin_token = setup_flow()
     order = create_refundable_order(client, seller_token, buyer_token, admin_token)

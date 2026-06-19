@@ -92,6 +92,19 @@ function request(options) {
 }
 
 function uploadFile(options) {
+  if (options.useMultipart !== true) {
+    const formData = options.formData || {}
+    return uploadImageBase64({
+      url: options.base64Url || '/files/upload-base64',
+      filePath: options.filePath,
+      filename: options.filename || filenameFromPath(options.filePath),
+      mimeType: options.mimeType || mimeFromPath(options.filePath),
+      usage: formData.usage || options.usage || 'product',
+      loading: options.loading,
+      loadingText: options.loadingText || '上传中',
+      silentError: options.silentError
+    })
+  }
   const token = getToken()
   const header = Object.assign({ 'X-Trace-Id': buildTraceId() }, options.header || {})
   if (token) {

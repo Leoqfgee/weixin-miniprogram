@@ -19,7 +19,7 @@
 
   <view class="hint-row">
     <text class="hint-icon">✓</text>
-    <text>{{role === 'buyer' ? '查看我发起的售后申请与处理进展' : '查看买家向我发起的售后申请'}}</text>
+    <text>{{isAdmin ? (role === 'buyer' ? '查看买家提交的售后申请' : '查看需要卖家处理的售后申请') : (role === 'buyer' ? '查看我发起的售后申请与处理进展' : '查看买家向我发起的售后申请')}}</text>
   </view>
 
   <view wx:if="{{loadError && !refunds.length}}" class="error-panel">售后列表加载失败，请下拉重试</view>

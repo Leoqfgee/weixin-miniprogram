@@ -367,7 +367,7 @@ class RefundService:
             raise NotFoundError("订单不存在")
         if str(order["buyer_id"]) != str(buyer_id):
             raise ForbiddenError("只有买家可以申请售后")
-        if order["status"] not in {"pending_delivery", "pending_receive"}:
+        if order["status"] not in {"pending_delivery", "pending_receive", "pending_review", "completed"}:
             raise ConflictError("当前订单状态不允许申请售后")
         amount = _amount(payload.get("amount"), "amount")
         if amount > float(order["pay_amount"]):

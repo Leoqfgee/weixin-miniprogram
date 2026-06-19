@@ -445,3 +445,26 @@ def test_dev_test_login_requires_switch_and_can_login_seed_user(monkeypatch):
     enabled = client.post("/api/v1/auth/dev-test-login", json={"account": "buyer_a"})
     assert enabled.status_code == 200
     assert enabled.get_json()["data"]["user"]["phone"] == "18800000002"
+
+
+def test_cancel_account_disables_login_and_releases_phone():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    phone = "19900000021"
+    app.db.users.delete_many({"phone": phone})
+    account = client.post(
+        "/api/v1/auth/register",
+        json={"phone": phone, "password": "test123456", "nickname": "注销测试"},
+    )
+    assert account.status_code == 201
+    token = account.get_json()["data"]["token"]
+
+    cancel = client.delete("/api/v1/users/me", headers=auth_headers(token))
+    assert cancel.status_code == 200
+    assert cancel.get_json()["data"]["cancelled"] is True
+
+    login = client.post("/api/v1/auth/password-login", json={"phone": phone, "password": "test123456"})
+    assert login.status_code == 401
+    assert app.db.users.find_one({"phone": phone}) is None

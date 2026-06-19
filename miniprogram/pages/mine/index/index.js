@@ -68,6 +68,9 @@ Page({
   goCustomerService() {
     wx.navigateTo({ url: '/pages/customer-service/index' })
   },
+  goSettings() {
+    wx.navigateTo({ url: '/pages/settings/index' })
+  },
   goProfileEdit() {
     wx.navigateTo({ url: '/pages/profile/edit/index' })
   },

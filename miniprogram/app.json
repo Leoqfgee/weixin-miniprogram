@@ -8,6 +8,7 @@
     "pages/message/chat/index",
     "pages/mine/index/index",
     "pages/mine/published/index",
+    "pages/settings/index",
     "pages/profile/edit/index",
     "pages/profile/home/index",
     "pages/address/index",

@@ -40,13 +40,14 @@
       <view class="service-item" bindtap="goRefunds"><view class="service-icon purple">售</view><view>售后</view></view>
       <view class="service-item" bindtap="goCustomerService"><view class="service-icon orange">客</view><view>联系客服</view></view>
       <view class="service-item" bindtap="goProfileHome"><view class="service-icon blue">页</view><view>我的主页</view></view>
-      <view class="service-item"><view class="service-icon gray">设</view><view>设置</view></view>
+      <view class="service-item" bindtap="goSettings"><view class="service-icon gray">设</view><view>设置</view></view>
     </view>
   </view>
 
   <view wx:if="{{isAdmin}}" class="panel admin-panel">
     <view class="section-title">管理员工具</view>
     <view class="admin-entry" bindtap="goAdminProducts"><view class="title small">商品审核</view><view class="muted">审核待上架商品</view></view>
+    <view class="admin-entry" bindtap="goRefunds"><view class="title small">售后退款单</view><view class="muted">查看和跟踪平台售后申请</view></view>
     <view class="admin-entry" bindtap="goAdminAppeals"><view class="title small">申诉仲裁</view><view class="muted">处理平台介入申请</view></view>
     <view class="admin-entry" bindtap="goAdminReports"><view class="title small">统计报表</view><view class="muted">查看发布、成交和活跃数据</view></view>
     <view class="admin-entry" bindtap="goAdminLogs"><view class="title small">后台日志</view><view class="muted">查看操作日志和基础统计</view></view>

@@ -21,6 +21,13 @@ def update_me():
     return success_response(data)
 
 
+@users_bp.delete("/users/me")
+@auth_required
+def cancel_me():
+    data = UserService(current_app.db).cancel_account(g.current_user_id)
+    return success_response(data)
+
+
 @users_bp.get("/users/<user_id>/profile")
 def get_public_profile(user_id):
     data = UserService(current_app.db).get_public_profile(user_id)

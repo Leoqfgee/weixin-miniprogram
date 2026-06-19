@@ -16,6 +16,11 @@ const ROLE_TABS = [
   { label: '我卖的', value: 'seller' }
 ]
 
+const ADMIN_ROLE_TABS = [
+  { label: '买家申请', value: 'buyer' },
+  { label: '卖家处理', value: 'seller' }
+]
+
 Page({
   data: {
     roleTabs: ROLE_TABS,
@@ -44,7 +49,8 @@ Page({
   },
   onShow() {
     if (!requireLogin()) return
-    this.setData({ isAdmin: hasRole('admin') })
+    const isAdmin = hasRole('admin')
+    this.setData({ isAdmin, roleTabs: isAdmin ? ADMIN_ROLE_TABS : ROLE_TABS })
     this.refreshList()
   },
   onPullDownRefresh() {

@@ -174,21 +174,24 @@ class AuthService:
         if self.users.find_by_phone(phone):
             raise ConflictError("手机号已注册")
         nickname = (payload.get("nickname") or "校园用户").strip()
+        openid = (payload.get("openid") or "").strip()
+        user_doc = {
+            "phone": phone,
+            "password_hash": generate_password_hash(password),
+            "roles": ["buyer", "seller"],
+            "status": "active",
+            "nickname": nickname,
+            "avatar_url": "",
+            "profile_completed": False,
+            "identity_type": "custom",
+            "last_login_at": utc_now(),
+            "created_at": utc_now(),
+            "updated_at": utc_now(),
+        }
+        if openid:
+            user_doc["openid"] = openid
         user = self.users.create_user(
-            {
-                "openid": payload.get("openid") or None,
-                "phone": phone,
-                "password_hash": generate_password_hash(password),
-                "roles": ["buyer", "seller"],
-                "status": "active",
-                "nickname": nickname,
-                "avatar_url": "",
-                "profile_completed": False,
-                "identity_type": "custom",
-                "last_login_at": utc_now(),
-                "created_at": utc_now(),
-                "updated_at": utc_now(),
-            },
+            user_doc,
             {
                 "nickname": nickname,
                 "avatar_url": "",
@@ -374,6 +377,59 @@ class UserService:
             "on_sale_products": [_public_product(item, profile) for item in on_sale_products],
             "reviews": _public_reviews(self.db, object_id),
         }
+
+    def cancel_account(self, user_id):
+        user = self.users.find_by_id(user_id)
+        if not user:
+            raise NotFoundError("用户不存在")
+        object_id = user["_id"]
+        active_order_count = self.db.orders.count_documents(
+            {
+                "$or": [{"buyer_id": object_id}, {"seller_id": object_id}],
+                "status": {"$in": ["pending_payment", "pending_delivery", "pending_receive", "refunding"]},
+            }
+        )
+        active_refund_count = self.db.refunds.count_documents(
+            {
+                "$or": [{"buyer_id": object_id}, {"seller_id": object_id}],
+                "status": {"$in": ["requested", "seller_agreed", "refunding", "seller_rejected"]},
+            }
+        )
+        if active_order_count or active_refund_count:
+            raise ConflictError("存在未完成订单或售后，暂不能注销账号")
+
+        now = utc_now()
+        self.db.users.update_one(
+            {"_id": object_id},
+            {
+                "$set": {
+                    "status": "disabled",
+                    "cancelled_at": now,
+                    "updated_at": now,
+                    "nickname": "已注销用户",
+                    "avatar_url": "",
+                    "profile_completed": False,
+                },
+                "$unset": {"phone": "", "openid": "", "password_hash": ""},
+            },
+        )
+        self.db.user_profiles.update_one(
+            {"user_id": object_id},
+            {
+                "$set": {
+                    "nickname": "已注销用户",
+                    "avatar": "",
+                    "avatar_url": "",
+                    "bio": "",
+                    "contact_phone": "",
+                    "contact_wechat": "",
+                    "profile_completed": False,
+                    "updated_at": now,
+                }
+            },
+            upsert=True,
+        )
+        return {"cancelled": True, "id": str(object_id)}
 
     def _account_stats(self, user_id):
         object_id = user_id if isinstance(user_id, ObjectId) else to_object_id(user_id, "user_id")

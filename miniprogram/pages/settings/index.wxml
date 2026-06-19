@@ -1,0 +1,39 @@
+<view class="page settings-page">
+  <view class="panel profile-panel" wx:if="{{user}}">
+    <view class="title">账号设置</view>
+    <view class="user-row">
+      <image wx:if="{{user.profile.avatar || user.profile.avatar_url}}" class="avatar" src="{{user.profile.avatar || user.profile.avatar_url}}" mode="aspectFill"></image>
+      <view wx:else class="avatar placeholder">{{avatarText}}</view>
+      <view class="user-main">
+        <view class="name">{{user.profile.nickname || user.nickname || '校园用户'}}</view>
+        <view class="muted">{{user.phone || '微信账号未绑定手机号'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel action-panel" wx:if="{{user}}">
+    <view class="settings-item" bindtap="goProfileEdit">
+      <view>
+        <view class="item-title">编辑个人资料</view>
+        <view class="muted">头像、昵称、校区和联系方式</view>
+      </view>
+      <text>›</text>
+    </view>
+    <view class="settings-item" bindtap="goAddresses">
+      <view>
+        <view class="item-title">收货地址</view>
+        <view class="muted">管理邮寄交易使用的地址</view>
+      </view>
+      <text>›</text>
+    </view>
+  </view>
+
+  <view class="panel danger-panel" wx:if="{{user}}">
+    <view class="section-title">账号操作</view>
+    <button class="ghost-btn full" bindtap="logout">退出登录</button>
+    <button class="danger-btn full" bindtap="cancelAccount">注销账号</button>
+    <view class="danger-tip">注销后当前账号会被停用，未完成订单或售后存在时不能注销。</view>
+  </view>
+
+  <empty-state wx:else title="未登录" text="请先登录后再进入设置"></empty-state>
+</view>

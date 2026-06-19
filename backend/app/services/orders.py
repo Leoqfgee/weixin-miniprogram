@@ -675,7 +675,7 @@ def _order_allowed_actions(order, current_user_id, payment=None, refund=None, re
             "pending_payment": ["pay", "cancel_order"],
             "pending_delivery": ["contact_seller", "apply_refund"],
             "pending_receive": ["confirm_receive", "reject_receive", "apply_refund", "contact_seller"],
-            "pending_review": ([] if already_reviewed else ["create_review"]) + ["view_after_sale"],
+            "pending_review": ([] if already_reviewed else ["create_review"]) + ["apply_after_sale", "view_after_sale"],
             "completed": ([] if already_reviewed else ["create_review"]) + ["view_review", "apply_after_sale"],
             "refunding": ["view_refund"],
             "refunded": ["view_refund_result"],
