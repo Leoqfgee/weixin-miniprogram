@@ -7,15 +7,23 @@ const TABS = [
   { label: '待处理', value: 'pending' },
   { label: '退款中', value: 'refunding' },
   { label: '已退款', value: 'refunded' },
-  { label: '已拒绝', value: 'rejected' }
+  { label: '已拒绝', value: 'rejected' },
+  { label: '已关闭', value: 'closed' }
+]
+
+const ROLE_TABS = [
+  { label: '我买的', value: 'buyer' },
+  { label: '我卖的', value: 'seller' }
 ]
 
 Page({
   data: {
+    roleTabs: ROLE_TABS,
     tabs: TABS,
+    activeRoleIndex: 0,
     activeTab: 0,
     refunds: [],
-    role: 'seller',
+    role: 'buyer',
     orderId: '',
     isAdmin: false,
     page: 1,
@@ -27,8 +35,10 @@ Page({
     pendingCount: 0
   },
   onLoad(options) {
+    const role = options.role || 'buyer'
     this.setData({
-      role: options.role || 'seller',
+      role,
+      activeRoleIndex: role === 'seller' ? 1 : 0,
       orderId: options.order_id || ''
     })
   },
@@ -47,6 +57,12 @@ Page({
   },
   selectTab(event) {
     this.setData({ activeTab: Number(event.currentTarget.dataset.index) })
+    this.refreshList()
+  },
+  selectRole(event) {
+    const index = Number(event.currentTarget.dataset.index)
+    const role = this.data.roleTabs[index] ? this.data.roleTabs[index].value : 'buyer'
+    this.setData({ activeRoleIndex: index, role, activeTab: 0 })
     this.refreshList()
   },
   refreshList() {

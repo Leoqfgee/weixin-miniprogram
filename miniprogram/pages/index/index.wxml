@@ -1,7 +1,6 @@
 <view class="page home-page">
   <view class="brand-block">
     <view class="brand-title">校园<text>二手</text></view>
-    <view class="brand-sub">让闲置流转，让校园更有爱</view>
   </view>
 
   <view class="search-panel">
@@ -49,5 +48,5 @@
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
   </view>
 
-  <empty-state wx:else title="{{emptyTitle}}" description="{{emptyDescription}}"></empty-state>
+  <empty-state wx:else title="{{emptyTitle}}"></empty-state>
 </view>

@@ -9,13 +9,6 @@
   font-weight: 900;
 }
 
-.page-sub {
-  margin-top: 6rpx;
-  text-align: center;
-  color: #7a8491;
-  font-size: 24rpx;
-}
-
 .publish-banner {
   position: relative;
   margin: 24rpx 0;
@@ -40,11 +33,6 @@
   color: #11924f;
   font-size: 30rpx;
   font-weight: 900;
-}
-
-.banner-sub {
-  margin-top: 14rpx;
-  color: #596470;
 }
 
 .panel {

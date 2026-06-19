@@ -1,6 +1,5 @@
 <view class="page publish-page">
   <view class="title">编辑商品</view>
-  <view class="muted intro">{{editingOnSale ? '修改保存后立即更新在售商品信息' : (canSubmitReview ? '完善商品信息后可保存修改或提交审核' : '完善商品信息后保存修改，再从商品管理重新发布')}}</view>
 
   <view class="image-grid">
     <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap">
@@ -12,7 +11,7 @@
 
   <view class="panel form-panel">
     <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="标题：品牌、型号或关键词" />
-    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、购买时间、使用情况、配件和瑕疵"></textarea>
+    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、使用情况和瑕疵"></textarea>
     <view class="ai-actions">
       <button class="ai-btn" bindtap="useAiTitle">AI 标题建议</button>
       <button class="ai-btn" bindtap="useAiDescription">AI 润色描述</button>

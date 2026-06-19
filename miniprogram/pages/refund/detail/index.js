@@ -55,11 +55,20 @@ Page({
       wx.previewImage({ current, urls })
     }
   },
-  contactBuyer() {
+  contactCounterparty() {
     const refund = this.data.refund
-    if (!refund || !refund.buyer || !refund.buyer.id) return
-    const productId = refund.product && refund.product.id ? `&product_id=${refund.product.id}` : ''
-    wx.navigateTo({ url: `/pages/message/chat/index?receiver_id=${refund.buyer.id}${productId}` })
+    const user = refund && refund.contact_user
+    if (!refund || !user || !user.id) {
+      wx.showToast({ title: '联系人信息不存在', icon: 'none' })
+      return
+    }
+    const product = refund.product || {}
+    wx.navigateTo({
+      url: `/pages/message/chat/index?conversation_id=${refund.conversation_id || ''}&receiver_id=${user.id}&product_id=${product.id || ''}&order_id=${refund.order_id || (refund.order && refund.order.id) || ''}&product_title=${encodeURIComponent(product.title || '')}&product_price=${product.price || ''}&product_cover=${encodeURIComponent(product.cover_image || '')}`
+    })
+  },
+  contactBuyer() {
+    this.contactCounterparty()
   },
   agreeRefund() {
     wx.showModal({

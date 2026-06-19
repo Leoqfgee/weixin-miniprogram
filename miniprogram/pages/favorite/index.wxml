@@ -23,5 +23,5 @@
       </view>
     </view>
   </view>
-  <empty-state wx:else title="暂无收藏" description="在商品详情页点收藏后会显示在这里"></empty-state>
+  <empty-state wx:else title="暂无收藏"></empty-state>
 </view>

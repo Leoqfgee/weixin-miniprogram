@@ -15,6 +15,14 @@ const APPEAL_STATUS_TEXT = {
   partial_refund: '部分退款'
 }
 
+const ADMIN_RESULT_TEXT = {
+  approved: '支持买家退款',
+  rejected: '支持卖家',
+  refund: '支持买家退款',
+  reject_refund: '支持卖家',
+  partial_refund: '部分退款'
+}
+
 Page({
   data: {
     status: 'pending',
@@ -37,6 +45,7 @@ Page({
   enrichAppeal(item) {
     const delivery = item.delivery || {}
     item.status_text = APPEAL_STATUS_TEXT[item.status] || item.status
+    item.admin_result_text = ADMIN_RESULT_TEXT[item.admin_result] || item.status_text || '已处理'
     item.delivery_text = delivery.delivery_type ? DELIVERY_TYPE_TEXT[delivery.delivery_type] || delivery.delivery_type : '暂无'
     item.delivery_location = delivery.meet_location || delivery.pickup_location || delivery.campus_address || delivery.tracking_no || delivery.delivery_note || ''
     item.product_title = (item.product_snapshot && item.product_snapshot.title) || '商品快照缺失'

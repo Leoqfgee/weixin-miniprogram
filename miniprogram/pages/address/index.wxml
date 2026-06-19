@@ -32,5 +32,5 @@
       </view>
     </view>
   </view>
-  <empty-state wx:elif="{{!editing}}" title="还没有收货地址" description="新增地址后，下单会更方便"></empty-state>
+  <empty-state wx:elif="{{!editing}}" title="还没有收货地址"></empty-state>
 </view>

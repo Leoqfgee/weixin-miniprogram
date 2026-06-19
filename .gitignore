@@ -6,6 +6,10 @@ __pycache__/
 tmp_run_logs/
 backend-cloudrun.zip
 .env
+.env.*
+!.env.example
+!backend/.env.example
+!backend/.env.production.example
 .env.local
 .env.production
 

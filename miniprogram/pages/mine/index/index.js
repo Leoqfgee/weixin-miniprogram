@@ -5,7 +5,8 @@ Page({
   data: {
     user: null,
     isAdmin: false,
-    avatarText: '?'
+    avatarText: '?',
+    stats: { published: 0, bought: 0, sold: 0, favorites: 0 }
   },
   onShow() {
     const user = getUser()
@@ -18,7 +19,18 @@ Page({
   },
   applyUser(user) {
     const nickname = user && user.profile ? user.profile.nickname || '我' : '?'
-    this.setData({ user, isAdmin: hasRole('admin'), avatarText: nickname.slice(0, 1) })
+    const stats = (user && user.stats) || {}
+    this.setData({
+      user,
+      isAdmin: hasRole('admin'),
+      avatarText: nickname.slice(0, 1),
+      stats: {
+        published: Number(stats.published || 0),
+        bought: Number(stats.bought || 0),
+        sold: Number(stats.sold || 0),
+        favorites: Number(stats.favorites || 0)
+      }
+    })
   },
   goLogin() {
     wx.navigateTo({ url: '/pages/login/index' })
@@ -36,7 +48,7 @@ Page({
     wx.navigateTo({ url: '/pages/admin/reports/index' })
   },
   goRefunds() {
-    wx.navigateTo({ url: '/pages/refund/list/index?role=seller' })
+    wx.navigateTo({ url: '/pages/refund/list/index' })
   },
   goPublished() {
     wx.navigateTo({ url: '/pages/mine/published/index' })
@@ -66,7 +78,7 @@ Page({
   },
   logout() {
     clearAuth()
-    this.setData({ user: null, isAdmin: false })
+    this.setData({ user: null, isAdmin: false, stats: { published: 0, bought: 0, sold: 0, favorites: 0 } })
     wx.showToast({ title: '已退出', icon: 'success' })
   }
 })

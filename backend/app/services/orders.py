@@ -28,6 +28,46 @@ ORDER_STATUSES = {
 }
 PAYMENT_STATUSES = {"pending", "paid", "failed", "refunded"}
 DELIVERY_TYPES = {"offline_meetup", "campus_pickup", "campus_delivery", "express"}
+ORDER_STATUS_TEXT = {
+    "pending_payment": "待付款",
+    "pending_delivery": "待发货",
+    "pending_receive": "待收货",
+    "pending_review": "待评价",
+    "completed": "交易完成",
+    "closed": "已关闭",
+    "refunding": "售后中",
+    "refunded": "已退款",
+}
+ORDER_STATUS_TIPS = {
+    "pending_payment": "请尽快完成付款，超时后订单将自动关闭",
+    "pending_delivery": "买家已付款，等待卖家交付",
+    "pending_receive": "卖家已交付，请买家确认收货",
+    "pending_review": "交易已确认收货，双方可进行评价",
+    "completed": "交易已完成",
+    "closed": "订单已关闭",
+    "refunding": "订单售后处理中",
+    "refunded": "订单已退款",
+}
+REFUND_STATUS_TEXT = {
+    "requested": "待处理",
+    "seller_agreed": "退款中",
+    "refunding": "退款中",
+    "refunded": "已退款",
+    "partial_refunded": "已退款",
+    "seller_rejected": "已拒绝",
+    "rejected": "已拒绝",
+    "closed": "已关闭",
+}
+REFUND_STATUS_GROUP = {
+    "requested": "pending",
+    "seller_agreed": "refunding",
+    "refunding": "refunding",
+    "refunded": "refunded",
+    "partial_refunded": "refunded",
+    "seller_rejected": "rejected",
+    "rejected": "rejected",
+    "closed": "closed",
+}
 
 
 class OrderService:
@@ -327,6 +367,8 @@ class OrderService:
         items = [serialize_doc(item) for item in self.order_items.list_by_order(order["_id"])]
         data["items"] = items
         data["product_snapshot"] = items[0]["product_snapshot"] if items else {}
+        if data["product_snapshot"].get("cover_image"):
+            data["product_snapshot"]["cover_image"] = normalize_image_url(data["product_snapshot"].get("cover_image"))
         if payment is None:
             payment = self.payments.find_by_order(order["_id"])
         data["payment"] = serialize_doc(payment) if payment else None
@@ -336,12 +378,24 @@ class OrderService:
         data["delivery"] = serialize_doc(delivery) if delivery else None
         refund = self.db.refunds.find_one({"order_id": order["_id"]}, sort=[("created_at", -1)])
         data["refund"] = serialize_doc(refund) if refund else None
+        if data["refund"]:
+            data["refund"]["status_text"] = REFUND_STATUS_TEXT.get(refund.get("status"), refund.get("status", ""))
+            data["refund"]["status_group"] = REFUND_STATUS_GROUP.get(refund.get("status"), refund.get("status", ""))
         appeal = self.db.appeals.find_one({"order_id": order["_id"]}, sort=[("created_at", -1)])
         data["appeal"] = serialize_doc(appeal) if appeal else None
         reviews = list(self.db.reviews.find({"order_id": order["_id"]}).sort("created_at", 1))
         data["reviews"] = [serialize_doc(item) for item in reviews]
         data["buyer"] = self._party(order["buyer_id"])
         data["seller"] = self._party(order["seller_id"])
+        current_user_id = ObjectId(str(current_user_id))
+        is_buyer = str(order["buyer_id"]) == str(current_user_id)
+        data["current_role"] = "buyer" if is_buyer else "seller"
+        data["status_text"] = ORDER_STATUS_TEXT.get(order.get("status"), order.get("status", ""))
+        data["status_tip"] = ORDER_STATUS_TIPS.get(order.get("status"), "")
+        data["conversation_id"] = _order_conversation_id(order)
+        contact_party = data["seller"] if is_buyer else data["buyer"]
+        data["contact_user"] = contact_party
+        data["contact_label"] = "联系卖家" if is_buyer else "联系买家"
         data["allowed_actions"] = _order_allowed_actions(
             order, current_user_id, payment, refund, {str(item["reviewer_id"]) for item in reviews}
         )
@@ -357,6 +411,12 @@ class OrderService:
                 "allowed_actions": data["allowed_actions"],
                 "buyer": data["buyer"],
                 "seller": data["seller"],
+                "current_role": data["current_role"],
+                "status_text": data["status_text"],
+                "status_tip": data["status_tip"],
+                "conversation_id": data["conversation_id"],
+                "contact_user": data["contact_user"],
+                "contact_label": data["contact_label"],
                 "shipping_address": data.get("shipping_address"),
                 "created_at": data["created_at"],
             }
@@ -364,11 +424,14 @@ class OrderService:
 
     def _party(self, user_id):
         profile = self.users.find_profile(user_id) or {}
+        user = self.users.find_by_id(user_id) or {}
+        phone = user.get("phone") or profile.get("contact_phone") or ""
         return {
             "id": str(user_id),
             "nickname": profile.get("nickname", "校园用户"),
             "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
             "campus": profile.get("campus", ""),
+            "phone_masked": _mask_phone(phone),
         }
 
 
@@ -646,8 +709,7 @@ def _shipping_address_snapshot(value):
 
 
 def _append_order_system_message(db, order, content, action):
-    user_pair = sorted([str(order["buyer_id"]), str(order["seller_id"])])
-    conversation_id = "_".join(user_pair + [str(order["product_id"])])
+    conversation_id = _order_conversation_id(order)
     seller_actions = {"order_created", "paid", "received", "order_closed"}
     sender_id = order["buyer_id"] if action in seller_actions else order["seller_id"]
     receiver_id = order["seller_id"] if action in seller_actions else order["buyer_id"]
@@ -667,3 +729,15 @@ def _append_order_system_message(db, order, content, action):
             "created_at": utc_now(),
         }
     )
+
+
+def _order_conversation_id(order):
+    user_pair = sorted([str(order["buyer_id"]), str(order["seller_id"])])
+    return "_".join(user_pair + [str(order["product_id"])])
+
+
+def _mask_phone(phone):
+    value = str(phone or "")
+    if len(value) < 7:
+        return value
+    return f"{value[:3]}****{value[-4:]}"

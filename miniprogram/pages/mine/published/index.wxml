@@ -7,7 +7,7 @@
         <view wx:else class="thumb placeholder">物</view>
         <view class="info">
           <view class="title small">{{item.title || '未填写标题的草稿'}}</view>
-          <view class="muted">¥{{item.price || '--'}} · {{item.status_text}}</view>
+          <view class="muted"><text wx:if="{{item.price}}">¥{{item.price}}</text><text wx:else>暂无价格</text> · {{item.status_text}}</view>
           <view wx:if="{{item.status_note}}" class="status-note">{{item.status_note}}</view>
           <view class="muted">{{item.created_at}}</view>
         </view>
@@ -21,5 +21,5 @@
       </view>
     </view>
   </view>
-  <empty-state wx:else title="当前状态暂无商品" description="切换上方状态查看其他商品"></empty-state>
+  <empty-state wx:else title="当前状态暂无商品"></empty-state>
 </view>

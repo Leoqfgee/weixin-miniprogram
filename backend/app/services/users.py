@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import re
 
+from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -26,6 +27,13 @@ def _validate_phone(phone):
         raise ValidationError("参数校验失败", [{"field": "phone", "message": "手机号不能为空"}])
     if not PHONE_RE.match(value):
         raise ValidationError("参数校验失败", [{"field": "phone", "message": "手机号格式不正确"}])
+    return value
+
+
+def _validate_optional_phone(phone, field="phone"):
+    value = (phone or "").strip()
+    if value and not PHONE_RE.match(value):
+        raise ValidationError("参数校验失败", [{"field": field, "message": "手机号格式不正确"}])
     return value
 
 
@@ -262,7 +270,9 @@ class UserService:
                 "updated_at": utc_now(),
             },
         )
-        return build_user_summary(user, profile)
+        summary = build_user_summary(user, profile)
+        summary["stats"] = self._account_stats(user["_id"])
+        return summary
 
     def update_me(self, user_id, payload):
         allowed = {
@@ -311,10 +321,7 @@ class UserService:
                 raise ValidationError("参数校验失败", [{"field": "bio", "message": "简介不能超过 120 字"}])
             fields["bio"] = bio
         if "contact_phone" in payload:
-            contact_phone = (payload.get("contact_phone") or "").strip()
-            if contact_phone and (len(contact_phone) < 7 or len(contact_phone) > 20):
-                raise ValidationError("参数校验失败", [{"field": "contact_phone", "message": "请填写有效联系方式"}])
-            fields["contact_phone"] = contact_phone
+            fields["contact_phone"] = _validate_optional_phone(payload.get("contact_phone"), "contact_phone")
         if "contact_wechat" in payload:
             fields["contact_wechat"] = (payload.get("contact_wechat") or "").strip()
         current_profile = self.users.find_profile(user_id) or {}
@@ -329,7 +336,9 @@ class UserService:
             self.users.update_user(user_id, user_fields)
         profile = self.users.update_profile(user_id, fields)
         user = self.users.find_by_id(user_id)
-        return build_user_summary(user, profile)
+        summary = build_user_summary(user, profile)
+        summary["stats"] = self._account_stats(user["_id"])
+        return summary
 
     def get_public_profile(self, user_id):
         user = self.users.find_by_id(user_id)
@@ -359,6 +368,15 @@ class UserService:
             "user": public_profile,
             "on_sale_products": [_public_product(item, profile) for item in on_sale_products],
             "reviews": _public_reviews(self.db, object_id),
+        }
+
+    def _account_stats(self, user_id):
+        object_id = user_id if isinstance(user_id, ObjectId) else to_object_id(user_id, "user_id")
+        return {
+            "published": self.db.products.count_documents({"seller_id": object_id, "deleted_at": {"$exists": False}}),
+            "bought": self.db.orders.count_documents({"buyer_id": object_id}),
+            "sold": self.db.orders.count_documents({"seller_id": object_id}),
+            "favorites": self.db.favorites.count_documents({"user_id": object_id}),
         }
 
 

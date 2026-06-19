@@ -13,6 +13,7 @@ Page({
     password: '',
     confirmPassword: '',
     nickname: '',
+    showPhonePanel: false,
     devTestEnabled: DEV_TEST_LOGIN_ENABLED,
     testAccounts: [
       { key: 'buyer_a', label: '测试买家 A' },
@@ -38,7 +39,15 @@ Page({
   },
 
   switchMode(event) {
-    this.setData({ mode: event.currentTarget.dataset.mode })
+    this.setData({ mode: event.currentTarget.dataset.mode, showPhonePanel: true })
+  },
+
+  openPhonePanel(event) {
+    this.setData({ mode: event.currentTarget.dataset.mode || 'login', showPhonePanel: true })
+  },
+
+  closePhonePanel() {
+    this.setData({ showPhonePanel: false })
   },
 
   setField(event) {

@@ -83,6 +83,22 @@ Page({
   applyRefund() {
     wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount}` })
   },
+  contactCounterparty() {
+    const order = this.data.order || {}
+    const user = order.contact_user || {}
+    const snapshot = order.product_snapshot || {}
+    if (!user.id) {
+      wx.showToast({ title: '联系人信息不存在', icon: 'none' })
+      return
+    }
+    wx.navigateTo({
+      url: `/pages/message/chat/index?conversation_id=${order.conversation_id || ''}&receiver_id=${user.id}&product_id=${snapshot.product_id || order.product_id || ''}&order_id=${order.id}&product_title=${encodeURIComponent(snapshot.title || '')}&product_price=${snapshot.price || ''}&product_cover=${encodeURIComponent(snapshot.cover_image || '')}`
+    })
+  },
+  viewProductSnapshot() {
+    if (!this.data.order || !this.data.order.id) return
+    wx.navigateTo({ url: `/pages/order/detail/index?id=${this.data.order.id}` })
+  },
   viewRefund() {
     const refund = this.data.order && this.data.order.refund
     if (refund && refund.id) {

@@ -10,5 +10,5 @@
       <view class="actions"><button wx:if="{{item.allowed_actions.can_seller_deliver}}" class="primary-btn" data-id="{{item.id}}" bindtap="deliver">我已交付/发货</button><button wx:if="{{item.allowed_actions.can_seller_cancel_and_refund}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="sellerCancel">取消并退款</button><button wx:if="{{item.allowed_actions.can_agree_refund || item.allowed_actions.can_reject_refund}}" class="ghost-btn" bindtap="handleAfterSale" data-id="{{item.id}}">处理售后</button></view>
     </view>
   </view>
-  <empty-state wx:else title="暂无卖出的订单" description="商品售出后会显示在这里"></empty-state>
+  <empty-state wx:else title="暂无卖出的订单"></empty-state>
 </view>

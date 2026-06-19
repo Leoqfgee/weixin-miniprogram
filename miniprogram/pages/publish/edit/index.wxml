@@ -1,10 +1,8 @@
 <view class="page publish-page">
   <view class="page-title">{{productId ? '编辑发布' : '发布商品'}}</view>
-  <view class="page-sub">让闲置流转，让校园更美好</view>
 
   <view class="publish-banner">
-    <view class="banner-title">校园二手 · 真实友善 · 交易安全</view>
-    <view class="banner-sub">请如实描述商品，规范发布更容易卖出哦</view>
+    <view class="banner-title">发布商品</view>
   </view>
 
   <view class="panel image-panel">
@@ -18,33 +16,30 @@
         </view>
       </view>
     </scroll-view>
-    <view class="muted tip">建议上传清晰实拍图，首图为封面更吸引人</view>
   </view>
 
   <view class="panel form-panel">
     <view class="block-title">标题</view>
-    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="请输入商品标题，建议20字以内" />
+    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="请输入商品标题" />
     <view class="ai-actions">
-      <button class="ai-btn" bindtap="useAiTitle"><text>AI</text> 标题建议<view>智能生成高曝光标题</view></button>
-      <button class="ai-btn" bindtap="useAiDescription"><text>AI</text> 润色描述<view>优化商品描述，更吸引人</view></button>
+      <button class="ai-btn" bindtap="useAiTitle"><text>AI</text> 标题建议</button>
+      <button class="ai-btn" bindtap="useAiDescription"><text>AI</text> 润色描述</button>
     </view>
   </view>
 
   <view class="panel form-panel">
     <view class="block-title">描述</view>
-    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="请详细描述商品的品牌型号、功能、使用情况、购买时间等信息..."></textarea>
+    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、使用情况和瑕疵"></textarea>
   </view>
 
   <view class="two-grid">
     <view class="panel mini-panel">
       <view class="block-title">价格 *</view>
       <input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="¥ 请输入价格" />
-      <view class="muted">建议参考相似商品定价</view>
     </view>
     <view class="panel mini-panel">
       <view class="block-title">库存 *</view>
       <input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" placeholder="请输入库存数量" />
-      <view class="muted">如仅一件可填1</view>
     </view>
   </view>
 

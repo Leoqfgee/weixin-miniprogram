@@ -1,13 +1,29 @@
 <view class="page login-page">
   <view class="login-hero">
     <view class="brand">校园二手</view>
-    <view class="slogan">一个账号，买卖都能用</view>
   </view>
 
-  <view class="panel login-card">
+  <view class="panel wechat-card">
+    <view class="entry-title">微信账号登录</view>
+    <button class="primary-btn wechat-action" bindtap="onWechatLogin">微信账号登录</button>
+  </view>
+
+  <view class="panel phone-entry">
+    <view class="entry-title">手机号登录 / 注册</view>
+    <view class="phone-actions">
+      <button class="ghost-btn" data-mode="login" bindtap="openPhonePanel">手机号登录</button>
+      <button class="ghost-btn" data-mode="register" bindtap="openPhonePanel">手机号注册</button>
+    </view>
+  </view>
+
+  <view wx:if="{{showPhonePanel}}" class="panel login-card">
+    <view class="panel-head">
+      <view class="entry-title">{{mode === 'login' ? '手机号登录' : '手机号注册'}}</view>
+      <view class="close" bindtap="closePhonePanel">收起</view>
+    </view>
     <view class="mode-tabs">
-      <view class="mode-tab {{mode === 'login' ? 'active' : ''}}" data-mode="login" bindtap="switchMode">手机号登录</view>
-      <view class="mode-tab {{mode === 'register' ? 'active' : ''}}" data-mode="register" bindtap="switchMode">手机号注册</view>
+      <view class="mode-tab {{mode === 'login' ? 'active' : ''}}" data-mode="login" bindtap="switchMode">登录</view>
+      <view class="mode-tab {{mode === 'register' ? 'active' : ''}}" data-mode="register" bindtap="switchMode">注册</view>
     </view>
 
     <view class="field">
@@ -28,13 +44,12 @@
     </view>
 
     <button class="primary-btn action" bindtap="submitPassword">{{mode === 'login' ? '登录' : '注册并登录'}}</button>
-    <button class="ghost-btn action secondary-action" bindtap="onWechatLogin">微信账号登录</button>
+  </view>
 
-    <view wx:if="{{devTestEnabled}}" class="dev-panel">
-      <view class="dev-title">开发测试账号</view>
-      <view class="dev-grid">
-        <button wx:for="{{testAccounts}}" wx:key="key" class="dev-btn" data-account="{{item.key}}" bindtap="onDevLogin">{{item.label}}</button>
-      </view>
+  <view wx:if="{{devTestEnabled}}" class="panel dev-panel">
+    <view class="dev-title">开发测试账号</view>
+    <view class="dev-grid">
+      <button wx:for="{{testAccounts}}" wx:key="key" class="dev-btn" data-account="{{item.key}}" bindtap="onDevLogin">{{item.label}}</button>
     </view>
   </view>
 </view>

@@ -3,5 +3,5 @@
   <view class="section-title">收到的评价（{{profile.review_count || 0}}）</view>
   <view wx:if="{{reviews.length}}" class="reviews"><view wx:for="{{reviews}}" wx:key="id" class="panel review" data-id="{{item.id}}" bindtap="viewReview"><view class="review-head"><text class="text-strong">{{item.reviewer.nickname}}</text><text class="rating">{{item.rating}} ★</text></view><view class="muted">{{item.content || '未填写评价内容'}}</view></view></view>
   <view wx:else class="muted empty-review">暂无评价</view>
-  <view class="section-title">在售商品</view><view wx:if="{{products.length}}" class="list"><product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card></view><empty-state wx:else title="暂无在售商品" description="稍后再来看看"></empty-state>
+  <view class="section-title">在售商品</view><view wx:if="{{products.length}}" class="list"><product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card></view><empty-state wx:else title="暂无在售商品"></empty-state>
 </view>

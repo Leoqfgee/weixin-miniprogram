@@ -16,6 +16,7 @@ Page({
     conversationId: '',
     receiverId: '',
     productId: '',
+    orderId: '',
     product: {},
     messages: [],
     content: '',
@@ -35,6 +36,7 @@ Page({
       conversationId: options.conversation_id || '',
       receiverId: options.receiver_id || '',
       productId: options.product_id || '',
+      orderId: options.order_id || '',
       currentUserId: user.id || '',
       supportMode: options.support === '1',
       product: {
@@ -66,6 +68,8 @@ Page({
   loadMessages() {
     if (!this.data.conversationId) return
     api.get(`/messages/${this.data.conversationId}`).then((data) => {
+      const context = data.context || {}
+      const contextProduct = context.product || {}
       let previous = 0
       const messages = (data.items || []).map((item) => {
         const stamp = new Date(item.created_at).getTime()
@@ -77,7 +81,17 @@ Page({
         previous = stamp
         return result
       })
-      this.setData({ messages, scrollIntoView: messages.length ? `msg-${messages[messages.length - 1].id}` : '' })
+      const nextData = { messages, scrollIntoView: messages.length ? `msg-${messages[messages.length - 1].id}` : '' }
+      if (context.order_id && !this.data.orderId) nextData.orderId = context.order_id
+      if (contextProduct.title && !this.data.product.title) {
+        nextData.productId = contextProduct.id || this.data.productId
+        nextData.product = {
+          title: contextProduct.title || '',
+          price: contextProduct.price || '',
+          cover_image: normalizeImageUrl(contextProduct.cover_image || '', 'product')
+        }
+      }
+      this.setData(nextData)
       refreshUnreadBadge()
     })
   },
@@ -130,6 +144,10 @@ Page({
     wx.previewImage({ urls: [event.currentTarget.dataset.url] })
   },
   viewProduct() {
+    if (this.data.orderId) {
+      wx.navigateTo({ url: `/pages/order/detail/index?id=${this.data.orderId}` })
+      return
+    }
     if (this.data.productId) {
       wx.navigateTo({ url: `/pages/product/detail/index?id=${this.data.productId}` })
     }
@@ -147,7 +165,8 @@ Page({
     }
     api.post('/messages', Object.assign({
       receiver_id: this.data.receiverId,
-      product_id: this.data.productId
+      product_id: this.data.productId,
+      order_id: this.data.orderId
     }, extra), { loading: true }).then((message) => {
       this.setData({
         content: '',

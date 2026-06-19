@@ -17,12 +17,6 @@
   margin-left: 6rpx;
 }
 
-.brand-sub {
-  margin-top: 6rpx;
-  color: #7a8491;
-  font-size: 25rpx;
-}
-
 .profile-card {
   overflow: hidden;
   background: linear-gradient(135deg, #f1fbf5 0%, #e4f7e8 100%);

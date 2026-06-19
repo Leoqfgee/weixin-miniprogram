@@ -243,6 +243,116 @@ def test_update_me_completes_platform_identity_and_masks_openid():
     assert "session_key" not in body
 
 
+def test_update_me_rejects_invalid_contact_phone_and_accepts_valid_phone():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    app.db.users.delete_many({"openid": "local_wechat_phone-code"})
+    login = client.post("/api/v1/auth/wechat-login", json={"code": "phone-code"}).get_json()["data"]
+    headers = auth_headers(login["token"])
+    base_payload = {
+        "nickname": "手机号测试",
+        "avatar_url": "https://example.com/avatar.png",
+        "identity_type": "custom",
+    }
+
+    for value in ["1283864646464", "123", "1880000000", "abcdef"]:
+        response = client.put(
+            "/api/v1/users/me",
+            headers=headers,
+            json={**base_payload, "contact_phone": value},
+        )
+        assert response.status_code == 422
+        body = response.get_json()
+        assert "手机号格式不正确" in str(body)
+
+    valid = client.put(
+        "/api/v1/users/me",
+        headers=headers,
+        json={**base_payload, "contact_phone": "18800000001"},
+    )
+    assert valid.status_code == 200
+    assert valid.get_json()["data"]["profile"]["contact_phone"] == "18800000001"
+
+
+def test_profile_avatar_is_isolated_between_phone_accounts():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    app.db.users.delete_many({"phone": {"$in": ["19900000011", "19900000012"]}})
+    app.db.users.delete_many({"openid": {"$in": ["pytest-profile-a", "pytest-profile-b"]}})
+
+    account_a = client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "19900000011",
+            "password": "test123456",
+            "nickname": "Account A",
+            "campus": "Campus A",
+            "openid": "pytest-profile-a",
+        },
+    )
+    assert account_a.status_code == 201
+    token_a = account_a.get_json()["data"]["token"]
+    user_a_id = account_a.get_json()["data"]["user"]["id"]
+
+    update_a = client.put(
+        "/api/v1/users/me",
+        headers=auth_headers(token_a),
+        json={
+            "nickname": "Account A Updated",
+            "avatar_url": "https://example.com/account-a-avatar.png",
+            "campus": "Campus A Updated",
+            "contact_phone": "19900000011",
+        },
+    )
+    assert update_a.status_code == 200
+    updated_a = update_a.get_json()["data"]
+    assert updated_a["id"] == user_a_id
+    assert updated_a["profile"]["avatar_url"] == "https://example.com/account-a-avatar.png"
+    assert updated_a["profile"]["campus"] == "Campus A Updated"
+
+    account_b = client.post(
+        "/api/v1/auth/register",
+        json={
+            "phone": "19900000012",
+            "password": "test123456",
+            "nickname": "Account B",
+            "campus": "Campus B",
+            "openid": "pytest-profile-b",
+        },
+    )
+    assert account_b.status_code == 201
+    token_b = account_b.get_json()["data"]["token"]
+    user_b = account_b.get_json()["data"]["user"]
+
+    me_b = client.get("/api/v1/users/me", headers=auth_headers(token_b))
+    assert me_b.status_code == 200
+    body_b = me_b.get_json()["data"]
+    assert body_b["id"] == user_b["id"]
+    assert body_b["id"] != user_a_id
+    assert body_b["profile"]["nickname"] == "Account B"
+    assert body_b["profile"]["campus"] == "Campus B"
+    assert body_b["profile"]["avatar_url"] == ""
+    assert body_b["stats"] == {"published": 0, "bought": 0, "sold": 0, "favorites": 0}
+
+    login_a = client.post(
+        "/api/v1/auth/password-login",
+        json={"phone": "19900000011", "password": "test123456"},
+    )
+    assert login_a.status_code == 200
+    relogin_token_a = login_a.get_json()["data"]["token"]
+    me_a = client.get("/api/v1/users/me", headers=auth_headers(relogin_token_a))
+    assert me_a.status_code == 200
+    body_a = me_a.get_json()["data"]
+    assert body_a["id"] == user_a_id
+    assert body_a["profile"]["nickname"] == "Account A Updated"
+    assert body_a["profile"]["avatar_url"] == "https://example.com/account-a-avatar.png"
+    assert body_a["profile"]["campus"] == "Campus A Updated"
+
+
 def test_dev_test_login_requires_switch_and_can_login_seed_user(monkeypatch):
     init_db()
     app = create_app()

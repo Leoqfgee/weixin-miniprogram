@@ -24,7 +24,7 @@
     <view class="muted">{{item.delivery_text}} · {{item.delivery_location}}</view>
 
     <view class="section-title">退款信息</view>
-    <view class="muted">原因：{{item.refund.reason}} · 状态：{{item.refund.status}}</view>
+    <view class="muted">原因：{{item.refund.reason}} · 状态：{{item.refund.status_text || '待处理'}}</view>
     <view class="image-grid">
       <image wx:for="{{item.refund.evidence_images}}" wx:key="*this" src="{{item}}" mode="aspectFill"></image>
     </view>
@@ -40,7 +40,7 @@
       <button class="ghost-btn" data-id="{{item.id}}" data-action="reject_refund" bindtap="arbitrate">支持卖家</button>
       <button class="ghost-btn" data-id="{{item.id}}" data-action="partial_refund" bindtap="arbitrate">部分退款</button>
     </view>
-    <view wx:else class="muted">处理结果：{{item.admin_result || item.status}}</view>
+    <view wx:else class="muted">处理结果：{{item.admin_result_text || item.status_text || '已处理'}}</view>
   </view>
 
   <empty-state wx:if="{{appeals.length === 0}}" text="暂无申诉"></empty-state>

@@ -1,11 +1,8 @@
 <view class="page chat-page">
-  <view class="safety-tip">交易安全提醒：请通过校园二手内置聊天和交易，不要脱离平台交易。</view>
-
   <view wx:if="{{product.title}}" class="product-head" bindtap="viewProduct">
     <image wx:if="{{product.cover_image}}" class="product-cover" src="{{product.cover_image}}" mode="aspectFill"></image>
     <view class="product-main">
       <view class="text-strong">{{product.title}}</view>
-      <view class="muted">校内交易 · 可现场验货</view>
       <view wx:if="{{product.price}}" class="price">¥{{product.price}}</view>
     </view>
     <view class="chevron">›</view>
@@ -22,7 +19,7 @@
             <image wx:if="{{item.message_type === 'image'}}" class="chat-image" src="{{item.image_url}}" mode="widthFix" data-url="{{item.image_url}}" bindtap="previewImage"></image>
             <video wx:elif="{{item.message_type === 'video'}}" class="chat-video" src="{{item.image_url}}"></video>
             <view wx:elif="{{item.message_type === 'voice'}}" class="voice">▶ 语音消息</view>
-            <view wx:elif="{{item.message_type === 'review'}}" class="review-card" data-id="{{item.review_id}}" bindtap="viewReview"><view class="text-strong">交易评价已发布</view><view class="muted">点击查看评价详情 ›</view></view>
+            <view wx:elif="{{item.message_type === 'review'}}" class="review-card" data-id="{{item.review_id}}" bindtap="viewReview"><view class="text-strong">交易评价已发布</view></view>
             <text wx:else>{{item.content}}</text>
           </view>
           <view wx:if="{{item.mine}}" class="read-state">{{item.read_at ? '已读' : '未读'}}</view>

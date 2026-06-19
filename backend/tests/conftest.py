@@ -7,6 +7,7 @@ from pymongo import MongoClient
 # 测试使用独立数据库，避免 pytest 演示商品污染本地课程演示主库。
 os.environ.setdefault("MONGO_DB_NAME", "campus_secondhand_test")
 os.environ.setdefault("PYTHONNOUSERSITE", "1")
+os.environ["AI_MODE"] = "mock"
 
 
 @pytest.fixture(scope="session", autouse=True)

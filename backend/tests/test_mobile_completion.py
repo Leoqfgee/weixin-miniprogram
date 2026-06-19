@@ -113,8 +113,14 @@ def test_incomplete_draft_edit_and_mutual_anonymous_reviews_in_chat():
     detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
     assert detail["status"] == "completed"
     assert len(detail["reviews"]) == 2
+    assert detail["current_role"] == "buyer"
+    assert detail["contact_label"] == "联系卖家"
+    assert detail["conversation_id"]
+    assert detail["status_text"] == "交易完成"
 
     conversation = client.get("/api/v1/messages/conversations", headers=auth_headers(buyer_token)).get_json()["data"]["items"][0]
+    assert conversation["order_id"] == order["id"]
+    assert conversation["product"]["title"]
     messages = client.get(
         f"/api/v1/messages/{conversation['conversation_id']}",
         headers=auth_headers(buyer_token),
@@ -126,6 +132,11 @@ def test_incomplete_draft_edit_and_mutual_anonymous_reviews_in_chat():
     public_profile = client.get(f"/api/v1/users/{buyer_id}/profile").get_json()["data"]
     assert public_profile["user"]["review_count"] >= 1
     assert public_profile["reviews"]
+
+    me = client.get("/api/v1/users/me", headers=auth_headers(buyer_token)).get_json()["data"]
+    assert me["stats"]["bought"] >= 1
+    assert me["stats"]["published"] == 0
+    assert me["stats"]["favorites"] == 0
 
 
 def test_on_sale_edit_republish_delete_and_admin_support_contact():

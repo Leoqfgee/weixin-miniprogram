@@ -14,9 +14,22 @@ function getUser() {
 
 function setUser(user) {
   wx.setStorageSync(STORAGE_KEYS.user, user || null)
+  if (user && user.id) {
+    wx.setStorageSync(`${STORAGE_KEYS.userScopedPrefix}${user.id}`, user)
+    wx.setStorageSync(STORAGE_KEYS.activeUserId, user.id)
+  }
+}
+
+function clearAccountRuntimeState() {
+  wx.removeStorageSync(STORAGE_KEYS.user)
+  wx.removeStorageSync(STORAGE_KEYS.activeUserId)
 }
 
 function saveAuth(token, user) {
+  const current = getUser()
+  if (current && user && current.id && user.id && current.id !== user.id) {
+    clearAccountRuntimeState()
+  }
   setToken(token)
   setUser(user)
   const app = getApp()
@@ -27,7 +40,7 @@ function saveAuth(token, user) {
 
 function clearAuth() {
   wx.removeStorageSync(STORAGE_KEYS.token)
-  wx.removeStorageSync(STORAGE_KEYS.user)
+  clearAccountRuntimeState()
   const app = getApp()
   if (app && app.refreshAuth) {
     app.refreshAuth('', null)

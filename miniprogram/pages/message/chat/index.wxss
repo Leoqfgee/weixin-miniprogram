@@ -2,16 +2,6 @@
   padding: 18rpx 24rpx 118rpx;
 }
 
-.safety-tip {
-  padding: 18rpx 22rpx;
-  color: #11924f;
-  background: #eefaf2;
-  border: 1rpx solid #cfeedd;
-  border-radius: 18rpx;
-  line-height: 1.45;
-  font-size: 24rpx;
-}
-
 .product-head {
   display: flex;
   align-items: center;

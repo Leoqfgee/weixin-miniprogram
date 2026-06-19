@@ -35,7 +35,12 @@ Page({
     })
   },
   onInput(event) {
-    this.setData({ [`form.${event.currentTarget.dataset.field}`]: event.detail.value })
+    const field = event.currentTarget.dataset.field
+    let value = event.detail.value
+    if (field === 'contact_phone') {
+      value = String(value || '').replace(/\D/g, '').slice(0, 11)
+    }
+    this.setData({ [`form.${field}`]: value })
   },
   onChooseWechatAvatar(event) {
     const filePath = event.detail.avatarUrl
@@ -88,12 +93,17 @@ Page({
       wx.showToast({ title: '请选择头像', icon: 'none' })
       return
     }
+    const contactPhone = String(form.contact_phone || '').trim()
+    if (contactPhone && !/^1[3-9]\d{9}$/.test(contactPhone)) {
+      wx.showToast({ title: '手机号格式不正确，请填写 11 位手机号', icon: 'none' })
+      return
+    }
     api.put('/users/me', {
       avatar_url: form.avatar,
       nickname: form.nickname,
       campus: form.campus,
       bio: form.bio,
-      contact_phone: form.contact_phone,
+      contact_phone: contactPhone,
       contact_wechat: form.contact_wechat,
       identity_type: form.identity_type || 'custom'
     }, { loading: true }).then((user) => {

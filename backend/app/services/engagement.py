@@ -55,6 +55,7 @@ class MessageService:
     def send_message(self, sender_id, payload):
         receiver_id = to_object_id(payload.get("receiver_id"), "receiver_id")
         product_id = payload.get("product_id")
+        order_id = to_object_id(payload.get("order_id"), "order_id") if payload.get("order_id") else None
         message_type = (payload.get("message_type") or "text").strip()
         content = (payload.get("content") or "").strip()
         image_url = (payload.get("image_url") or "").strip()
@@ -70,6 +71,14 @@ class MessageService:
             raise NotFoundError("接收方不存在")
 
         product_object_id = to_object_id(product_id, "product_id") if product_id else None
+        if order_id:
+            order = self.db.orders.find_one({"_id": order_id})
+            if not order:
+                raise NotFoundError("订单不存在")
+            participants = {str(order["buyer_id"]), str(order["seller_id"])}
+            if str(sender_id) not in participants or str(receiver_id) not in participants:
+                raise ForbiddenError("无权限使用该订单会话")
+            product_object_id = order.get("product_id") or product_object_id
         user_pair = sorted([str(sender_id), str(receiver_id)])
         conversation_id = "_".join(user_pair + ([str(product_object_id)] if product_object_id else []))
         doc = {
@@ -78,6 +87,7 @@ class MessageService:
             "sender_id": ObjectId(str(sender_id)),
             "receiver_id": receiver_id,
             "product_id": product_object_id,
+            "order_id": order_id,
             "message_type": message_type,
             "content": content,
             "image_url": image_url,
@@ -139,7 +149,10 @@ class MessageService:
             {"$set": {"read_at": utc_now()}},
         )
         items = list(self.db.messages.find(query).sort("created_at", 1))
-        return {"items": [self._present_message(item, user_object_id) for item in items]}
+        return {
+            "items": [self._present_message(item, user_object_id) for item in items],
+            "context": self._conversation_context(items[-1], user_object_id) if items else {},
+        }
 
     def list_notifications(self, user_id):
         user_object_id = ObjectId(str(user_id))
@@ -148,7 +161,7 @@ class MessageService:
             .sort("created_at", DESCENDING)
             .limit(50)
         )
-        return {"items": [self._present_refund(item, user["_id"], user) for item in items]}
+        return {"items": [self._present_message(item, user_object_id) for item in items]}
 
     def _present_conversation(self, row, user_id):
         data = serialize_doc(row)
@@ -157,6 +170,11 @@ class MessageService:
         other_user = self.users.find_by_id(other_id) if other_id else None
         other_profile = self.users.find_profile(other_id) if other_id else None
         product = self.products.find_by_id(last.get("product_id")) if last.get("product_id") else None
+        order = self._conversation_order(last, user_id)
+        product_snapshot = {}
+        if order:
+            order_item = self.db.order_items.find_one({"order_id": order["_id"]}) or {}
+            product_snapshot = order_item.get("product_snapshot", {}) or {}
         data["conversation_id"] = data.get("id")
         data["other_user"] = {
             "id": str(other_id) if other_id else "",
@@ -164,12 +182,8 @@ class MessageService:
             "avatar": normalize_image_url((other_profile or {}).get("avatar") or (other_profile or {}).get("avatar_url", "")),
             "campus": (other_profile or {}).get("campus", ""),
         } if other_user else None
-        data["product"] = {
-            "id": str(product["_id"]),
-            "title": product.get("title", ""),
-            "cover_image": normalize_image_url(product.get("cover_image", "")),
-            "price": product.get("price", 0),
-        } if product else None
+        data["order_id"] = str(order["_id"]) if order else ""
+        data["product"] = self._conversation_product(product, product_snapshot)
         data["updated_at"] = data.get("last_message", {}).get("created_at")
         return data
 
@@ -184,6 +198,53 @@ class MessageService:
             "avatar": normalize_image_url(sender_profile.get("avatar") or sender_profile.get("avatar_url", "")),
         }
         return data
+
+    def _conversation_context(self, message, user_id):
+        if not message:
+            return {}
+        product = self.products.find_by_id(message.get("product_id")) if message.get("product_id") else None
+        order = self._conversation_order(message, user_id)
+        product_snapshot = {}
+        if order:
+            order_item = self.db.order_items.find_one({"order_id": order["_id"]}) or {}
+            product_snapshot = order_item.get("product_snapshot", {}) or {}
+        return {
+            "order_id": str(order["_id"]) if order else "",
+            "product": self._conversation_product(product, product_snapshot),
+        }
+
+    def _conversation_order(self, message, user_id):
+        if not message:
+            return None
+        if message.get("order_id"):
+            return self.db.orders.find_one({"_id": message["order_id"]})
+        product_id = message.get("product_id")
+        if not product_id:
+            return None
+        other_id = message.get("receiver_id") if str(message.get("sender_id")) == str(user_id) else message.get("sender_id")
+        return self.db.orders.find_one(
+            {
+                "product_id": product_id,
+                "$or": [
+                    {"buyer_id": user_id, "seller_id": other_id},
+                    {"buyer_id": other_id, "seller_id": user_id},
+                ],
+            },
+            sort=[("created_at", DESCENDING)],
+        )
+
+    def _conversation_product(self, product, snapshot=None):
+        snapshot = snapshot or {}
+        if not product and not snapshot:
+            return None
+        return {
+            "id": str((product or {}).get("_id") or snapshot.get("product_id") or ""),
+            "title": (product or {}).get("title") or snapshot.get("title", ""),
+            "cover_image": normalize_image_url((product or {}).get("cover_image") or snapshot.get("cover_image", "")),
+            "price": (product or {}).get("price") or snapshot.get("price", 0),
+            "condition": (product or {}).get("condition") or snapshot.get("condition", ""),
+            "status": (product or {}).get("status", ""),
+        }
 
 
 class ReviewService:
@@ -268,6 +329,7 @@ class ReviewService:
                 "sender_id": review["reviewer_id"],
                 "receiver_id": receiver_id,
                 "product_id": order["product_id"],
+                "order_id": order["_id"],
                 "message_type": "review",
                 "content": "对方完成了评价，点击查看详情",
                 "review_id": review["_id"],
@@ -583,10 +645,19 @@ class RefundService:
         data["timeline"] = self._refund_timeline(refund)
         user_id = str(current_user_id or "")
         is_admin = current_user and "admin" in current_user.get("roles", [])
+        is_buyer = user_id == str(refund["buyer_id"])
+        contact_party = data["seller"] if is_buyer else data["buyer"]
+        data["current_role"] = "buyer" if is_buyer else "seller"
+        data["conversation_id"] = _order_conversation_id(order) if order else ""
+        data["contact_user"] = contact_party
+        data["contact_label"] = "联系卖家" if is_buyer else "联系买家"
+        data["counterparty"] = contact_party
+        data["counterparty_label"] = "卖家" if is_buyer else "买家"
         data["permissions"] = {
             "can_seller_handle": user_id == str(refund["seller_id"]) and refund.get("status") == "requested",
             "can_apply_appeal": user_id == str(refund["buyer_id"]) and refund.get("status") == "seller_rejected",
             "can_admin_arbitrate": bool(is_admin) and refund.get("status") in {"requested", "seller_rejected"},
+            "can_contact": bool(contact_party.get("id")),
         }
         return data
 
@@ -799,6 +870,10 @@ class AppealService:
         refund = self.db.refunds.find_one({"_id": appeal["refund_id"]})
         data["order"] = serialize_doc(order) if order else None
         data["refund"] = serialize_doc(refund) if refund else None
+        if data["refund"]:
+            status_meta = REFUND_STATUS_META.get(refund.get("status"), {"text": refund.get("status", ""), "group": refund.get("status", "")})
+            data["refund"]["status_text"] = status_meta["text"]
+            data["refund"]["status_group"] = status_meta["group"]
         data["payment"] = serialize_doc(self.payments.find_by_order(appeal["order_id"])) or {}
         data["escrow"] = serialize_doc(self.escrows.find_by_order(appeal["order_id"])) or {}
         data["delivery"] = serialize_doc(self.db.deliveries.find_one({"order_id": appeal["order_id"]})) or {}
@@ -835,8 +910,12 @@ class AiService:
         error_message = ""
         success = False
         try:
+            if mode == "mock":
+                result_data = self._mock_product_copy(payload, action)
+                success = True
+                return self._store_log(user_id, feature_type, "mock", payload, result_data, success, error_message, started)
             if mode not in {"qwen", "dashscope"}:
-                raise AppError(50302, "AI_MODE 必须配置为 qwen 才能调用正式千问 API", 503)
+                raise AppError(50302, "AI_MODE 必须配置为 qwen 或 dashscope 才能调用正式模型", 503)
             api_key = self.config.get("DASHSCOPE_API_KEY", "")
             if not api_key:
                 raise AppError(50301, "AI 服务未配置 DASHSCOPE_API_KEY", 503)
@@ -853,6 +932,24 @@ class AiService:
             error_message = getattr(exc, "message", str(exc))
             self._store_log(user_id, feature_type, model, payload, result_data or {}, success, error_message, started)
             raise
+
+    def _mock_product_copy(self, payload, action):
+        keyword = (payload.get("keywords") or payload.get("title") or payload.get("description") or "校园好物").strip()
+        title_suggestions = [
+            f"{keyword}，校内自提更方便",
+            f"低价转让{keyword}",
+            f"{keyword}实拍，可当面验货",
+        ]
+        description = (
+            f"这件{keyword}适合校内同学日常使用，支持当面查看成色。"
+            "如需更多细节可以直接联系卖家沟通，交易建议走平台订单。"
+        )
+        result = {"tags": ["校内交易", "可验货"]}
+        if action in {"title", "both"}:
+            result["title_suggestions"] = title_suggestions
+        if action in {"description", "both"}:
+            result["description"] = description
+        return result
 
     def _store_log(self, user_id, feature_type, model, payload, result_data, success, error_message, started):
         latency_ms = int((perf_counter() - started) * 1000)
@@ -956,6 +1053,13 @@ def _amount(value, field):
     if amount <= 0:
         raise ValidationError("参数校验失败", [{"field": field, "message": "金额必须大于 0"}])
     return amount
+
+
+def _order_conversation_id(order):
+    if not order:
+        return ""
+    user_pair = sorted([str(order["buyer_id"]), str(order["seller_id"])])
+    return "_".join(user_pair + [str(order["product_id"])])
 
 
 def _summary_text(value, limit=240):

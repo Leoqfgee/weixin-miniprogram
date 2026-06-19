@@ -32,5 +32,5 @@
   <view wx:if="{{products.length}}" class="list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
   </view>
-  <empty-state wx:else title="暂无符合条件的商品" description="换个关键词或筛选条件试试"></empty-state>
+  <empty-state wx:else title="暂无符合条件的商品"></empty-state>
 </view>

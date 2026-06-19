@@ -12,14 +12,53 @@
   font-weight: 900;
 }
 
-.slogan {
-  margin-top: 12rpx;
-  color: #697580;
-  font-size: 27rpx;
-}
-
 .login-card {
   padding: 30rpx;
+}
+
+.wechat-card,
+.phone-entry {
+  padding: 34rpx 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.entry-title {
+  color: #17202a;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.wechat-action {
+  margin-top: 30rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.phone-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18rpx;
+  margin-top: 26rpx;
+}
+
+.phone-actions button {
+  height: 78rpx;
+  line-height: 78rpx;
+  margin: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22rpx;
+}
+
+.close {
+  color: #6b7280;
+  font-size: 25rpx;
 }
 
 .mode-tabs {
@@ -80,9 +119,8 @@ input {
 }
 
 .dev-panel {
-  margin-top: 28rpx;
-  padding-top: 24rpx;
-  border-top: 1rpx solid #edf0f3;
+  margin-top: 24rpx;
+  padding: 26rpx;
 }
 
 .dev-title {

@@ -32,6 +32,30 @@
   font-weight: 800;
 }
 
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14rpx;
+  padding: 18rpx 24rpx;
+  background: #ffffff;
+}
+
+.role-tab {
+  height: 76rpx;
+  line-height: 76rpx;
+  color: #667281;
+  text-align: center;
+  background: #eef5f1;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.role-tab.active {
+  color: #ffffff;
+  background: #13b86b;
+}
+
 .tabs {
   background: #ffffff;
   white-space: nowrap;

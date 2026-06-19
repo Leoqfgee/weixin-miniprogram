@@ -4,6 +4,10 @@
     <view class="nav-title">售后管理</view>
   </view>
 
+  <view class="role-tabs">
+    <view wx:for="{{roleTabs}}" wx:key="value" class="role-tab {{index === activeRoleIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectRole">{{item.label}}</view>
+  </view>
+
   <scroll-view scroll-x class="tabs">
     <view class="tabs-inner">
       <view wx:for="{{tabs}}" wx:key="value" class="tab {{index === activeTab ? 'active' : ''}}" data-index="{{index}}" bindtap="selectTab">
@@ -15,7 +19,7 @@
 
   <view class="hint-row">
     <text class="hint-icon">✓</text>
-    <text>仅显示当前账号相关的售后单，可在此处理售后申请</text>
+    <text>{{role === 'buyer' ? '查看我发起的售后申请与处理进展' : '查看买家向我发起的售后申请'}}</text>
   </view>
 
   <view wx:if="{{loadError && !refunds.length}}" class="error-panel">售后列表加载失败，请下拉重试</view>
@@ -41,9 +45,9 @@
       </view>
 
       <view class="buyer-row">
-        <image class="avatar" src="{{item.buyer.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
-        <text class="buyer-name">{{item.buyer.nickname || '校园同学'}}</text>
-        <text class="phone">☎ {{item.buyer.phone_masked || '未留手机号'}}</text>
+        <image class="avatar" src="{{item.counterparty.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+        <text class="buyer-name">{{item.counterparty_label}}：{{item.counterparty.nickname || '校园同学'}}</text>
+        <text class="phone">☎ {{item.counterparty.phone_masked || '未留手机号'}}</text>
         <text class="apply-time">申请时间：{{item.created_at}}</text>
       </view>
 
@@ -59,6 +63,6 @@
     </view>
   </view>
 
-  <empty-state wx:elif="{{!loading && !loadError}}" title="暂无售后申请" description="有买家申请售后后会显示在这里"></empty-state>
+  <empty-state wx:elif="{{!loading && !loadError}}" title="暂无售后申请"></empty-state>
   <view wx:if="{{finished && refunds.length}}" class="bottom-text">没有更多了</view>
 </view>

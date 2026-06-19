@@ -24,7 +24,7 @@ Page({
     const other = item.other_user || {}
     const product = item.product || {}
     wx.navigateTo({
-      url: `/pages/message/chat/index?conversation_id=${item.conversation_id || item.id}&receiver_id=${other.id || ''}&product_id=${product.id || ''}&product_title=${encodeURIComponent(product.title || '')}&product_price=${product.price || ''}&product_cover=${encodeURIComponent(normalizeImageUrl(product.cover_image, 'product'))}`
+      url: `/pages/message/chat/index?conversation_id=${item.conversation_id || item.id}&receiver_id=${other.id || ''}&product_id=${product.id || ''}&order_id=${item.order_id || ''}&product_title=${encodeURIComponent(product.title || '')}&product_price=${product.price || ''}&product_cover=${encodeURIComponent(normalizeImageUrl(product.cover_image, 'product'))}`
     })
   }
 })

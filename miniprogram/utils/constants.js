@@ -29,7 +29,9 @@ const DEV_TEST_LOGIN_ENABLED = CURRENT_ENV === 'develop'
 
 const STORAGE_KEYS = {
   token: 'campus_token',
-  user: 'campus_user'
+  user: 'campus_user',
+  activeUserId: 'campus_active_user_id',
+  userScopedPrefix: 'campus_user_profile_'
 }
 
 const PRODUCT_STATUS_TEXT = {

@@ -10,6 +10,6 @@
       </view>
     </view>
   </view>
-  <empty-state wx:else title="暂无待审核商品" description="卖家提交审核后会出现在这里"></empty-state>
+  <empty-state wx:else title="暂无待审核商品"></empty-state>
   <button class="ghost-btn refresh" bindtap="loadPending">刷新待审核</button>
 </view>

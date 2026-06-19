@@ -1,3 +1,36 @@
+.order-detail-page {
+  padding-bottom: 140rpx;
+}
+
+.status-hero {
+  padding: 34rpx 30rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #12a05b, #18c374);
+  border-radius: 26rpx;
+}
+
+.role-tag {
+  display: inline-block;
+  padding: 8rpx 18rpx;
+  color: #0f8f52;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  font-weight: 800;
+}
+
+.status-title {
+  margin-top: 20rpx;
+  font-size: 44rpx;
+  font-weight: 900;
+}
+
+.status-tip {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  line-height: 1.5;
+}
+
 .steps {
   display: flex;
   justify-content: space-between;
@@ -7,16 +40,26 @@
 
 .step {
   flex: 1;
-  padding: 10rpx 6rpx;
+  padding: 8rpx 4rpx;
   color: #8a94a3;
-  background: #f7f8f5;
-  border-radius: 999rpx;
   font-size: 21rpx;
   text-align: center;
 }
 
+.dot {
+  width: 18rpx;
+  height: 18rpx;
+  margin: 0 auto 8rpx;
+  border-radius: 50%;
+  background: #d9e1dc;
+}
+
 .step.active {
-  color: #ffffff;
+  color: #16a45a;
+  font-weight: 800;
+}
+
+.step.active .dot {
   background: #16b85e;
 }
 
@@ -36,6 +79,13 @@
   font-size: 25rpx;
 }
 
+.amount-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
 .amount {
   margin-top: 24rpx;
   color: #d64545;
@@ -43,16 +93,17 @@
   font-weight: 700;
 }
 
-.item {
-  margin-top: 24rpx;
-  padding: 20rpx;
-  background: #f7f8f5;
-  border-radius: 20rpx;
+.order-meta {
+  color: #687380;
+  font-size: 24rpx;
+  line-height: 1.7;
+  text-align: right;
 }
 
 .product-line {
   display: flex;
   gap: 18rpx;
+  margin-top: 18rpx;
 }
 
 .thumb {
@@ -66,6 +117,58 @@
 .product-info {
   min-width: 0;
   flex: 1;
+}
+
+.snapshot-desc {
+  margin-top: 10rpx;
+  color: #4b5563;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.contact-avatar {
+  width: 86rpx;
+  height: 86rpx;
+  border-radius: 50%;
+  background: #edf1f5;
+}
+
+.contact-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-btn {
+  width: 170rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  margin: 0;
+  font-size: 24rpx;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 14rpx 0;
+  color: #2f3742;
+  font-size: 26rpx;
+  line-height: 1.55;
+}
+
+.kv > text {
+  flex: none;
+  color: #7a8491;
+}
+
+.kv > view {
+  text-align: right;
 }
 
 .info-block {
@@ -96,10 +199,17 @@
 }
 
 .actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 16rpx;
   margin-top: 32rpx;
+  padding: 18rpx 24rpx calc(18rpx + env(safe-area-inset-bottom));
+  background: #ffffff;
+  box-shadow: 0 -8rpx 26rpx rgba(22, 34, 48, 0.08);
 }
 
 .actions button {

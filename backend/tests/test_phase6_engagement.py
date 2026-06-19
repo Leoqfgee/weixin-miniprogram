@@ -78,13 +78,16 @@ def test_phase6_message_review_refund_ai_and_admin_reports():
         json={
             "receiver_id": product_detail["seller"]["id"],
             "product_id": product_id,
+            "order_id": order_id,
             "content": "商品还在吗？",
         },
     )
     assert message_response.status_code == 201
+    assert message_response.get_json()["data"]["order_id"] == order_id
     conversations = client.get("/api/v1/messages/conversations", headers=auth_headers(seller["token"]))
     assert conversations.status_code == 200
     assert conversations.get_json()["data"]["items"]
+    assert conversations.get_json()["data"]["items"][0]["order_id"] == order_id
 
     ai_response = client.post(
         "/api/v1/ai/product-copy",

@@ -10,5 +10,5 @@
       <view class="actions"><button wx:if="{{item.allowed_actions.can_pay}}" class="primary-btn" data-id="{{item.id}}" bindtap="pay">去支付</button><button wx:if="{{item.allowed_actions.can_confirm_receipt}}" class="primary-btn" data-id="{{item.id}}" bindtap="confirmReceive">确认收货</button><button wx:if="{{item.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyAfterSale" data-id="{{item.id}}" data-amount="{{item.total_amount}}">申请售后</button></view>
     </view>
   </view>
-  <empty-state wx:else title="暂无买到的订单" description="从商品详情页购买后会显示在这里"></empty-state>
+  <empty-state wx:else title="暂无买到的订单"></empty-state>
 </view>

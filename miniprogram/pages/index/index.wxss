@@ -17,12 +17,6 @@
   margin-left: 6rpx;
 }
 
-.brand-sub {
-  margin-top: 6rpx;
-  color: #7a8491;
-  font-size: 26rpx;
-}
-
 .search-panel {
   display: flex;
   align-items: center;

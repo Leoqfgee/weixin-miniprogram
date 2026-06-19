@@ -89,7 +89,18 @@ def test_refund_list_detail_and_unread_badge_flow():
     assert item["product"]["title"]
     assert item["buyer"]["nickname"]
     assert "phone_masked" in item["buyer"]
+    assert item["current_role"] == "seller"
+    assert item["contact_label"] == "联系买家"
+    assert item["contact_user"]["id"] == str(refund_doc["buyer_id"])
+    assert item["conversation_id"]
     assert "applicant" not in item
+
+    buyer_list = client.get("/api/v1/refunds?role=buyer", headers=auth_headers(buyer_token))
+    assert buyer_list.status_code == 200
+    buyer_item = next(row for row in buyer_list.get_json()["data"]["items"] if row["id"] == refund_id)
+    assert buyer_item["current_role"] == "buyer"
+    assert buyer_item["contact_label"] == "联系卖家"
+    assert buyer_item["contact_user"]["id"] == str(refund_doc["seller_id"])
 
     assert app.db.messages.count_documents({
         "refund_id": refund_doc["_id"],
@@ -204,6 +215,7 @@ def test_buyer_reject_creates_refund_record_and_order_detail_contains_refund():
     detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
     assert detail["status"] == "refunding"
     assert detail["refund"]["status"] == "requested"
+    assert detail["refund"]["status_text"] == "待处理"
     assert detail["refund"]["reason"] == "买家拒绝收货"
     assert detail["refund"]["amount"] == detail["pay_amount"]
     assert "view_refund" in detail["allowed_actions"]["actions"]
