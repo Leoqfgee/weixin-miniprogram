@@ -22,12 +22,12 @@ Page({
     ]
   },
 
-  afterLogin(data, title) {
+  afterLogin(data, title, loginType) {
     if (!data || !data.token || !data.user) {
       wx.showToast({ title: '登录结果异常，请重试', icon: 'none' })
       return
     }
-    saveAuth(data.token, data.user)
+    saveAuth(data.token, data.user, loginType)
     wx.showToast({ title: title || '登录成功', icon: 'success' })
     const user = data.user || {}
     const profile = user.profile || {}
@@ -82,12 +82,12 @@ Page({
         password,
         nickname: this.data.nickname.trim()
       }, { loading: true, loadingText: '注册中' }).then((data) => {
-        this.afterLogin(data, '注册成功')
+        this.afterLogin(data, '注册成功', 'phone')
       })
       return
     }
     api.post('/auth/password-login', { phone, password }, { loading: true, loadingText: '登录中' }).then((data) => {
-      this.afterLogin(data, '登录成功')
+      this.afterLogin(data, '登录成功', 'phone')
     })
   },
 
@@ -100,7 +100,7 @@ Page({
         }
         clearAuth()
         api.post('/auth/wechat-login', { code: res.code }, { loading: true, loadingText: '微信登录中' })
-          .then((data) => this.afterLogin(data, '登录成功'))
+          .then((data) => this.afterLogin(data, '登录成功', 'wechat'))
       },
       fail: () => {
         wx.showToast({ title: '微信登录失败，请稍后重试', icon: 'none' })
@@ -114,7 +114,7 @@ Page({
     api.post('/auth/dev-test-login', {
       account: event.currentTarget.dataset.account
     }, { loading: true, loadingText: '切换测试账号' }).then((data) => {
-      this.afterLogin(data, '已切换账号')
+      this.afterLogin(data, '已切换账号', 'phone')
     })
   }
 })

@@ -7,7 +7,7 @@
       <view wx:else class="avatar placeholder">头像</view>
       <view class="avatar-actions">
         <button class="ghost-btn compact" bindtap="openAvatarSheet">设置头像</button>
-        <button wx:if="{{showWechatAvatarPicker}}" class="ghost-btn compact light" open-type="chooseAvatar" bindchooseavatar="onChooseWechatAvatar">确认使用微信头像</button>
+        <button wx:if="{{canUseWechatAvatar && showWechatAvatarPicker}}" class="ghost-btn compact light" open-type="chooseAvatar" bindchooseavatar="onChooseWechatAvatar">确认使用微信头像</button>
       </view>
     </view>
     <view class="field">

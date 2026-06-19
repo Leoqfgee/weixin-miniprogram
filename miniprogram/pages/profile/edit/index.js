@@ -1,5 +1,5 @@
 const api = require('../../../utils/request')
-const { getToken, getUser, requireLogin, saveAuth } = require('../../../utils/auth')
+const { getLoginType, getToken, getUser, requireLogin, saveAuth } = require('../../../utils/auth')
 
 Page({
   data: {
@@ -13,7 +13,8 @@ Page({
       contact_wechat: '',
       identity_type: 'custom'
     },
-    showWechatAvatarPicker: false
+    showWechatAvatarPicker: false,
+    canUseWechatAvatar: false
   },
   onLoad(options) {
     this.setData({ completeMode: options && options.mode === 'complete' })
@@ -22,7 +23,10 @@ Page({
     if (!requireLogin()) return
     const user = getUser()
     const profile = (user && user.profile) || {}
+    const loginType = getLoginType()
     this.setData({
+      canUseWechatAvatar: loginType === 'wechat',
+      showWechatAvatarPicker: false,
       form: {
         avatar: profile.avatar || profile.avatar_url || '',
         nickname: profile.nickname || '',
@@ -43,6 +47,10 @@ Page({
     this.setData({ [`form.${field}`]: value })
   },
   onChooseWechatAvatar(event) {
+    if (!this.data.canUseWechatAvatar) {
+      wx.showToast({ title: '当前账号不支持微信头像', icon: 'none' })
+      return
+    }
     const filePath = event.detail.avatarUrl
     if (!filePath) return
     api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
@@ -54,16 +62,18 @@ Page({
     })
   },
   openAvatarSheet() {
+    const itemList = this.data.canUseWechatAvatar ? ['使用微信头像', '从相册选择', '拍照'] : ['从相册选择', '拍照']
     wx.showActionSheet({
-      itemList: ['使用微信头像', '从相册选择', '拍照'],
+      itemList,
       success: (res) => {
-        if (res.tapIndex === 0) {
+        if (this.data.canUseWechatAvatar && res.tapIndex === 0) {
           this.setData({ showWechatAvatarPicker: true })
           wx.showToast({ title: '请确认使用微信头像', icon: 'none' })
           return
         }
         this.setData({ showWechatAvatarPicker: false })
-        this.chooseAvatar(res.tapIndex === 2 ? 'camera' : 'album')
+        const cameraIndex = this.data.canUseWechatAvatar ? 2 : 1
+        this.chooseAvatar(res.tapIndex === cameraIndex ? 'camera' : 'album')
       }
     })
   },

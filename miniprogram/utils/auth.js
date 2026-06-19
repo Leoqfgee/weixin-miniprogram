@@ -12,6 +12,21 @@ function getUser() {
   return wx.getStorageSync(STORAGE_KEYS.user) || null
 }
 
+function inferLoginType(user) {
+  if (!user) return ''
+  if (user.phone) return 'phone'
+  if (user.openid_mask) return 'wechat'
+  return ''
+}
+
+function getLoginType() {
+  return wx.getStorageSync(STORAGE_KEYS.loginType) || inferLoginType(getUser())
+}
+
+function setLoginType(loginType) {
+  wx.setStorageSync(STORAGE_KEYS.loginType, loginType || '')
+}
+
 function setUser(user) {
   wx.setStorageSync(STORAGE_KEYS.user, user || null)
   if (user && user.id) {
@@ -22,15 +37,18 @@ function setUser(user) {
 
 function clearAccountRuntimeState() {
   wx.removeStorageSync(STORAGE_KEYS.user)
+  wx.removeStorageSync(STORAGE_KEYS.loginType)
   wx.removeStorageSync(STORAGE_KEYS.activeUserId)
 }
 
-function saveAuth(token, user) {
+function saveAuth(token, user, loginType) {
   const current = getUser()
+  const currentLoginType = getLoginType()
   if (current && user && current.id && user.id && current.id !== user.id) {
     clearAccountRuntimeState()
   }
   setToken(token)
+  setLoginType(loginType || currentLoginType || inferLoginType(user))
   setUser(user)
   const app = getApp()
   if (app && app.refreshAuth) {
@@ -66,6 +84,7 @@ module.exports = {
   getToken,
   setToken,
   getUser,
+  getLoginType,
   setUser,
   saveAuth,
   clearAuth,

@@ -30,6 +30,7 @@ const DEV_TEST_LOGIN_ENABLED = CURRENT_ENV === 'develop'
 const STORAGE_KEYS = {
   token: 'campus_token',
   user: 'campus_user',
+  loginType: 'campus_login_type',
   activeUserId: 'campus_active_user_id',
   userScopedPrefix: 'campus_user_profile_'
 }
