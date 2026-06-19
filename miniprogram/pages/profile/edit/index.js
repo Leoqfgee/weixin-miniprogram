@@ -14,7 +14,9 @@ Page({
       identity_type: 'custom'
     },
     canUseWechatAvatar: false,
-    canUseWechatAvatarButton: false
+    showAvatarSheet: false,
+    avatarUploading: false,
+    avatarUploadError: false
   },
   onLoad(options) {
     this.setData({ completeMode: options && options.mode === 'complete' })
@@ -24,11 +26,11 @@ Page({
     const user = getUser()
     const profile = (user && user.profile) || {}
     const loginType = getLoginType()
-    const systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : {}
-    const isDevtools = systemInfo.platform === 'devtools'
     this.setData({
       canUseWechatAvatar: loginType === 'wechat',
-      canUseWechatAvatarButton: loginType === 'wechat' && !isDevtools,
+      showAvatarSheet: false,
+      avatarUploading: false,
+      avatarUploadError: false,
       form: {
         avatar: profile.avatar || profile.avatar_url || '',
         nickname: profile.nickname || '',
@@ -55,33 +57,59 @@ Page({
     }
     const filePath = event.detail.avatarUrl
     if (!filePath) return
+    this.setData({
+      'form.avatar': filePath,
+      'form.identity_type': 'wechat',
+      showAvatarSheet: false,
+      avatarUploading: true,
+      avatarUploadError: false
+    })
     api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
       this.setData({
         'form.avatar': withCacheBuster(data.url),
-        'form.identity_type': 'wechat'
+        'form.identity_type': 'wechat',
+        avatarUploading: false,
+        avatarUploadError: false
       })
+    }).catch(() => {
+      this.setData({ avatarUploading: false, avatarUploadError: true })
+      wx.showToast({ title: '头像上传失败，请重试', icon: 'none' })
     })
   },
   openAvatarSheet() {
-    wx.showActionSheet({
-      itemList: ['从相册选择', '拍照'],
-      success: (res) => {
-        this.chooseAvatar(res.tapIndex === 1 ? 'camera' : 'album')
-      }
-    })
+    this.setData({ showAvatarSheet: true })
+  },
+  closeAvatarSheet() {
+    this.setData({ showAvatarSheet: false })
+  },
+  noop() {},
+  chooseAvatarFromSheet(event) {
+    this.chooseAvatar(event.currentTarget.dataset.source || 'album')
   },
   chooseAvatar(sourceType) {
+    this.setData({ showAvatarSheet: false })
     wx.chooseMedia({
       count: 1,
       mediaType: ['image'],
       sourceType: [sourceType || 'album'],
       success: (res) => {
         const filePath = res.tempFiles[0].tempFilePath
+        this.setData({
+          'form.avatar': filePath,
+          'form.identity_type': 'custom',
+          avatarUploading: true,
+          avatarUploadError: false
+        })
         api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
           this.setData({
             'form.avatar': withCacheBuster(data.url),
-            'form.identity_type': 'custom'
+            'form.identity_type': 'custom',
+            avatarUploading: false,
+            avatarUploadError: false
           })
+        }).catch(() => {
+          this.setData({ avatarUploading: false, avatarUploadError: true })
+          wx.showToast({ title: '头像上传失败，请重试', icon: 'none' })
         })
       }
     })
@@ -94,6 +122,14 @@ Page({
     }
     if (!form.avatar) {
       wx.showToast({ title: '请选择头像', icon: 'none' })
+      return
+    }
+    if (this.data.avatarUploading) {
+      wx.showToast({ title: '头像上传中，请稍后保存', icon: 'none' })
+      return
+    }
+    if (this.data.avatarUploadError || isLocalTempFile(form.avatar)) {
+      wx.showToast({ title: '头像上传失败，请重新选择', icon: 'none' })
       return
     }
     const contactPhone = String(form.contact_phone || '').trim()
@@ -125,4 +161,9 @@ function withCacheBuster(url) {
   const value = String(url || '').trim()
   if (!value) return ''
   return `${value}${value.indexOf('?') >= 0 ? '&' : '?'}v=${Date.now()}`
+}
+
+function isLocalTempFile(url) {
+  const value = String(url || '')
+  return value.indexOf('wxfile://') === 0 || value.indexOf('http://tmp/') === 0 || value.indexOf('file://') === 0
 }
