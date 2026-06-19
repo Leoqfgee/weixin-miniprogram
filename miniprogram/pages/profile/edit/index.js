@@ -13,7 +13,8 @@ Page({
       contact_wechat: '',
       identity_type: 'custom'
     },
-    canUseWechatAvatar: false
+    canUseWechatAvatar: false,
+    canUseWechatAvatarButton: false
   },
   onLoad(options) {
     this.setData({ completeMode: options && options.mode === 'complete' })
@@ -23,8 +24,11 @@ Page({
     const user = getUser()
     const profile = (user && user.profile) || {}
     const loginType = getLoginType()
+    const systemInfo = wx.getSystemInfoSync ? wx.getSystemInfoSync() : {}
+    const isDevtools = systemInfo.platform === 'devtools'
     this.setData({
       canUseWechatAvatar: loginType === 'wechat',
+      canUseWechatAvatarButton: loginType === 'wechat' && !isDevtools,
       form: {
         avatar: profile.avatar || profile.avatar_url || '',
         nickname: profile.nickname || '',
@@ -53,7 +57,7 @@ Page({
     if (!filePath) return
     api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
       this.setData({
-        'form.avatar': data.url,
+        'form.avatar': withCacheBuster(data.url),
         'form.identity_type': 'wechat'
       })
     })
@@ -75,7 +79,7 @@ Page({
         const filePath = res.tempFiles[0].tempFilePath
         api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
           this.setData({
-            'form.avatar': data.url,
+            'form.avatar': withCacheBuster(data.url),
             'form.identity_type': 'custom'
           })
         })
@@ -116,3 +120,9 @@ Page({
     })
   }
 })
+
+function withCacheBuster(url) {
+  const value = String(url || '').trim()
+  if (!value) return ''
+  return `${value}${value.indexOf('?') >= 0 ? '&' : '?'}v=${Date.now()}`
+}

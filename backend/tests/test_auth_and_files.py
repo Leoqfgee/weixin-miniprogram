@@ -353,6 +353,33 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
     assert body_a["profile"]["campus"] == "Campus A Updated"
 
 
+def test_phone_account_cannot_save_wechat_avatar_identity():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    phone = "19900000013"
+    app.db.users.delete_many({"phone": phone})
+    account = client.post(
+        "/api/v1/auth/register",
+        json={"phone": phone, "password": "test123456", "nickname": "Phone Account"},
+    )
+    assert account.status_code == 201
+    token = account.get_json()["data"]["token"]
+
+    response = client.put(
+        "/api/v1/users/me",
+        headers=auth_headers(token),
+        json={
+            "nickname": "Phone Account",
+            "avatar_url": "https://example.com/wechat-avatar.png",
+            "identity_type": "wechat",
+        },
+    )
+    assert response.status_code == 403
+    assert "手机号账号不能使用微信头像身份" in str(response.get_json())
+
+
 def test_dev_test_login_requires_switch_and_can_login_seed_user(monkeypatch):
     init_db()
     app = create_app()

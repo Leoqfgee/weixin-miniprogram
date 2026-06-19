@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from ..adapters.wechat import WechatAuthAdapter
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
-from ..utils.errors import ConflictError, NotFoundError, UnauthorizedError, ValidationError
+from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError
 from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.jwt import create_token
 from ..utils.serializers import serialize_doc, to_object_id
@@ -275,6 +275,9 @@ class UserService:
         return summary
 
     def update_me(self, user_id, payload):
+        user = self.users.find_by_id(user_id)
+        if not user:
+            raise NotFoundError("用户不存在")
         allowed = {
             "avatar",
             "avatar_url",
@@ -311,6 +314,8 @@ class UserService:
                     "参数校验失败",
                     [{"field": "identity_type", "message": "identity_type 只能是 wechat 或 custom"}],
                 )
+            if identity_type == "wechat" and (user.get("phone") or not user.get("openid")):
+                raise ForbiddenError("手机号账号不能使用微信头像身份")
             fields["identity_type"] = identity_type
             user_fields["identity_type"] = identity_type
         if "campus" in payload:

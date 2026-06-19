@@ -40,7 +40,7 @@ def test_address_default_switch_and_express_order_snapshot():
             "product_id": product_id,
             "quantity": 1,
             "delivery_type": "express",
-            "shipping_address": second_address,
+            "shipping_address_id": second_address["id"],
         },
     )
     assert order_response.status_code == 201
@@ -54,6 +54,38 @@ def test_address_default_switch_and_express_order_snapshot():
     )
     detail = client.get(f"/api/v1/orders/{order['id']}", headers=auth_headers(buyer_token)).get_json()["data"]
     assert detail["shipping_address"]["address"] == "Dorm 2"
+
+
+def test_deleted_address_cannot_be_reused_from_stale_order_page():
+    app, client, seller_token, buyer_token, admin_token = setup_flow()
+
+    address_response = client.post(
+        "/api/v1/addresses",
+        headers=auth_headers(buyer_token),
+        json={"name": "Alice", "phone": "13800000000", "address": "Dorm stale"},
+    )
+    assert address_response.status_code == 201
+    stale_address = address_response.get_json()["data"]
+    delete_response = client.delete(
+        f"/api/v1/addresses/{stale_address['id']}",
+        headers=auth_headers(buyer_token),
+    )
+    assert delete_response.status_code == 200
+
+    product_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
+    order_response = client.post(
+        "/api/v1/orders",
+        headers=auth_headers(buyer_token, "stale-deleted-address"),
+        json={
+            "product_id": product_id,
+            "quantity": 1,
+            "delivery_type": "express",
+            "shipping_address_id": stale_address["id"],
+            "shipping_address": stale_address,
+        },
+    )
+    assert order_response.status_code == 404
+    assert "收货地址不存在或已删除" in str(order_response.get_json())
 
 
 def test_incomplete_draft_edit_and_mutual_anonymous_reviews_in_chat():

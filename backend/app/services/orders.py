@@ -123,7 +123,7 @@ class OrderService:
                 self._log("product_locked", "product", product["_id"], buyer_id, "buyer", "on_sale", "locked")
 
             delivery_type = _normalize_delivery_type(payload.get("delivery_type", "offline_meetup"))
-            shipping_address = _shipping_address_snapshot(payload.get("shipping_address")) if delivery_type == "express" else None
+            shipping_address = self._resolve_shipping_address(buyer_id, payload) if delivery_type == "express" else None
             order_doc = {
                 "order_no": f"ORD{utc_now().strftime('%Y%m%d%H%M%S')}{uuid4().hex[:8].upper()}",
                 "buyer_id": buyer_id,
@@ -433,6 +433,18 @@ class OrderService:
             "campus": profile.get("campus", ""),
             "phone_masked": _mask_phone(phone),
         }
+
+    def _resolve_shipping_address(self, buyer_id, payload):
+        address_payload = payload.get("shipping_address") if isinstance(payload.get("shipping_address"), dict) else {}
+        address_id = payload.get("shipping_address_id") or address_payload.get("id")
+        if address_id:
+            address = self.db.addresses.find_one(
+                {"_id": to_object_id(address_id, "shipping_address_id"), "user_id": buyer_id}
+            )
+            if not address:
+                raise NotFoundError("收货地址不存在或已删除")
+            return _shipping_address_snapshot(serialize_doc(address))
+        return _shipping_address_snapshot(payload.get("shipping_address"))
 
 
 class PaymentService:

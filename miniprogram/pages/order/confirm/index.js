@@ -15,7 +15,13 @@ Page({
     requireLogin()
     this.setData({ productId: options.product_id || '', quantity: Number(options.quantity || 1) })
     this.loadProduct()
+  },
+  onShow() {
+    if (requireLogin()) this.loadAddresses()
+  },
+  onPullDownRefresh() {
     this.loadAddresses()
+    wx.stopPullDownRefresh()
   },
   loadProduct() {
     api.get(`/products/${this.data.productId}`, {}, { loading: true }).then((product) => this.setData({ product }))
@@ -23,8 +29,13 @@ Page({
   loadAddresses() {
     api.get('/addresses').then((data) => {
       const addresses = data.items || []
+      const current = this.data.addresses[this.data.addressIndex]
+      const currentIndex = current && current.id ? addresses.findIndex((item) => item.id === current.id) : -1
       const defaultIndex = addresses.findIndex((item) => item.is_default)
-      this.setData({ addresses, addressIndex: defaultIndex >= 0 ? defaultIndex : (addresses.length ? 0 : -1) })
+      this.setData({
+        addresses,
+        addressIndex: currentIndex >= 0 ? currentIndex : (defaultIndex >= 0 ? defaultIndex : (addresses.length ? 0 : -1))
+      })
     })
   },
   chooseDelivery(event) {
@@ -50,7 +61,13 @@ Page({
         wx.showToast({ title: '请先添加收货地址', icon: 'none' })
         return
       }
-      body.shipping_address = this.data.addresses[this.data.addressIndex]
+      const selectedAddress = this.data.addresses[this.data.addressIndex]
+      if (!selectedAddress || !selectedAddress.id) {
+        wx.showToast({ title: '收货地址已失效，请重新选择', icon: 'none' })
+        this.loadAddresses()
+        return
+      }
+      body.shipping_address_id = selectedAddress.id
     } else {
       body.meet_location = this.data.meetLocation
     }

@@ -90,6 +90,8 @@ Page({
         if (!res.confirm) return
         api.del(`/addresses/${id}`, {}, { loading: true, loadingText: '删除中' }).then(() => {
           wx.showToast({ title: '地址已删除', icon: 'success' })
+          const addresses = this.data.addresses.filter((item) => item.id !== id)
+          this.setData({ addresses, editing: false, form: emptyForm() })
           this.loadAddresses()
         }).catch(() => {
           wx.showToast({ title: '删除地址失败', icon: 'none' })
