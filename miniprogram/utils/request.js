@@ -136,9 +136,55 @@ function uploadFile(options) {
   })
 }
 
+function uploadImageBase64(options) {
+  const filePath = options.filePath
+  const fs = wx.getFileSystemManager()
+  return new Promise((resolve, reject) => {
+    fs.readFile({
+      filePath,
+      encoding: 'base64',
+      success(res) {
+        request({
+          url: options.url || '/files/upload-base64',
+          method: 'POST',
+          data: {
+            usage: options.usage || 'avatar',
+            filename: options.filename || filenameFromPath(filePath),
+            mime_type: options.mimeType || mimeFromPath(filePath),
+            content_base64: res.data
+          },
+          loading: options.loading,
+          loadingText: options.loadingText,
+          silentError: options.silentError
+        }).then(resolve).catch(reject)
+      },
+      fail(err) {
+        if (!options.silentError) wx.showToast({ title: '图片读取失败，请重试', icon: 'none' })
+        reject(err)
+      }
+    })
+  })
+}
+
+function filenameFromPath(filePath) {
+  const value = String(filePath || '')
+  const clean = value.split('?')[0]
+  const name = clean.split('/').pop() || 'avatar.jpg'
+  return name.indexOf('.') >= 0 ? name : 'avatar.jpg'
+}
+
+function mimeFromPath(filePath) {
+  const filename = filenameFromPath(filePath).toLowerCase()
+  if (filename.endsWith('.png')) return 'image/png'
+  if (filename.endsWith('.webp')) return 'image/webp'
+  if (filename.endsWith('.gif')) return 'image/gif'
+  return 'image/jpeg'
+}
+
 module.exports = {
   request,
   uploadFile,
+  uploadImageBase64,
   get(url, data, options) {
     return request(Object.assign({}, options || {}, { url, data, method: 'GET' }))
   },

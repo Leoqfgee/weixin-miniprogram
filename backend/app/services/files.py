@@ -1,3 +1,5 @@
+import base64
+import binascii
 from datetime import datetime, timezone
 
 from werkzeug.utils import secure_filename
@@ -42,7 +44,33 @@ class FileService:
             raise ValidationError("参数校验失败", [{"field": "file", "message": "单个文件不能超过 20MB"}])
 
         safe_usage = usage if usage in ALLOWED_USAGES else "misc"
-        storage_result = StorageService().save(content, original_name, file_storage.mimetype, safe_usage)
+        return self._store(owner_id, content, original_name, file_storage.mimetype, safe_usage)
+
+    def upload_base64(self, owner_id, payload):
+        usage = payload.get("usage") or "product"
+        filename = _safe_filename(payload.get("filename") or "upload.jpg")
+        suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        if suffix not in ALLOWED_EXTENSIONS:
+            raise ValidationError("参数校验失败", [{"field": "filename", "message": "仅支持常见图片、视频和音频格式"}])
+
+        encoded = (payload.get("content_base64") or "").strip()
+        if "," in encoded and encoded.split(",", 1)[0].startswith("data:"):
+            encoded = encoded.split(",", 1)[1]
+        if not encoded:
+            raise ValidationError("参数校验失败", [{"field": "content_base64", "message": "请选择要上传的文件"}])
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError):
+            raise ValidationError("参数校验失败", [{"field": "content_base64", "message": "文件内容不合法"}])
+        if len(content) > MAX_FILE_SIZE:
+            raise ValidationError("参数校验失败", [{"field": "file", "message": "单个文件不能超过 20MB"}])
+
+        safe_usage = usage if usage in ALLOWED_USAGES else "misc"
+        mime_type = payload.get("mime_type") or _mime_from_suffix(suffix)
+        return self._store(owner_id, content, filename, mime_type, safe_usage)
+
+    def _store(self, owner_id, content, original_name, mime_type, safe_usage):
+        storage_result = StorageService().save(content, original_name, mime_type, safe_usage)
         object_key = storage_result["object_key"]
         filename = object_key.rsplit("/", 1)[-1]
         doc = {
@@ -54,9 +82,20 @@ class FileService:
             "relative_path": object_key,
             "url": storage_result["url"],
             "storage_backend": storage_result["storage_backend"],
-            "mime_type": file_storage.mimetype,
+            "mime_type": mime_type,
             "size": len(content),
             "created_at": utc_now(),
         }
         result = self.db.files.insert_one(doc)
         return serialize_doc(self.db.files.find_one({"_id": result.inserted_id}))
+
+
+def _mime_from_suffix(suffix):
+    mapping = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+        "gif": "image/gif",
+    }
+    return mapping.get(suffix, "application/octet-stream")

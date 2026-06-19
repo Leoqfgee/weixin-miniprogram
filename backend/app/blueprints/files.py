@@ -16,6 +16,13 @@ def upload_file():
     return success_response(data, http_status=201)
 
 
+@files_bp.post("/files/upload-base64")
+@auth_required
+def upload_base64():
+    data = FileService(current_app.db).upload_base64(g.current_user_id, request.get_json(silent=True) or {})
+    return success_response(data, http_status=201)
+
+
 @files_bp.get("/debug/storage")
 def debug_storage():
     if not (current_app.debug or current_app.config.get("DEV_TEST_LOGIN_ENABLED")):

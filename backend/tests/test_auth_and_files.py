@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 
 from app import create_app
@@ -104,6 +105,58 @@ def test_upload_delivery_image_uses_delivery_folder():
     assert "/uploads/delivery/" in file_doc["url"]
     assert file_doc["storage_backend"] == "local"
     assert file_doc["object_key"].startswith("delivery/")
+
+
+def test_upload_avatar_base64_returns_static_url():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+    login = client.post(
+        "/api/v1/auth/password-login",
+        json={"phone": "18800000001", "password": "seller123456"},
+    ).get_json()["data"]
+
+    response = client.post(
+        "/api/v1/files/upload-base64",
+        headers=auth_headers(login["token"]),
+        json={
+            "usage": "avatar",
+            "filename": "avatar.jpg",
+            "mime_type": "image/jpeg",
+            "content_base64": base64.b64encode(b"fake-avatar-content").decode("ascii"),
+        },
+    )
+
+    assert response.status_code == 201
+    file_doc = response.get_json()["data"]
+    assert file_doc["usage"] == "avatar"
+    assert file_doc["url"].endswith(".jpg")
+    assert "/uploads/avatar/" in file_doc["url"]
+    assert file_doc["storage_backend"] == "local"
+    assert file_doc["object_key"].startswith("avatar/")
+
+
+def test_upload_avatar_base64_rejects_invalid_content():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+    login = client.post(
+        "/api/v1/auth/password-login",
+        json={"phone": "18800000001", "password": "seller123456"},
+    ).get_json()["data"]
+
+    response = client.post(
+        "/api/v1/files/upload-base64",
+        headers=auth_headers(login["token"]),
+        json={
+            "usage": "avatar",
+            "filename": "avatar.jpg",
+            "mime_type": "image/jpeg",
+            "content_base64": "not-base64!",
+        },
+    )
+
+    assert response.status_code == 422
 
 
 def test_cos_storage_returns_public_url(monkeypatch):

@@ -61,7 +61,7 @@ Page({
       avatarUploading: true,
       avatarUploadError: false
     })
-    api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
+    api.uploadImageBase64({ filePath, usage: 'avatar', loading: true }).then((data) => {
       this.setData({
         'form.avatar': withCacheBuster(data.url),
         'form.identity_type': 'wechat',
@@ -94,7 +94,7 @@ Page({
           avatarUploading: true,
           avatarUploadError: false
         })
-        api.uploadFile({ url: '/files/upload', filePath, formData: { usage: 'avatar' }, loading: true }).then((data) => {
+        api.uploadImageBase64({ filePath, usage: 'avatar', loading: true }).then((data) => {
           this.setData({
             'form.avatar': withCacheBuster(data.url),
             'form.identity_type': 'custom',
