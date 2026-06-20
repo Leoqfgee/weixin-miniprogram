@@ -24,6 +24,7 @@
         {{item.label}}
       </button>
     </view>
+    <view class="filter-line" bindtap="openFilter">筛选</view>
     <view wx:if="{{loading}}" class="mode-loading">加载中...</view>
   </view>
 

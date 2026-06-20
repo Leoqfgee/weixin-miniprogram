@@ -1,5 +1,5 @@
 .mine-page {
-  padding-bottom: 48rpx;
+  padding: 22rpx 20rpx 118rpx;
 }
 
 .brand-block {
@@ -7,33 +7,33 @@
 }
 
 .brand-title {
-  color: #1f2933;
+  color: #ffffff;
   font-size: 46rpx;
   font-weight: 900;
 }
 
 .brand-title text {
-  color: #16b85e;
+  color: #ffdf4a;
   margin-left: 6rpx;
 }
 
 .profile-card {
   overflow: hidden;
-  background: linear-gradient(135deg, #f1fbf5 0%, #e4f7e8 100%);
-  border-radius: 28rpx;
-  box-shadow: 0 16rpx 40rpx rgba(21, 99, 69, 0.10);
+  background: linear-gradient(135deg, rgba(255,255,255,.96), #eaf9ef);
+  border-radius: 16rpx;
+  box-shadow: 0 16rpx 36rpx rgba(20, 79, 50, 0.12);
 }
 
 .profile-top {
   display: flex;
   align-items: center;
   gap: 22rpx;
-  padding: 38rpx 28rpx;
+  padding: 34rpx 28rpx 26rpx;
 }
 
 .avatar {
-  width: 118rpx;
-  height: 118rpx;
+  width: 108rpx;
+  height: 108rpx;
   border: 6rpx solid #fff;
   border-radius: 50%;
   flex: none;
@@ -93,8 +93,10 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  padding: 26rpx 10rpx 30rpx;
+  margin: 0 14rpx 14rpx;
+  padding: 26rpx 10rpx;
   background: #ffffff;
+  border-radius: 14rpx;
 }
 
 .stats view {
@@ -117,6 +119,7 @@
 
 .grid-panel {
   margin-top: 24rpx;
+  border-radius: 16rpx;
 }
 
 .service-grid {
@@ -150,8 +153,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 68rpx;
-  height: 68rpx;
+  width: 64rpx;
+  height: 64rpx;
   margin-bottom: 14rpx;
   border-radius: 20rpx;
   font-weight: 900;
@@ -190,6 +193,6 @@
   color: #f04438;
   background: #ffffff;
   border: 1rpx solid #edf1ed;
-  border-radius: 22rpx;
+  border-radius: 999rpx;
   font-size: 29rpx;
 }

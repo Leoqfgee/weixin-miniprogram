@@ -1,13 +1,13 @@
 page {
-  background: #f7f8f5;
-  color: #1f2933;
+  background: #f5f8f6;
+  color: #202733;
   font-size: 28rpx;
 }
 
 .page {
   min-height: 100vh;
   box-sizing: border-box;
-  padding: 24rpx 24rpx 48rpx;
+  padding: 24rpx 24rpx 56rpx;
 }
 
 .section {
@@ -17,10 +17,10 @@ page {
 .panel,
 .soft-card {
   background: #ffffff;
-  border: 1rpx solid #e8ece8;
-  border-radius: 24rpx;
-  padding: 26rpx;
-  box-shadow: 0 14rpx 34rpx rgba(21, 99, 69, 0.08);
+  border: 1rpx solid #e6eee9;
+  border-radius: 18rpx;
+  padding: 24rpx;
+  box-shadow: 0 12rpx 34rpx rgba(28, 49, 42, 0.07);
 }
 
 .title {
@@ -54,26 +54,26 @@ page {
 .ghost-btn,
 .pill-btn {
   box-sizing: border-box;
-  height: 78rpx;
-  line-height: 78rpx;
+  height: 76rpx;
+  line-height: 76rpx;
   margin: 0;
   padding: 0 28rpx;
-  border-radius: 999rpx;
+  border-radius: 14rpx;
   font-size: 27rpx;
   font-weight: 700;
 }
 
 .primary-btn {
   color: #ffffff;
-  background: linear-gradient(135deg, #20c767 0%, #0f9f55 100%);
+  background: linear-gradient(135deg, #22c86a 0%, #10a65d 100%);
   border: 0;
-  box-shadow: 0 12rpx 24rpx rgba(22, 184, 94, 0.24);
+  box-shadow: 0 12rpx 24rpx rgba(23, 180, 100, 0.24);
 }
 
 .ghost-btn {
-  color: #16a45a;
+  color: #12a261;
   background: #ffffff;
-  border: 1rpx solid #16b85e;
+  border: 1rpx solid #16b96b;
 }
 
 .ghost-btn.danger,
@@ -101,8 +101,8 @@ textarea,
   box-sizing: border-box;
   width: 100%;
   background: #fbfcfb;
-  border: 1rpx solid #e1e7e1;
-  border-radius: 18rpx;
+  border: 1rpx solid #dfe8e2;
+  border-radius: 12rpx;
   color: #1f2933;
 }
 
@@ -121,8 +121,8 @@ textarea {
 .section-title,
 .section-head {
   color: #1f2933;
-  font-size: 31rpx;
-  font-weight: 800;
+  font-size: 30rpx;
+  font-weight: 900;
 }
 
 .section-title::before,
@@ -130,11 +130,33 @@ textarea {
   content: "";
   display: inline-block;
   width: 8rpx;
-  height: 34rpx;
+  height: 30rpx;
   margin-right: 12rpx;
   vertical-align: -5rpx;
-  background: #16b85e;
+  background: #18b86c;
   border-radius: 999rpx;
+}
+
+.mini-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72rpx;
+  color: #202733;
+  font-size: 32rpx;
+  font-weight: 900;
+}
+
+.mini-nav .back {
+  position: absolute;
+  left: 24rpx;
+  color: #202733;
+  font-size: 44rpx;
+  font-weight: 300;
+}
+
+.green-page {
+  background: linear-gradient(180deg, #10a65d 0, #13bd70 148rpx, #f5f8f6 148rpx);
 }
 
 .bottom-actions,

@@ -1,8 +1,12 @@
 <view class="page login-page">
   <view class="login-hero">
+    <view class="campus-sky"></view>
+    <view class="logo-mark">校</view>
     <view class="brand">校园二手</view>
+    <view class="brand-sub">一个账号，买卖都能用</view>
   </view>
 
+  <view class="login-sheet">
   <view class="panel wechat-card">
     <view class="entry-title">微信账号登录</view>
     <button class="primary-btn wechat-action" bindtap="onWechatLogin">微信账号登录</button>
@@ -51,5 +55,6 @@
     <view class="dev-grid">
       <button wx:for="{{testAccounts}}" wx:key="key" class="dev-btn" data-account="{{item.key}}" bindtap="onDevLogin">{{item.label}}</button>
     </view>
+  </view>
   </view>
 </view>

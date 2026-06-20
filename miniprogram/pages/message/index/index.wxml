@@ -1,8 +1,13 @@
-<view class="page">
+<view class="page message-page">
+  <view class="mini-nav">消息</view>
   <view wx:if="{{conversations.length}}" class="list">
     <view wx:for="{{conversations}}" wx:key="id" class="panel item" data-index="{{index}}" bindtap="goChat">
       <image class="avatar" src="{{item.other_user.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
-      <view class="main"><view class="text-strong">{{item.other_user ? item.other_user.nickname : '会话'}}<text wx:if="{{item.product}}"> · {{item.product.title}}</text></view><view class="muted last">{{item.last_message.message_type === 'image' ? '[图片]' : item.last_message.content}}</view></view>
+      <view class="main">
+        <view class="text-strong">{{item.other_user ? item.other_user.nickname : '会话'}}</view>
+        <view wx:if="{{item.product}}" class="product-line">{{item.product.title}}</view>
+        <view class="muted last">{{item.last_message.message_type === 'image' ? '[图片]' : item.last_message.content}}</view>
+      </view>
       <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view>
     </view>
   </view>

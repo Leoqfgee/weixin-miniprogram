@@ -1,29 +1,29 @@
 .product-card {
   position: relative;
   display: flex;
-  gap: 20rpx;
-  padding: 18rpx;
+  gap: 16rpx;
+  padding: 14rpx;
   background: #ffffff;
-  border: 1rpx solid #e8ece8;
-  border-radius: 24rpx;
-  box-shadow: 0 12rpx 28rpx rgba(31, 41, 51, 0.07);
+  border: 1rpx solid #edf1ed;
+  border-radius: 12rpx;
+  box-shadow: 0 8rpx 24rpx rgba(31, 41, 51, 0.06);
 }
 
 .favorite-btn {
   position: absolute;
   z-index: 2;
-  right: 26rpx;
-  top: 26rpx;
-  width: 58rpx;
-  height: 58rpx;
-  line-height: 56rpx;
+  right: 18rpx;
+  top: 18rpx;
+  width: 46rpx;
+  height: 46rpx;
+  line-height: 44rpx;
   margin: 0;
   padding: 0;
-  color: #f04438;
+  color: #9aa4ad;
   background: rgba(255, 255, 255, 0.92);
   border: 0;
   border-radius: 50%;
-  font-size: 32rpx;
+  font-size: 28rpx;
   box-shadow: 0 8rpx 18rpx rgba(31, 41, 51, 0.14);
 }
 
@@ -34,10 +34,10 @@
 
 .cover {
   position: relative;
-  width: 214rpx;
-  height: 172rpx;
+  width: 198rpx;
+  height: 160rpx;
   flex: none;
-  border-radius: 18rpx;
+  border-radius: 10rpx;
   overflow: hidden;
 }
 
@@ -72,7 +72,7 @@
 
 .name {
   color: #1f2933;
-  font-size: 30rpx;
+  font-size: 26rpx;
   line-height: 1.32;
   font-weight: 900;
 }
@@ -98,10 +98,10 @@
 }
 
 .tag {
-  padding: 5rpx 12rpx;
-  color: #11924f;
-  background: #eaf8ef;
-  border-radius: 999rpx;
+  padding: 0;
+  color: #66717c;
+  background: transparent;
+  border-radius: 0;
   font-size: 20rpx;
 }
 
@@ -122,8 +122,8 @@
 }
 
 .price {
-  color: #f04438;
-  font-size: 36rpx;
+  color: #08a85d;
+  font-size: 30rpx;
   font-weight: 900;
 }
 
@@ -133,24 +133,24 @@
   min-width: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: 22rpx;
-  box-shadow: 0 10rpx 24rpx rgba(31, 41, 51, 0.08);
+  border-radius: 10rpx;
+  box-shadow: 0 8rpx 22rpx rgba(31, 41, 51, 0.07);
 }
 
 .grid-card .cover {
   width: 100%;
-  height: 250rpx;
-  border-radius: 22rpx 22rpx 0 0;
+  height: 220rpx;
+  border-radius: 10rpx 10rpx 0 0;
 }
 
 .grid-card .info {
-  padding: 16rpx 16rpx 18rpx;
+  padding: 12rpx 12rpx 14rpx;
 }
 
 .grid-card .name {
   display: -webkit-box;
-  min-height: 72rpx;
-  font-size: 27rpx;
+  min-height: 62rpx;
+  font-size: 24rpx;
   line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -164,13 +164,13 @@
 
 .grid-card .tags {
   gap: 6rpx;
-  margin-top: 10rpx;
-  max-height: 42rpx;
+  margin-top: 8rpx;
+  max-height: 36rpx;
   overflow: hidden;
 }
 
 .grid-card .tag {
-  padding: 4rpx 10rpx;
+  padding: 0;
   font-size: 19rpx;
 }
 
@@ -184,7 +184,7 @@
 }
 
 .grid-card .price {
-  font-size: 31rpx;
+  font-size: 27rpx;
 }
 
 .grid-card .seller {

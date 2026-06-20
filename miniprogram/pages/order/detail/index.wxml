@@ -1,4 +1,5 @@
-<view class="page order-detail-page">
+<view class="page order-detail-page green-page">
+  <view class="mini-nav light">订单详情</view>
   <view wx:if="{{order}}" class="order-wrap">
     <view class="status-hero">
       <view class="role-tag">{{order.current_role === 'buyer' ? '我买到的' : '我卖出的'}}</view>

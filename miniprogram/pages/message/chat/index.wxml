@@ -1,4 +1,5 @@
 <view class="page chat-page">
+  <view class="mini-nav">校园二手</view>
   <view wx:if="{{product.title}}" class="product-head" bindtap="viewProduct">
     <image wx:if="{{product.cover_image}}" class="product-cover" src="{{product.cover_image}}" mode="aspectFill"></image>
     <view class="product-main">

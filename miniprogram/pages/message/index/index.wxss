@@ -1,5 +1,6 @@
-page {
-  background: #f7f8f5;
+.message-page {
+  padding-bottom: 118rpx;
+  background: #f6f8f6;
 }
 
 .list {
@@ -13,7 +14,7 @@ page {
   align-items: center;
   gap: 18rpx;
   padding: 24rpx;
-  border-radius: 24rpx;
+  border-radius: 14rpx;
 }
 
 .avatar {
@@ -35,6 +36,20 @@ page {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 24rpx;
+}
+
+.product-line {
+  display: inline-block;
+  max-width: 440rpx;
+  margin-top: 8rpx;
+  padding: 4rpx 12rpx;
+  color: #0f9f5b;
+  background: #eaf8ef;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .badge {

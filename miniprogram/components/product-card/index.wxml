@@ -7,14 +7,10 @@
   <button class="favorite-btn {{product.is_favorited ? 'active' : ''}}" catchtap="toggleFavorite">{{product.is_favorited ? '♥' : '♡'}}</button>
   <view class="info">
     <view class="name">{{product.title || '未命名商品'}}</view>
-    <view class="desc">{{product.description || '校内见面交易，可现场验货'}}</view>
     <view class="tags">
       <text class="tag">{{campusText}}</text>
       <text wx:if="{{product.category_name}}" class="tag">{{product.category_name}}</text>
       <text class="tag">库存 {{product.stock || 0}}</text>
-      <text class="tag">浏览 {{product.view_count || 0}}</text>
-      <text class="tag">收藏 {{product.favorite_count || 0}}</text>
-      <status-badge status="{{product.status || 'on_sale'}}"></status-badge>
     </view>
     <view class="bottom">
       <text class="price">¥{{product.price || '0.00'}}</text>

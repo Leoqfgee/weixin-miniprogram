@@ -17,6 +17,14 @@ const EMPTY_TEXT = {
   }
 }
 
+const CATEGORY_ICONS = {
+  digital: '▥',
+  book: '书',
+  clothing: '衣',
+  home: '灯',
+  other: '••'
+}
+
 Page({
   data: {
     loading: false,
@@ -108,11 +116,19 @@ Page({
           return Object.assign({}, base, matched, {
             code: base.code,
             name: base.name,
-            short_name: base.name.slice(0, 1)
+            short_name: CATEGORY_ICONS[base.code] || base.name.slice(0, 1)
           })
         })
         this.setData({
           categories
+        })
+      })
+      .catch(() => {
+        this.setData({
+          categories: PRODUCT_CATEGORIES.map((item) => ({
+            ...item,
+            short_name: CATEGORY_ICONS[item.code] || item.name.slice(0, 1)
+          }))
         })
       })
   },
@@ -129,5 +145,18 @@ Page({
     const code = event.currentTarget.dataset.code || ''
     this.setData({ activeCategory: code === this.data.activeCategory ? '' : code, products: [] })
     this.loadProducts(this.data.activeMode, false)
+  },
+
+  openFilter() {
+    const params = []
+    if (this.data.activeCategory) {
+      params.push(`category=${encodeURIComponent(this.data.activeCategory)}`)
+    }
+    if (this.data.keyword) {
+      params.push(`keyword=${encodeURIComponent(this.data.keyword)}`)
+    }
+    wx.navigateTo({
+      url: `/pages/category/index${params.length ? `?${params.join('&')}` : ''}`
+    })
   }
 })

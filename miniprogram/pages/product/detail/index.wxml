@@ -1,4 +1,5 @@
 <view class="page product-page">
+  <view class="mini-nav">校园二手</view>
   <view wx:if="{{product}}" class="detail-shell">
     <view class="cover-shell">
       <swiper wx:if="{{gallery.length}}" class="cover-swiper" current="{{currentImage}}" bindchange="onImageChange">
@@ -44,6 +45,13 @@
         <view class="muted">{{product.seller.campus || product.campus || '校内交易'}}</view>
       </view>
       <text class="chevron">›</text>
+    </view>
+
+    <view class="trade-card panel">
+      <view class="block-title">交易信息</view>
+      <view class="trade-row"><text>交易方式</text><view>{{product.delivery_options && product.delivery_options.length ? '校内面交 / 快递' : '校内面交'}}</view></view>
+      <view class="trade-row"><text>所在校区</text><view>{{product.campus || product.seller.campus || '校内'}}</view></view>
+      <view class="trade-row"><text>商品分类</text><view>{{product.category_name || '其他'}}</view></view>
     </view>
 
     <view class="detail-block panel">

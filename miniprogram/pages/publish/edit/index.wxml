@@ -1,8 +1,10 @@
 <view class="page publish-page">
-  <view class="page-title">{{productId ? '编辑发布' : '发布商品'}}</view>
+  <view class="mini-nav">
+    <view class="page-title">{{productId ? '编辑商品' : '发布商品'}}</view>
+  </view>
 
   <view class="publish-banner">
-    <view class="banner-title">发布商品</view>
+    <view class="banner-title">校圆二手 · 真实可靠 · 安全交易</view>
   </view>
 
   <view class="panel image-panel">

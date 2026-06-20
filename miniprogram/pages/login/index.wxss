@@ -1,15 +1,70 @@
 .login-page {
-  padding-top: 72rpx;
+  padding: 0 0 40rpx;
+  background: #f6fbf8;
 }
 
 .login-hero {
-  margin-bottom: 34rpx;
+  position: relative;
+  height: 360rpx;
+  padding-top: 92rpx;
+  overflow: hidden;
+  text-align: center;
+  background: linear-gradient(180deg, #e9fbf1 0%, #ffffff 100%);
+}
+
+.campus-sky {
+  position: absolute;
+  left: -40rpx;
+  right: -40rpx;
+  bottom: 0;
+  height: 150rpx;
+  background: radial-gradient(circle at 18% 72%, rgba(24, 184, 108, 0.18) 0 28rpx, transparent 30rpx),
+    radial-gradient(circle at 84% 70%, rgba(24, 184, 108, 0.16) 0 34rpx, transparent 36rpx),
+    linear-gradient(180deg, transparent 0, rgba(16, 166, 93, 0.09) 100%);
+}
+
+.logo-mark {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112rpx;
+  height: 112rpx;
+  margin: 0 auto 22rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #23cc6e, #0ea258);
+  border-radius: 28rpx;
+  font-size: 50rpx;
+  font-weight: 900;
+  box-shadow: 0 14rpx 28rpx rgba(16, 166, 93, 0.24);
 }
 
 .brand {
-  color: #17202a;
-  font-size: 54rpx;
+  position: relative;
+  z-index: 1;
+  color: #202733;
+  font-size: 50rpx;
   font-weight: 900;
+}
+
+.brand text {
+  color: #202733;
+}
+
+.brand-sub {
+  position: relative;
+  z-index: 1;
+  margin-top: 8rpx;
+  color: #75827c;
+  font-size: 24rpx;
+}
+
+.login-sheet {
+  margin-top: -20rpx;
+  padding: 36rpx 24rpx 0;
+  background: #ffffff;
+  border-radius: 32rpx 32rpx 0 0;
 }
 
 .login-card {
@@ -20,6 +75,7 @@
 .phone-entry {
   padding: 34rpx 30rpx;
   margin-bottom: 24rpx;
+  border-radius: 16rpx;
 }
 
 .entry-title {
@@ -30,8 +86,9 @@
 
 .wechat-action {
   margin-top: 30rpx;
-  height: 92rpx;
-  line-height: 92rpx;
+  height: 86rpx;
+  line-height: 86rpx;
+  border-radius: 999rpx;
   font-size: 31rpx;
   font-weight: 900;
 }
@@ -47,6 +104,7 @@
   height: 78rpx;
   line-height: 78rpx;
   margin: 0;
+  border-radius: 999rpx;
 }
 
 .panel-head {
@@ -66,7 +124,7 @@
   grid-template-columns: 1fr 1fr;
   padding: 8rpx;
   background: #eef5f1;
-  border-radius: 8rpx;
+  border-radius: 14rpx;
 }
 
 .mode-tab {
@@ -74,7 +132,7 @@
   line-height: 72rpx;
   color: #667281;
   text-align: center;
-  border-radius: 6rpx;
+  border-radius: 10rpx;
   font-size: 27rpx;
   font-weight: 800;
 }
@@ -102,7 +160,7 @@ input {
   color: #17202a;
   background: #fbfcfb;
   border: 1rpx solid #e1e7e1;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   font-size: 28rpx;
 }
 
@@ -121,6 +179,7 @@ input {
 .dev-panel {
   margin-top: 24rpx;
   padding: 26rpx;
+  border-radius: 16rpx;
 }
 
 .dev-title {

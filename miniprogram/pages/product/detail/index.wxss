@@ -1,17 +1,18 @@
 .product-page {
-  padding: 18rpx 20rpx 150rpx;
+  padding: 16rpx 20rpx 150rpx;
+  background: #ffffff;
 }
 
 .cover-shell {
   position: relative;
   overflow: hidden;
-  border-radius: 24rpx;
+  border-radius: 12rpx;
 }
 
 .cover-swiper,
 .cover-wrap {
   width: 100%;
-  height: 520rpx;
+  height: 326rpx;
   background: #edf3ee;
 }
 
@@ -66,10 +67,10 @@
 }
 
 .summary-panel {
-  margin-top: -18rpx;
+  margin-top: 16rpx;
   position: relative;
   z-index: 3;
-  border-radius: 28rpx;
+  border-radius: 14rpx;
 }
 
 .summary-head {
@@ -93,8 +94,8 @@
 }
 
 .price {
-  color: #f04438;
-  font-size: 54rpx;
+  color: #09a85e;
+  font-size: 44rpx;
   font-weight: 900;
 }
 
@@ -147,6 +148,7 @@
 
 .seller-card,
 .detail-block,
+.trade-card,
 .recommend-panel {
   margin-top: 20rpx;
 }
@@ -155,12 +157,12 @@
   display: flex;
   align-items: center;
   gap: 18rpx;
-  border-color: #bfeccc;
+  border-color: #e6eee9;
 }
 
 .seller-avatar {
-  width: 104rpx;
-  height: 104rpx;
+  width: 84rpx;
+  height: 84rpx;
   border-radius: 50%;
   background: #dfe5ea;
   flex: none;
@@ -253,4 +255,17 @@
   background: #ffffff;
   border: 0;
   font-size: 24rpx;
+}
+
+.trade-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 0;
+  color: #202733;
+  font-size: 25rpx;
+}
+
+.trade-row text {
+  color: #697581;
 }

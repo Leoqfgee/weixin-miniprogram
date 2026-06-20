@@ -1,27 +1,29 @@
 .order-detail-page {
-  padding-bottom: 140rpx;
+  padding: 18rpx 20rpx 140rpx;
 }
 
 .status-hero {
-  padding: 34rpx 30rpx;
-  color: #ffffff;
-  background: linear-gradient(135deg, #12a05b, #18c374);
-  border-radius: 26rpx;
+  margin-top: 12rpx;
+  padding: 26rpx 24rpx;
+  color: #202733;
+  background: linear-gradient(135deg, #e9f8ef, #f7fbf8);
+  border-radius: 14rpx;
 }
 
 .role-tag {
   display: inline-block;
   padding: 8rpx 18rpx;
-  color: #0f8f52;
-  background: rgba(255, 255, 255, 0.9);
+  color: #ffffff;
+  background: #12a960;
   border-radius: 999rpx;
   font-size: 23rpx;
   font-weight: 800;
 }
 
 .status-title {
-  margin-top: 20rpx;
-  font-size: 44rpx;
+  margin-top: 18rpx;
+  color: #11a55e;
+  font-size: 36rpx;
   font-weight: 900;
 }
 
@@ -35,7 +37,7 @@
   display: flex;
   justify-content: space-between;
   gap: 8rpx;
-  margin-top: 24rpx;
+  margin-top: 0;
 }
 
 .step {
@@ -47,8 +49,8 @@
 }
 
 .dot {
-  width: 18rpx;
-  height: 18rpx;
+  width: 24rpx;
+  height: 24rpx;
   margin: 0 auto 8rpx;
   border-radius: 50%;
   background: #d9e1dc;
@@ -88,7 +90,7 @@
 
 .amount {
   margin-top: 24rpx;
-  color: #d64545;
+  color: #08a85d;
   font-size: 42rpx;
   font-weight: 700;
 }
@@ -107,10 +109,10 @@
 }
 
 .thumb {
-  width: 132rpx;
-  height: 132rpx;
+  width: 128rpx;
+  height: 128rpx;
   flex-shrink: 0;
-  border-radius: 18rpx;
+  border-radius: 10rpx;
   background: #edf1f5;
 }
 
@@ -213,7 +215,9 @@
 }
 
 .actions button {
-  width: 210rpx;
+  flex: 1;
+  min-width: 0;
+  width: auto;
   font-size: 26rpx;
 }
 .review-line{display:flex;align-items:center;justify-content:space-between;padding:16rpx 0;border-bottom:1rpx solid #e7ecef}.review-line:last-child{border-bottom:0}

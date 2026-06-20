@@ -46,7 +46,7 @@
   color: #667281;
   text-align: center;
   background: #eef5f1;
-  border-radius: 8rpx;
+  border-radius: 999rpx;
   font-size: 28rpx;
   font-weight: 800;
 }
@@ -135,7 +135,7 @@
   margin-bottom: 22rpx;
   padding: 24rpx;
   background: #ffffff;
-  border-radius: 8rpx;
+  border-radius: 14rpx;
   box-shadow: 0 12rpx 30rpx rgba(26, 39, 50, 0.08);
 }
 
@@ -166,7 +166,7 @@
 .status {
   flex: none;
   padding: 8rpx 16rpx;
-  border-radius: 8rpx;
+  border-radius: 999rpx;
   font-size: 24rpx;
   font-weight: 800;
 }
@@ -202,7 +202,7 @@
   width: 142rpx;
   height: 142rpx;
   flex: none;
-  border-radius: 8rpx;
+  border-radius: 10rpx;
   background: #edf1f5;
 }
 
@@ -304,7 +304,7 @@
   height: 68rpx;
   line-height: 68rpx;
   margin: 0;
-  border-radius: 8rpx;
+  border-radius: 10rpx;
   font-size: 25rpx;
 }
 

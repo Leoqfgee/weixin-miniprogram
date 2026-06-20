@@ -1,38 +1,29 @@
 .publish-page {
-  padding: 24rpx 24rpx 156rpx;
+  padding: 18rpx 24rpx 156rpx;
+  background: #f6f8f6;
 }
 
 .page-title {
   text-align: center;
   color: #1f2933;
-  font-size: 38rpx;
+  font-size: 32rpx;
   font-weight: 900;
 }
 
 .publish-banner {
   position: relative;
-  margin: 24rpx 0;
-  padding: 28rpx 30rpx;
+  margin: 8rpx -24rpx 18rpx;
+  padding: 16rpx 30rpx;
   overflow: hidden;
-  background: linear-gradient(135deg, #effaf1 0%, #dff5e7 100%);
-  border-radius: 24rpx;
-}
-
-.publish-banner::after {
-  content: "";
-  position: absolute;
-  right: 34rpx;
-  bottom: 20rpx;
-  width: 120rpx;
-  height: 92rpx;
-  background: linear-gradient(135deg, #20c767, #0f9f55);
-  border-radius: 24rpx;
+  text-align: center;
+  background: #edf8f1;
+  border-radius: 0;
 }
 
 .banner-title {
   color: #11924f;
-  font-size: 30rpx;
-  font-weight: 900;
+  font-size: 23rpx;
+  font-weight: 700;
 }
 
 .panel {
@@ -62,10 +53,10 @@
 .image-wrap,
 .image-add {
   position: relative;
-  width: 142rpx;
-  height: 142rpx;
-  flex: 0 0 142rpx;
-  border-radius: 18rpx;
+  width: 150rpx;
+  height: 150rpx;
+  flex: 0 0 150rpx;
+  border-radius: 12rpx;
   overflow: hidden;
 }
 
@@ -94,7 +85,7 @@
   justify-content: center;
   color: #16a45a;
   background: #f6fbf7;
-  border: 1rpx solid #cfeedd;
+  border: 2rpx dashed #c9d8d0;
 }
 
 .image-add view {
@@ -131,15 +122,15 @@
 }
 
 .ai-btn {
-  height: 104rpx;
-  line-height: 1.25;
+  height: 64rpx;
+  line-height: 62rpx;
   margin: 0;
-  padding: 20rpx 12rpx;
+  padding: 0 12rpx;
   color: #11924f;
-  background: #f5fcf7;
+  background: #ffffff;
   border: 1rpx solid #16b85e;
-  border-radius: 18rpx;
-  font-size: 27rpx;
+  border-radius: 10rpx;
+  font-size: 24rpx;
   font-weight: 900;
 }
 
@@ -186,12 +177,12 @@
   display: flex;
   align-items: center;
   gap: 18rpx;
-  min-height: 118rpx;
+  min-height: 104rpx;
   padding: 22rpx;
   background: #ffffff;
   border: 1rpx solid #e8ece8;
-  border-radius: 22rpx;
-  box-shadow: 0 12rpx 28rpx rgba(31, 41, 51, 0.06);
+  border-radius: 12rpx;
+  box-shadow: 0 10rpx 24rpx rgba(31, 41, 51, 0.05);
 }
 
 .option-icon {
@@ -238,7 +229,7 @@
   bottom: 0;
   display: grid;
   grid-template-columns: 1fr 1.25fr;
-  gap: 18rpx;
+  gap: 16rpx;
   padding: 18rpx 24rpx 30rpx;
   background: rgba(255, 255, 255, 0.96);
 }
@@ -246,4 +237,5 @@
 .bottom-actions button {
   height: 86rpx;
   line-height: 86rpx;
+  border-radius: 10rpx;
 }
