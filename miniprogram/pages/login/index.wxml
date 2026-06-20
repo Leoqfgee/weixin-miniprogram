@@ -1,9 +1,17 @@
 <view class="page login-page">
   <view class="login-hero">
     <view class="campus-sky"></view>
-    <view class="logo-mark">校</view>
-    <view class="brand">校园二手</view>
-    <view class="brand-sub">一个账号，买卖都能用</view>
+    <view class="hero-card">
+      <view class="hero-topline">
+        <view class="hero-dot"></view>
+        <text>Campus Market</text>
+      </view>
+      <view class="brand">校园二手</view>
+      <view class="hero-tags">
+        <text>闲置发布</text>
+        <text>同校交易</text>
+      </view>
+    </view>
   </view>
 
   <view class="login-sheet">
