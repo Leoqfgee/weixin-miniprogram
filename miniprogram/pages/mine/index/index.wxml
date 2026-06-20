@@ -1,15 +1,57 @@
-﻿<view class="page mine-page green-page">
+<view class="page mine-page green-page">
+  <view class="brand-block">
+    <view class="brand-title">校园<text>二手</text></view>
+  </view>
+
   <view class="profile-card" bindtap="goProfileHome">
     <view class="profile-top">
       <image wx:if="{{user && (user.profile.avatar || user.profile.avatar_url)}}" class="avatar" src="{{user.profile.avatar || user.profile.avatar_url}}" mode="aspectFill"></image>
       <view wx:else class="avatar placeholder">{{avatarText}}</view>
-      <view class="profile-main"><view class="name-line">{{user ? user.profile.nickname : '未登录'}}</view><view class="campus">{{user ? (user.profile.campus || '未填写校区') : '登录后查看交易'}}</view><view wx:if="{{user}}" class="profile-tags"><text>信用分 {{user.profile.credit_score || 100}}</text><text>资料完整度 {{profileRate}}</text></view></view>
-      <button wx:if="{{!user}}" class="primary-btn action" catchtap="goLogin">去登录</button><button wx:else class="ghost-btn action" catchtap="goProfileEdit">编辑资料 ›</button>
+      <view class="profile-main">
+        <view class="name-line">{{user ? user.profile.nickname : '未登录'}}</view>
+        <view class="muted">{{user ? (user.profile.campus || '未填写校区') : '未登录'}}</view>
+        <view wx:if="{{user}}" class="profile-tags"><text>信用分 {{user.profile.credit_score || 100}}</text><text>{{user.profile.profile_completed ? '资料完整' : '待完善资料'}}</text></view>
+      </view>
+      <button wx:if="{{!user}}" class="primary-btn action" catchtap="goLogin">去登录</button>
+      <button wx:else class="ghost-btn action" catchtap="goProfileEdit">编辑资料 ›</button>
     </view>
-    <view wx:if="{{user}}" class="stats"><view><text>{{stats.published}}</text><text>发布商品</text></view><view><text>{{stats.bought}}</text><text>买到的</text></view><view><text>{{stats.sold}}</text><text>卖出的</text></view><view><text>{{stats.favorites}}</text><text>收藏</text></view></view>
+    <view wx:if="{{user}}" class="stats">
+      <view><text>{{stats.published}}</text><text>发布商品</text></view>
+      <view><text>{{stats.bought}}</text><text>买到的</text></view>
+      <view><text>{{stats.sold}}</text><text>卖出的</text></view>
+      <view><text>{{stats.favorites}}</text><text>收藏</text></view>
+    </view>
   </view>
-  <view wx:if="{{user}}" class="panel grid-panel"><view class="section-title">我的交易</view><view class="service-grid trade-grid"><view wx:for="{{tradeItems}}" wx:key="text" class="service-item" data-action="{{item.action}}" bindtap="handleGridTap"><view class="service-icon"><image src="{{item.icon}}" mode="aspectFit"></image></view><view>{{item.text}}</view></view></view></view>
-  <view wx:if="{{user}}" class="panel grid-panel"><view class="section-title">我的服务</view><view class="service-grid"><view wx:for="{{serviceItems}}" wx:key="text" class="service-item" data-action="{{item.action}}" bindtap="handleGridTap"><view class="service-icon"><image src="{{item.icon}}" mode="aspectFit"></image></view><view>{{item.text}}</view></view></view></view>
-  <view wx:if="{{isAdmin}}" class="panel admin-panel"><view class="section-title">管理员工具</view><view class="admin-entry" bindtap="goAdminProducts"><view class="title small">商品审核</view><view class="muted">审核待上架商品</view></view><view class="admin-entry" bindtap="goRefunds"><view class="title small">售后退款单</view><view class="muted">查看和跟踪平台售后申请</view></view><view class="admin-entry" bindtap="goAdminAppeals"><view class="title small">申诉仲裁</view><view class="muted">处理平台介入申请</view></view><view class="admin-entry" bindtap="goAdminReports"><view class="title small">统计报表</view><view class="muted">查看发布、成交和活跃数据</view></view><view class="admin-entry" bindtap="goAdminLogs"><view class="title small">后台日志</view><view class="muted">查看操作日志和基础统计</view></view></view>
+
+  <view wx:if="{{user}}" class="panel grid-panel">
+    <view class="section-title">我的交易</view>
+    <view class="service-grid trade-grid">
+      <view class="service-item" bindtap="goPublished"><view class="service-icon green">包</view><view>我发布的</view></view>
+      <view class="service-item" bindtap="goBought"><view class="service-icon blue">买</view><view>我买到的</view></view>
+      <view class="service-item" bindtap="goSold"><view class="service-icon orange">卖</view><view>我卖出的</view></view>
+    </view>
+  </view>
+
+  <view wx:if="{{user}}" class="panel grid-panel">
+    <view class="section-title">我的服务</view>
+    <view class="service-grid">
+      <view class="service-item" bindtap="goFavorites"><view class="service-icon pink">♥</view><view>我的收藏</view></view>
+      <view class="service-item" bindtap="goAddresses"><view class="service-icon green">址</view><view>收货地址</view></view>
+      <view class="service-item" bindtap="goRefunds"><view class="service-icon purple">售</view><view>售后</view></view>
+      <view class="service-item" bindtap="goCustomerService"><view class="service-icon orange">客</view><view>联系客服</view></view>
+      <view class="service-item" bindtap="goProfileHome"><view class="service-icon blue">页</view><view>我的主页</view></view>
+      <view class="service-item" bindtap="goSettings"><view class="service-icon gray">设</view><view>设置</view></view>
+    </view>
+  </view>
+
+  <view wx:if="{{isAdmin}}" class="panel admin-panel">
+    <view class="section-title">管理员工具</view>
+    <view class="admin-entry" bindtap="goAdminProducts"><view class="title small">商品审核</view><view class="muted">审核待上架商品</view></view>
+    <view class="admin-entry" bindtap="goRefunds"><view class="title small">售后退款单</view><view class="muted">查看和跟踪平台售后申请</view></view>
+    <view class="admin-entry" bindtap="goAdminAppeals"><view class="title small">申诉仲裁</view><view class="muted">处理平台介入申请</view></view>
+    <view class="admin-entry" bindtap="goAdminReports"><view class="title small">统计报表</view><view class="muted">查看发布、成交和活跃数据</view></view>
+    <view class="admin-entry" bindtap="goAdminLogs"><view class="title small">后台日志</view><view class="muted">查看操作日志和基础统计</view></view>
+  </view>
+
   <button wx:if="{{user}}" class="logout" bindtap="logout">退出登录</button>
 </view>
