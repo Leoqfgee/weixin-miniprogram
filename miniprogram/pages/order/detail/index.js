@@ -1,115 +1,25 @@
-const { requireLogin } = require('../../../utils/auth')
+﻿const { requireLogin } = require('../../../utils/auth')
 const api = require('../../../utils/request')
-
-const DELIVERY_TEXT = { offline_meetup: '校内面交', campus_pickup: '校园自提', campus_delivery: '校内送达', express: '快递邮寄' }
+const { safeText, money, formatDateTime, orderStatus, orderStep, orderTip, delivery, condition, refundStatus } = require('../../../utils/format')
 
 Page({
-  data: {
-    id: '',
-    order: null,
-    steps: [
-      { key: 'pending_payment', text: '待付款' },
-      { key: 'pending_delivery', text: '待交付' },
-      { key: 'pending_receive', text: '待收货' },
-      { key: 'pending_review', text: '待评价' },
-      { key: 'completed', text: '完成' }
-    ],
-    currentStep: 0,
-    fundText: '未付款',
-    actionMap: {}
-  },
-  onLoad(options) {
-    requireLogin()
-    this.setData({ id: options.id || '' })
-  },
-  onShow() {
-    if (this.data.id) this.loadOrder()
-  },
-  loadOrder() {
-    api.get(`/orders/${this.data.id}`, {}, { loading: true }).then((order) => {
-      if (order.delivery) {
-        order.delivery.delivery_type_text = DELIVERY_TEXT[order.delivery.delivery_type] || order.delivery.delivery_type
-        order.delivery.location_text = order.delivery.meet_location || order.delivery.pickup_location || order.delivery.campus_address || order.delivery.tracking_no || '暂无'
-      }
-      this.setData({
-        order,
-        currentStep: this.getStepIndex(order.status),
-        fundText: this.getFundText(order),
-        actionMap: this.buildActionMap(order.allowed_actions)
-      })
-    })
-  },
-  buildActionMap(allowedActions) {
-    return ((allowedActions && allowedActions.actions) || []).reduce((map, action) => {
-      map[action] = true
-      return map
-    }, {})
-  },
-  getStepIndex(status) {
-    return { pending_payment: 0, pending_delivery: 1, pending_receive: 2, pending_review: 3, completed: 4 }[status] || 0
-  },
-  getFundText(order) {
-    if (order.escrow && order.escrow.status === 'holding') return '已付款，平台担保中（模拟）'
-    if (order.escrow && order.escrow.status === 'settled') return '已结算给卖家（模拟）'
-    if ((order.payment && order.payment.status === 'refunded') || order.status === 'refunded') return '已退款'
-    return '未付款'
-  },
-  pay() {
-    api.post('/payments/prepay', { order_id: this.data.id }, { loading: true })
-      .then((data) => api.post('/payments/mock-confirm', { payment_id: data.payment.id, mock_result: 'success' }, { loading: true }))
-      .then(() => this.loadOrder())
-  },
-  sellerCancel() {
-    api.post(`/orders/${this.data.id}/seller-cancel`, { reason: '卖家取消交易' }, { loading: true }).then(() => this.loadOrder())
-  },
-  sellerDeliver() {
-    wx.navigateTo({ url: `/pages/delivery/form/index?order_id=${this.data.id}` })
-  },
-  cancel() {
-    api.post(`/orders/${this.data.id}/buyer-cancel`, {}, { loading: true }).then(() => this.loadOrder())
-  },
-  confirmReceipt() {
-    api.post(`/deliveries/${this.data.id}/buyer-confirm`, {}, { loading: true }).then(() => this.loadOrder())
-  },
-  rejectReceive() {
-    api.post(`/deliveries/${this.data.id}/buyer-reject`, { reason: '买家拒绝收货' }, { loading: true }).then(() => this.loadOrder())
-  },
-  review() {
-    wx.navigateTo({ url: `/pages/review/apply/index?order_id=${this.data.id}` })
-  },
-  viewReview(event) {
-    wx.navigateTo({ url: `/pages/review/detail/index?id=${event.currentTarget.dataset.id}` })
-  },
-  applyRefund() {
-    wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount}` })
-  },
-  contactCounterparty() {
-    const order = this.data.order || {}
-    const user = order.contact_user || {}
-    const snapshot = order.product_snapshot || {}
-    if (!user.id) {
-      wx.showToast({ title: '联系人信息不存在', icon: 'none' })
-      return
-    }
-    wx.navigateTo({
-      url: `/pages/message/chat/index?conversation_id=${order.conversation_id || ''}&receiver_id=${user.id}&product_id=${snapshot.product_id || order.product_id || ''}&order_id=${order.id}&product_title=${encodeURIComponent(snapshot.title || '')}&product_price=${snapshot.price || ''}&product_cover=${encodeURIComponent(snapshot.cover_image || '')}`
-    })
-  },
-  viewProductSnapshot() {
-    if (!this.data.order || !this.data.order.id) return
-    wx.navigateTo({ url: `/pages/order/detail/index?id=${this.data.order.id}` })
-  },
-  viewRefund() {
-    const refund = this.data.order && this.data.order.refund
-    if (refund && refund.id) {
-      wx.navigateTo({ url: `/pages/refund/detail/index?id=${refund.id}` })
-      return
-    }
-    const role = (this.data.actionMap.agree_refund || this.data.actionMap.reject_refund || this.data.actionMap.seller_deliver) ? 'seller' : 'buyer'
-    wx.navigateTo({ url: `/pages/refund/list/index?role=${role}&order_id=${this.data.id}` })
-  },
-  applyAppeal() {
-    const refund = this.data.order && this.data.order.refund
-    if (refund && refund.id) wx.navigateTo({ url: `/pages/appeal/apply/index?refund_id=${refund.id}` })
-  }
+  data: { id: '', order: null, steps: [{ key: 'pending_payment', text: '待付款' }, { key: 'pending_delivery', text: '待发货' }, { key: 'pending_receive', text: '待收货' }, { key: 'pending_review', text: '待评价' }, { key: 'completed', text: '完成' }], currentStep: 0, fundText: '未付款', actionMap: {} },
+  onLoad(options) { requireLogin(); this.setData({ id: options.id || '' }) },
+  onShow() { if (this.data.id) this.loadOrder() },
+  loadOrder() { api.get(`/orders/${this.data.id}`, {}, { loading: true }).then((order) => { const role = order.current_role || 'buyer'; const items = (order.items || []).map((item) => Object.assign({}, item, { quantity: Number(item.quantity || 1), unit_price_text: money(item.unit_price), snapshot: Object.assign({}, item.product_snapshot || {}, { title: safeText((item.product_snapshot || {}).title, '订单商品'), condition_text: condition((item.product_snapshot || {}).condition), description: safeText((item.product_snapshot || {}).description, '') }) })); const contact = order.contact_user || {}; const refund = order.refund ? Object.assign({}, order.refund, { status_text: refundStatus(order.refund.status, order.refund.status_group) }) : null; const normalized = Object.assign({}, order, { items, refund, role_text: role === 'buyer' ? '我买到的' : '我卖出的', status_text: orderStatus(order.status), status_tip: orderTip(order, role), total_amount_text: money(order.total_amount), created_text: formatDateTime(order.created_at), contact_label: role === 'buyer' ? '联系卖家' : '联系买家', contact_user: Object.assign({}, contact, { nickname: safeText(contact.nickname, '校内同学'), campus: safeText(contact.campus, '未填写'), phone_masked: safeText(contact.phone_masked, '未填写') }) }); if (normalized.delivery) { normalized.delivery.delivery_type_text = delivery(normalized.delivery.delivery_type); normalized.delivery.location_text = safeText(normalized.delivery.meet_location || normalized.delivery.pickup_location || normalized.delivery.campus_address || normalized.delivery.tracking_no, '暂无') } this.setData({ order: normalized, currentStep: orderStep(order.status), fundText: this.getFundText(order), actionMap: this.buildActionMap(order.allowed_actions) }) }) },
+  buildActionMap(allowedActions) { if (!allowedActions) return {}; if (Array.isArray(allowedActions.actions)) return allowedActions.actions.reduce((map, action) => { map[action] = true; return map }, {}); return Object.keys(allowedActions).reduce((map, key) => { if (allowedActions[key]) map[key] = true; return map }, {}) },
+  getFundText(order) { if ((order.payment && order.payment.status === 'refunded') || order.status === 'refunded') return '已退款'; if (order.escrow && order.escrow.status === 'holding') return '已付款，平台担保中'; if (order.escrow && order.escrow.status === 'settled') return '已结算给卖家'; if (['pending_delivery', 'pending_receive', 'pending_review', 'completed', 'refunding'].includes(order.status)) return '已付款'; return '未付款' },
+  pay() { api.post('/payments/prepay', { order_id: this.data.id }, { loading: true }).then((data) => api.post('/payments/mock-confirm', { payment_id: data.payment.id, mock_result: 'success' }, { loading: true })).then(() => this.loadOrder()) },
+  sellerCancel() { api.post(`/orders/${this.data.id}/seller-cancel`, { reason: '卖家取消交易' }, { loading: true }).then(() => this.loadOrder()) },
+  sellerDeliver() { wx.navigateTo({ url: `/pages/delivery/form/index?order_id=${this.data.id}` }) },
+  cancel() { api.post(`/orders/${this.data.id}/buyer-cancel`, {}, { loading: true }).then(() => this.loadOrder()) },
+  confirmReceipt() { api.post(`/deliveries/${this.data.id}/buyer-confirm`, {}, { loading: true }).then(() => this.loadOrder()) },
+  rejectReceive() { api.post(`/deliveries/${this.data.id}/buyer-reject`, { reason: '买家拒绝收货' }, { loading: true }).then(() => this.loadOrder()) },
+  review() { wx.navigateTo({ url: `/pages/review/apply/index?order_id=${this.data.id}` }) },
+  viewReview(event) { wx.navigateTo({ url: `/pages/review/detail/index?id=${event.currentTarget.dataset.id}` }) },
+  applyRefund() { wx.navigateTo({ url: `/pages/refund/apply/index?order_id=${this.data.id}&amount=${this.data.order.pay_amount || this.data.order.total_amount}` }) },
+  contactCounterparty() { const order = this.data.order || {}; const user = order.contact_user || {}; const snapshot = (order.items && order.items[0] && order.items[0].snapshot) || order.product_snapshot || {}; if (!user.id) return wx.showToast({ title: '联系人信息不存在', icon: 'none' }); wx.navigateTo({ url: `/pages/message/chat/index?conversation_id=${order.conversation_id || ''}&receiver_id=${user.id}&product_id=${snapshot.product_id || order.product_id || ''}&order_id=${order.id}&product_title=${encodeURIComponent(snapshot.title || '')}&product_price=${snapshot.price || ''}&product_cover=${encodeURIComponent(snapshot.cover_image || '')}` }) },
+  viewRefund() { const refund = this.data.order && this.data.order.refund; if (refund && refund.id) return wx.navigateTo({ url: `/pages/refund/detail/index?id=${refund.id}` }); const role = (this.data.order && this.data.order.current_role) || 'buyer'; wx.navigateTo({ url: `/pages/refund/list/index?role=${role}&order_id=${this.data.id}` }) },
+  applyAppeal() { const refund = this.data.order && this.data.order.refund; if (refund && refund.id) wx.navigateTo({ url: `/pages/appeal/apply/index?refund_id=${refund.id}` }) }
 })
+

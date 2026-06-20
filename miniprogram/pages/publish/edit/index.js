@@ -1,193 +1,35 @@
-const api = require('../../../utils/request')
+﻿const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { validateProductForm, firstError } = require('../../../utils/validator')
 const { CONDITION_OPTIONS, classifyProduct, getCategoryName } = require('../../../utils/constants')
 
-const blankForm = () => ({
-  title: '',
-  description: '',
-  price: '',
-  stock: 1,
-  category_id: '',
-  category: '',
-  category_name: '',
-  category_source: '',
-  condition: '',
-  images: [],
-  campus: '主校区',
-  delivery_options: ['meetup', 'express']
-})
+const blankForm = () => ({ title: '', description: '', price: '', stock: 1, category_id: '', category: '', category_name: '', category_source: '', condition: '', images: [], campus: '主校区', delivery_options: ['meetup'] })
+const DELIVERY_OPTIONS = [{ label: '当面交易', value: 'meetup' }, { label: '快递邮寄', value: 'express' }]
 
 Page({
-  data: {
-    productId: '',
-    categories: [],
-    categoryIndex: -1,
-    autoCategoryText: '填写标题和描述后自动推荐',
-    editingOnSale: false,
-    conditionOptions: [{ label: '成色暂不填写', value: '' }].concat(CONDITION_OPTIONS),
-    conditionIndex: 0,
-    form: blankForm(),
-    errors: {}
-  },
-  onLoad(options) {
-    requireLogin()
-    this.setData({ productId: options.id || '' })
-    this.loadCategories()
-  },
-  loadCategories() {
-    api.get('/categories').then((data) => {
-      const categories = data.items || []
-      this.setData({ categories })
-      if (this.data.productId) this.loadProduct()
-    })
-  },
-  loadProduct() {
-    api.get(`/products/${this.data.productId}`, {}, { loading: true }).then((product) => {
-      const categoryIndex = this.data.categories.findIndex((item) => item.code === product.category || item.id === product.category_id)
-      const conditionIndex = this.data.conditionOptions.findIndex((item) => item.value === (product.condition || ''))
-      this.setData({
-        form: Object.assign(blankForm(), product, { price: String(product.price || '') }),
-        categoryIndex,
-        autoCategoryText: product.category_name || '填写标题和描述后自动推荐',
-        conditionIndex: conditionIndex < 0 ? 0 : conditionIndex,
-        editingOnSale: product.status === 'on_sale'
-      })
-    })
-  },
-  setField(event) {
-    this.setData({ [`form.${event.currentTarget.dataset.field}`]: event.detail.value })
-    if (['title', 'description'].includes(event.currentTarget.dataset.field) && this.data.categoryIndex < 0) {
-      this.refreshAutoCategory()
-    }
-  },
-  refreshAutoCategory() {
-    const code = classifyProduct(this.data.form.title, this.data.form.description)
-    this.setData({
-      autoCategoryText: `推荐：${getCategoryName(code)}`,
-      'form.category': code,
-      'form.category_name': getCategoryName(code),
-      'form.category_source': 'auto'
-    })
-  },
-  onCategoryChange(event) {
-    const index = Number(event.detail.value)
-    const category = this.data.categories[index]
-    this.setData({
-      categoryIndex: index,
-      autoCategoryText: category.name,
-      'form.category_id': category.id || '',
-      'form.category': category.code,
-      'form.category_name': category.name,
-      'form.category_source': 'manual'
-    })
-  },
-  onConditionChange(event) {
-    const index = Number(event.detail.value)
-    this.setData({ conditionIndex: index, 'form.condition': this.data.conditionOptions[index].value })
-  },
-  chooseImages() {
-    wx.chooseMedia({
-      count: 9 - this.data.form.images.length,
-      mediaType: ['image'],
-      sizeType: ['compressed'],
-      success: (res) => this.uploadImages(res.tempFiles || [])
-    })
-  },
-  uploadImages(files) {
-    if (!files.length) return
-    Promise.all(files.map((item) => api.uploadFile({
-      url: '/files/upload',
-      filePath: item.tempFilePath,
-      formData: { usage: 'product' },
-      loading: true
-    }))).then((items) => {
-      this.setData({ 'form.images': this.data.form.images.concat(items.map((item) => item.url)) })
-    }).catch(() => {
-      wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' })
-    })
-  },
-  removeImage(event) {
-    const images = this.data.form.images.slice()
-    images.splice(Number(event.currentTarget.dataset.index), 1)
-    this.setData({ 'form.images': images })
-  },
-  requestAi(action) {
-    const endpointMap = {
-      title: '/ai/title',
-      description: '/ai/description',
-      polish: '/ai/polish'
-    }
-    return api.post(endpointMap[action] || '/ai/description', {
-      keywords: this.data.form.title || '校园闲置好物',
-      title: this.data.form.title,
-      description: this.data.form.description
-    }, { loading: true, loadingText: 'AI 生成中' })
-  },
-  useAiTitle() {
-    this.requestAi('title').then((data) => {
-      const suggestions = data.title_suggestions || (data.title ? [data.title] : [])
-      if (!suggestions.length) {
-        wx.showToast({ title: '暂未生成标题建议', icon: 'none' })
-        return
-      }
-      wx.showActionSheet({
-        itemList: suggestions,
-        success: (res) => this.setData({ 'form.title': suggestions[res.tapIndex] })
-      })
-    })
-  },
-  useAiDescription() {
-    this.requestAi('description').then((data) => {
-      if (data.description) this.setData({ 'form.description': data.description })
-    })
-  },
+  data: { productId: '', categories: [], categoryIndex: -1, autoCategoryText: '填写标题和描述后自动推荐', editingOnSale: false, conditionOptions: [{ label: '成色暂不填写', value: '' }].concat(CONDITION_OPTIONS), conditionIndex: 0, deliveryOptions: DELIVERY_OPTIONS, form: blankForm(), errors: {} },
+  onLoad(options) { requireLogin(); this.setData({ productId: options.id || '' }); this.loadCategories() },
+  loadCategories() { api.get('/categories').then((data) => { const categories = data.items || []; this.setData({ categories }); if (this.data.productId) this.loadProduct() }) },
+  loadProduct() { api.get(`/products/${this.data.productId}`, {}, { loading: true }).then((product) => { const categoryIndex = this.data.categories.findIndex((item) => item.code === product.category || item.id === product.category_id); const conditionIndex = this.data.conditionOptions.findIndex((item) => item.value === (product.condition || '')); this.setData({ form: Object.assign(blankForm(), product, { price: String(product.price || ''), delivery_options: product.delivery_options || ['meetup'] }), categoryIndex, autoCategoryText: product.category_name || '填写标题和描述后自动推荐', conditionIndex: conditionIndex < 0 ? 0 : conditionIndex, editingOnSale: product.status === 'on_sale' }) }) },
+  setField(event) { const field = event.currentTarget.dataset.field; this.setData({ [`form.${field}`]: event.detail.value }); if (['title', 'description'].includes(field) && this.data.categoryIndex < 0) this.refreshAutoCategory() },
+  refreshAutoCategory() { const code = classifyProduct(this.data.form.title, this.data.form.description); this.setData({ autoCategoryText: `推荐：${getCategoryName(code)}`, 'form.category': code, 'form.category_name': getCategoryName(code), 'form.category_source': 'auto' }) },
+  onCategoryChange(event) { const index = Number(event.detail.value); const category = this.data.categories[index]; this.setData({ categoryIndex: index, autoCategoryText: category.name, 'form.category_id': category.id || '', 'form.category': category.code, 'form.category_name': category.name, 'form.category_source': 'manual' }) },
+  onConditionChange(event) { const index = Number(event.detail.value); this.setData({ conditionIndex: index, 'form.condition': this.data.conditionOptions[index].value }) },
+  onDeliveryChange(event) { this.setData({ 'form.delivery_options': event.detail.value.length ? event.detail.value : ['meetup'] }) },
+  chooseImages() { wx.chooseMedia({ count: 9 - this.data.form.images.length, mediaType: ['image'], sizeType: ['compressed'], success: (res) => this.uploadImages(res.tempFiles || []) }) },
+  uploadImages(files) { if (!files.length) return; Promise.all(files.map((item) => api.uploadFile({ url: '/files/upload', filePath: item.tempFilePath, formData: { usage: 'product' }, loading: true }))).then((items) => this.setData({ 'form.images': this.data.form.images.concat(items.map((item) => item.url)) })).catch(() => wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' })) },
+  removeImage(event) { const images = this.data.form.images.slice(); images.splice(Number(event.currentTarget.dataset.index), 1); this.setData({ 'form.images': images }) },
+  requestAi(action) { const endpointMap = { title: '/ai/title', description: '/ai/description', polish: '/ai/polish' }; return api.post(endpointMap[action] || '/ai/description', { keywords: this.data.form.title || '校园闲置好物', title: this.data.form.title, description: this.data.form.description }, { loading: true, loadingText: 'AI 生成中' }) },
+  useAiTitle() { this.requestAi('title').then((data) => { const suggestions = data.title_suggestions || (data.title ? [data.title] : []); if (!suggestions.length) return wx.showToast({ title: '暂未生成标题建议', icon: 'none' }); wx.showActionSheet({ itemList: suggestions, success: (res) => this.setData({ 'form.title': suggestions[res.tapIndex] }) }) }) },
+  useAiDescription() { this.requestAi('description').then((data) => { if (data.description) this.setData({ 'form.description': data.description }) }) },
   submit(event) {
     const submitAction = this.data.editingOnSale ? 'draft' : event.currentTarget.dataset.action
     const source = this.data.form
     const autoCode = source.category || classifyProduct(source.title, source.description)
     const selectedCategory = this.data.categoryIndex >= 0 ? this.data.categories[this.data.categoryIndex] : null
-    const form = {
-      title: source.title,
-      description: source.description,
-      price: this.data.form.price === '' ? '' : Number(this.data.form.price),
-      stock: Number(this.data.form.stock || 1),
-      category_id: selectedCategory ? (selectedCategory.id || '') : '',
-      category: selectedCategory ? selectedCategory.code : autoCode,
-      category_name: selectedCategory ? selectedCategory.name : getCategoryName(autoCode),
-      category_source: selectedCategory ? 'manual' : 'auto',
-      condition: source.condition,
-      images: source.images || [],
-      cover_image: source.cover_image || '',
-      campus: source.campus || '',
-      delivery_options: source.delivery_options || ['meetup']
-    }
-    if (submitAction === 'review') {
-      const result = validateProductForm(form)
-      this.setData({ errors: result.errors })
-      if (!result.valid) {
-        wx.showToast({ title: firstError(result.errors, '请检查商品信息'), icon: 'none' })
-        return
-      }
-    }
-    const save = this.data.productId
-      ? api.put(`/products/${this.data.productId}`, form, { loading: true })
-      : api.post('/products', Object.assign({}, form, { submit_action: submitAction }), { loading: true })
-    save.then((product) => {
-      const id = product.id || this.data.productId
-      if (this.data.productId && submitAction === 'review') {
-        return api.post(`/products/${id}/submit-review`, {}, { loading: true }).then(() => ({ id }))
-      }
-      return { id }
-    }).then((product) => {
-      wx.showToast({ title: this.data.editingOnSale ? '修改已保存' : (submitAction === 'review' ? '已提交审核' : '草稿已保存'), icon: 'success' })
-      if (this.data.productId) {
-        setTimeout(() => wx.navigateBack(), 400)
-      } else {
-        wx.redirectTo({ url: `/pages/product/detail/index?id=${product.id}` })
-      }
-    }).catch(() => {
-      wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' })
-    })
+    const form = { title: source.title, description: source.description, price: source.price === '' ? '' : Number(source.price), stock: Number(source.stock || 1), category_id: selectedCategory ? (selectedCategory.id || '') : '', category: selectedCategory ? selectedCategory.code : autoCode, category_name: selectedCategory ? selectedCategory.name : getCategoryName(autoCode), category_source: selectedCategory ? 'manual' : 'auto', condition: source.condition, images: source.images || [], cover_image: source.cover_image || '', campus: source.campus || '', delivery_options: source.delivery_options || ['meetup'] }
+    if (submitAction === 'review') { const result = validateProductForm(form); this.setData({ errors: result.errors }); if (!result.valid) return wx.showToast({ title: firstError(result.errors, '请检查商品信息'), icon: 'none' }) }
+    const save = this.data.productId ? api.put(`/products/${this.data.productId}`, form, { loading: true }) : api.post('/products', Object.assign({}, form, { submit_action: submitAction }), { loading: true })
+    save.then((product) => { const id = product.id || this.data.productId; if (this.data.productId && submitAction === 'review') return api.post(`/products/${id}/submit-review`, {}, { loading: true }).then(() => ({ id })); return { id } }).then((product) => { wx.showToast({ title: this.data.editingOnSale ? '修改已保存' : (submitAction === 'review' ? '已提交审核' : '草稿已保存'), icon: 'success' }); if (this.data.productId) setTimeout(() => wx.navigateBack(), 400); else wx.redirectTo({ url: `/pages/product/detail/index?id=${product.id}` }) }).catch(() => wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' }))
   }
 })

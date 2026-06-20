@@ -1,14 +1,1 @@
-<view class="page">
-  <scroll-view scroll-x class="tabs"><view class="tabs-inner"><view wx:for="{{statusOptions}}" wx:key="value" class="tab {{index === statusIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view>
-  <view wx:if="{{orders.length}}" class="list">
-    <view wx:for="{{orders}}" wx:key="id" class="panel item">
-      <view class="item-main" bindtap="goDetail" data-id="{{item.id}}">
-        <image wx:if="{{item.snapshot.cover_image}}" class="thumb" src="{{item.snapshot.cover_image}}" mode="aspectFill"></image>
-        <view wx:else class="thumb placeholder">买</view>
-        <view class="info"><view class="title small">{{item.snapshot.title || item.order_no}}</view><view class="muted">¥{{item.total_amount}} · {{item.status_text}}</view><view wx:if="{{item.status_note}}" class="muted">{{item.status_note}}</view><view wx:if="{{item.seller}}" class="party">卖家：{{item.seller.nickname}}</view><view class="muted">{{item.created_at}}</view></view>
-      </view>
-      <view class="actions"><button wx:if="{{item.allowed_actions.can_pay}}" class="primary-btn" data-id="{{item.id}}" bindtap="pay">去支付</button><button wx:if="{{item.allowed_actions.can_confirm_receipt}}" class="primary-btn" data-id="{{item.id}}" bindtap="confirmReceive">确认收货</button><button wx:if="{{item.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyAfterSale" data-id="{{item.id}}" data-amount="{{item.total_amount}}">申请售后</button></view>
-    </view>
-  </view>
-  <empty-state wx:else title="暂无买到的订单"></empty-state>
-</view>
+﻿<view class="page order-list-page"><scroll-view scroll-x class="tabs"><view class="tabs-inner"><view wx:for="{{statusOptions}}" wx:key="value" class="tab {{index === statusIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectStatus">{{item.label}}</view></view></scroll-view><view wx:if="{{orders.length}}" class="order-list"><view wx:for="{{orders}}" wx:key="id" class="order-card"><view class="card-head"><text>{{item.status_text}}</text><text>{{item.created_text}}</text></view><view class="item-main" bindtap="goDetail" data-id="{{item.id}}"><image wx:if="{{item.snapshot.cover_image}}" class="thumb" src="{{item.snapshot.cover_image}}" mode="aspectFill"></image><view wx:else class="thumb placeholder">图</view><view class="info"><view class="title small">{{item.snapshot.title || '订单商品'}}</view><view class="party">卖家：{{item.party_name}}</view><view class="price">{{item.price_text}}</view></view></view><view class="actions"><button wx:if="{{item.allowed_actions.can_apply_refund}}" class="ghost-btn" bindtap="applyAfterSale" data-id="{{item.id}}" data-amount="{{item.total_amount}}">申请售后</button><button class="primary-btn" data-index="{{index}}" bindtap="primaryAction">{{item.action_text}}</button></view></view></view><empty-state wx:else title="暂无买到的订单"></empty-state></view>
