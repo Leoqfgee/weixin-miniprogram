@@ -41,6 +41,12 @@
   font-weight: 900;
 }
 
+.context-tip {
+  margin-top: 6rpx;
+  color: #7a8491;
+  font-size: 22rpx;
+}
+
 .chevron {
   color: #9aa2ad;
   font-size: 46rpx;

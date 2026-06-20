@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 from bson import ObjectId
+from ..domain.categories import CATEGORY_CODES, category_name, classify_category, normalize_category_code
 from ..repositories.categories import CategoryRepository
 from ..repositories.logs import OperationLogRepository
 from ..repositories.products import ProductRepository, utc_now
@@ -34,6 +35,7 @@ class ProductService:
             "keyword": args.get("keyword", "").strip(),
             "condition": args.get("condition", "").strip(),
             "category_id": None,
+            "category": normalize_category_code(args.get("category") or args.get("category_code")),
             "min_price": _optional_float(args.get("min_price"), "min_price"),
             "max_price": _optional_float(args.get("max_price"), "max_price"),
             "campus": args.get("campus", "").strip(),
@@ -44,6 +46,11 @@ class ProductService:
         }
         if args.get("category_id"):
             filters["category_id"] = to_object_id(args.get("category_id"), "category_id")
+            if not filters["category"]:
+                category_doc = self.categories.find_by_id(filters["category_id"])
+                filters["category"] = normalize_category_code((category_doc or {}).get("code"))
+        if filters["category"] and filters["category"] not in CATEGORY_CODES:
+            raise ValidationError("参数校验失败", [{"field": "category", "message": "分类不合法"}])
         if filters["mode"] not in {"recommend", "latest", "hot"}:
             raise ValidationError("参数校验失败", [{"field": "mode", "message": "展示模式不合法"}])
         if filters["condition"] and filters["condition"] not in CONDITIONS:
@@ -65,6 +72,51 @@ class ProductService:
                 "pages": (total + page_size - 1) // page_size,
             },
         }
+
+    def list_recommendations(self, product_id, current_user=None, limit=6):
+        product = self._get_existing(product_id)
+        if product.get("status") != "on_sale":
+            return {"items": []}
+        limit = min(max(int(limit or 6), 1), 20)
+        category = normalize_category_code(product.get("category"))
+        filters = {
+            "category": category,
+            "exclude_product_id": product["_id"],
+            "campus": product.get("campus") or "",
+            "sort": "hot",
+        }
+        candidates = self.products.list_public_all(filters)
+        if len(candidates) < limit:
+            fallback_filters = {
+                "category": category,
+                "exclude_product_id": product["_id"],
+                "sort": "hot",
+            }
+            seen = {item["_id"] for item in candidates}
+            candidates.extend([item for item in self.products.list_public_all(fallback_filters) if item["_id"] not in seen])
+        if len(candidates) < limit:
+            seen = {item["_id"] for item in candidates}
+            candidates.extend([
+                item
+                for item in self.products.list_public_all({"exclude_product_id": product["_id"], "sort": "hot"})
+                if item["_id"] not in seen
+            ])
+
+        base_price = float(product.get("price") or 0)
+        def score(item):
+            price_gap = abs(float(item.get("price") or 0) - base_price)
+            same_category = normalize_category_code(item.get("category")) == category
+            same_campus = item.get("campus") and item.get("campus") == product.get("campus")
+            return (
+                100 if same_category else 0,
+                30 if same_campus else 0,
+                -price_gap,
+                int(item.get("view_count", 0) or 0) + int(item.get("favorite_count", 0) or 0) * 3,
+                item.get("created_at") or datetime.min.replace(tzinfo=timezone.utc),
+            )
+
+        candidates.sort(key=score, reverse=True)
+        return {"items": [self._present(item, current_user, compact=True) for item in candidates[:limit]]}
 
     def _list_recommended(self, filters, page, page_size, current_user=None):
         user_id = ObjectId(str(current_user["_id"])) if current_user and current_user.get("_id") else None
@@ -206,6 +258,9 @@ class ProductService:
             "description": "",
             "price": None,
             "category_id": None,
+            "category": "other",
+            "category_name": category_name("other"),
+            "category_source": "auto",
             "condition": "",
             "stock": 1,
             "images": [],
@@ -339,8 +394,10 @@ class ProductService:
             "title",
             "description",
             "price",
-            "original_price",
             "category_id",
+            "category",
+            "category_name",
+            "category_source",
             "condition",
             "stock",
             "images",
@@ -374,20 +431,8 @@ class ProductService:
             if price is not None:
                 data["price"] = price
 
-        if "original_price" in payload:
-            original_price = _optional_float(payload.get("original_price"), "original_price")
-            data["original_price"] = original_price
-
-        if need("category_id"):
-            raw_category_id = payload.get("category_id")
-            if raw_category_id:
-                category_id = to_object_id(raw_category_id, "category_id")
-                if not self.categories.exists(category_id):
-                    errors.append({"field": "category_id", "message": "分类不存在或已停用"})
-                else:
-                    data["category_id"] = category_id
-            else:
-                data["category_id"] = None
+        if any(key in payload for key in ["category", "category_id"]) or (not partial and "category" not in data):
+            self._apply_category_payload(payload, data, errors)
 
         if "condition" in payload:
             condition = (payload.get("condition") or "").strip()
@@ -424,7 +469,43 @@ class ProductService:
 
         if errors:
             raise ValidationError("参数校验失败", errors)
+        if not data.get("category") and not partial:
+            inferred = classify_category(data.get("title", payload.get("title")), data.get("description", payload.get("description")))
+            data["category"] = inferred
+            data["category_name"] = category_name(inferred)
+            data["category_source"] = "auto"
         return data
+
+    def _apply_category_payload(self, payload, data, errors):
+        category_doc = None
+        category_code = normalize_category_code(payload.get("category"))
+        source = (payload.get("category_source") or "").strip()
+        raw_category_id = payload.get("category_id")
+        if raw_category_id:
+            category_id = to_object_id(raw_category_id, "category_id")
+            category_doc = self.categories.find_by_id(category_id)
+            if not category_doc:
+                errors.append({"field": "category_id", "message": "分类不存在或已停用"})
+                return
+            category_code = normalize_category_code(category_doc.get("code")) or category_code
+            data["category_id"] = category_id
+        elif category_code:
+            category_doc = self.categories.find_by_code(category_code)
+            if category_doc:
+                data["category_id"] = category_doc["_id"]
+        else:
+            inferred = classify_category(payload.get("title"), payload.get("description"))
+            category_code = inferred
+            source = "auto"
+
+        if not category_code:
+            category_code = "other"
+        if category_code not in CATEGORY_CODES:
+            errors.append({"field": "category", "message": "分类不合法"})
+            return
+        data["category"] = category_code
+        data["category_name"] = category_name(category_code)
+        data["category_source"] = "manual" if source == "manual" or raw_category_id else "auto"
 
     def _ensure_review_ready(self, product):
         missing = []
@@ -460,6 +541,15 @@ class ProductService:
         data = serialize_doc(product)
         data["view_count"] = int(product.get("view_count", 0) or 0)
         data["favorite_count"] = int(product.get("favorite_count", 0) or 0)
+        code = normalize_category_code(product.get("category"))
+        if not code and product.get("category_id"):
+            category_doc = self.categories.find_by_id(product.get("category_id"))
+            code = normalize_category_code((category_doc or {}).get("code"))
+        if not code:
+            code = "other"
+        data["category"] = code
+        data["category_name"] = product.get("category_name") or category_name(code)
+        data["category_source"] = product.get("category_source") or "legacy"
         data["images"] = normalize_image_list(product.get("images") or [])
         data["cover_image"] = normalize_image_url(product.get("cover_image"))
         data["is_favorited"] = False
@@ -489,6 +579,10 @@ class ProductService:
                     "cover_image",
                     "images",
                     "condition",
+                    "category",
+                    "category_name",
+                    "category_source",
+                    "category_id",
                     "stock",
                     "status",
                     "seller",

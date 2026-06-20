@@ -12,6 +12,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import Config  # noqa: E402
+from app.domain.categories import CATEGORY_DEFINITIONS, category_name  # noqa: E402
 
 
 COLLECTIONS = [
@@ -39,14 +40,7 @@ COLLECTIONS = [
 ]
 
 
-BASE_CATEGORIES = [
-    {"code": "digital", "name": "数码电子", "sort": 10},
-    {"code": "book", "name": "教材书籍", "sort": 20},
-    {"code": "daily", "name": "生活用品", "sort": 30},
-    {"code": "sport", "name": "运动户外", "sort": 40},
-    {"code": "clothing", "name": "服饰鞋包", "sort": 50},
-    {"code": "other", "name": "其他", "sort": 99},
-]
+BASE_CATEGORIES = CATEGORY_DEFINITIONS
 
 
 TEST_USERS = [
@@ -99,7 +93,6 @@ DEMO_PRODUCTS = [
         "title": "罗技静音无线鼠标",
         "description": "轻微使用痕迹，按键灵敏，适合宿舍学习和办公。",
         "price": 39.0,
-        "original_price": 79.0,
         "category_code": "digital",
         "condition": "good",
         "stock": 2,
@@ -114,7 +107,6 @@ DEMO_PRODUCTS = [
         "title": "高等数学教材套装",
         "description": "高数上下册加习题册，笔记少，适合期末复习。",
         "price": 35.0,
-        "original_price": 88.0,
         "category_code": "book",
         "condition": "fair",
         "stock": 4,
@@ -129,8 +121,7 @@ DEMO_PRODUCTS = [
         "title": "宿舍护眼台灯",
         "description": "三档亮度，可 USB 供电，晚上看书不刺眼。",
         "price": 42.0,
-        "original_price": 89.0,
-        "category_code": "daily",
+        "category_code": "home",
         "condition": "like_new",
         "stock": 1,
         "images": ["/assets/images/demo-lamp.png"],
@@ -144,8 +135,7 @@ DEMO_PRODUCTS = [
         "title": "斯伯丁室外篮球",
         "description": "手感好，气很足，适合操场和球场日常训练。",
         "price": 58.0,
-        "original_price": 129.0,
-        "category_code": "sport",
+        "category_code": "other",
         "condition": "good",
         "stock": 1,
         "images": ["/assets/images/demo-basketball.png"],
@@ -159,7 +149,6 @@ DEMO_PRODUCTS = [
         "title": "通勤双肩背包",
         "description": "容量大，可放电脑，拉链顺滑，适合上课和短途出行。",
         "price": 49.0,
-        "original_price": 139.0,
         "category_code": "clothing",
         "condition": "good",
         "stock": 1,
@@ -174,7 +163,6 @@ DEMO_PRODUCTS = [
         "title": "头戴式蓝牙耳机",
         "description": "续航正常，耳罩干净，适合自习室听课和通勤。",
         "price": 75.0,
-        "original_price": 199.0,
         "category_code": "digital",
         "condition": "good",
         "stock": 1,
@@ -218,6 +206,7 @@ def ensure_indexes(db):
     db.categories.create_index([("parent_id", ASCENDING), ("sort", ASCENDING)])
     db.products.create_index([("seller_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.products.create_index([("category_id", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
+    db.products.create_index([("category", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
     db.products.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
     db.products.create_index([("status", ASCENDING), ("price", ASCENDING)])
     db.products.create_index([("status", ASCENDING), ("campus", ASCENDING)])
@@ -378,8 +367,10 @@ def seed_products(db, seed_codes=None):
             "title": item["title"],
             "description": item["description"],
             "price": item["price"],
-            "original_price": item["original_price"],
             "category_id": category["_id"],
+            "category": category["code"],
+            "category_name": category_name(category["code"]),
+            "category_source": "seed",
             "condition": item["condition"],
             "stock": item["stock"],
             "images": images,

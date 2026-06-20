@@ -1,5 +1,6 @@
 const api = require('../../utils/request')
 const { getToken, getUser } = require('../../utils/auth')
+const { PRODUCT_CATEGORIES } = require('../../utils/constants')
 
 const EMPTY_TEXT = {
   recommend: {
@@ -22,6 +23,7 @@ Page({
     products: [],
     keyword: '',
     categories: [],
+    activeCategory: '',
     authKey: '',
     activeMode: 'latest',
     modeTabs: [
@@ -35,8 +37,8 @@ Page({
 
   onLoad() {
     this.setData({ authKey: this.getAuthKey() })
-    this.loadProducts(this.data.activeMode)
     this.loadCategories()
+    this.loadProducts(this.data.activeMode)
   },
 
   onShow() {
@@ -68,7 +70,10 @@ Page({
   loadProducts(mode, allowFallback = true) {
     const activeMode = mode || this.data.activeMode
     this.setData({ loading: true })
-    api.get('/products', { page: 1, page_size: 10, mode: activeMode })
+    const params = { page: 1, page_size: 20, mode: activeMode }
+    if (this.data.keyword) params.keyword = this.data.keyword
+    if (this.data.activeCategory) params.category = this.data.activeCategory
+    api.get('/products', params)
       .then((data) => {
         const items = data.items || []
         if (activeMode === 'recommend' && !items.length && allowFallback) {
@@ -97,11 +102,17 @@ Page({
   loadCategories() {
     api.get('/categories')
       .then((data) => {
+        const remote = data.items || []
+        const categories = PRODUCT_CATEGORIES.map((base) => {
+          const matched = remote.find((item) => item.code === base.code) || {}
+          return Object.assign({}, base, matched, {
+            code: base.code,
+            name: base.name,
+            short_name: base.name.slice(0, 1)
+          })
+        })
         this.setData({
-          categories: (data.items || []).slice(0, 8).map((item) => ({
-            ...item,
-            short_name: (item.name || '类').slice(0, 1)
-          }))
+          categories
         })
       })
   },
@@ -111,11 +122,12 @@ Page({
   },
 
   goSearch() {
-    wx.navigateTo({ url: `/pages/category/index?keyword=${encodeURIComponent(this.data.keyword || '')}` })
+    this.loadProducts(this.data.activeMode, false)
   },
 
   goCategory(event) {
-    const id = event.currentTarget.dataset.id
-    wx.navigateTo({ url: `/pages/category/index?category_id=${id}` })
+    const code = event.currentTarget.dataset.code || ''
+    this.setData({ activeCategory: code === this.data.activeCategory ? '' : code, products: [] })
+    this.loadProducts(this.data.activeMode, false)
   }
 })

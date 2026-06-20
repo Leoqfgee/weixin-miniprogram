@@ -22,6 +22,7 @@
 
 .cover-tag,
 .image-count,
+.preview-chip,
 .album-chip {
   position: absolute;
   z-index: 2;
@@ -53,6 +54,12 @@
   bottom: 24rpx;
 }
 
+.preview-chip {
+  right: 24rpx;
+  top: 24rpx;
+  background: rgba(31, 41, 51, 0.36);
+}
+
 .album-chip {
   right: 24rpx;
   bottom: 24rpx;
@@ -79,6 +86,9 @@
 }
 
 .price-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 20rpx;
 }
 
@@ -88,11 +98,17 @@
   font-weight: 900;
 }
 
-.origin-price {
-  margin-left: 16rpx;
-  color: #9aa2ad;
-  text-decoration: line-through;
-  font-size: 28rpx;
+.share-btn {
+  width: 116rpx;
+  height: 58rpx;
+  line-height: 58rpx;
+  margin: 0;
+  padding: 0;
+  color: #11924f;
+  background: #eaf8ef;
+  border: 0;
+  border-radius: 999rpx;
+  font-size: 24rpx;
 }
 
 .sub-desc {
@@ -130,7 +146,8 @@
 }
 
 .seller-card,
-.detail-block {
+.detail-block,
+.recommend-panel {
   margin-top: 20rpx;
 }
 
@@ -189,6 +206,13 @@
   margin-top: 16rpx;
   color: #7a8491;
   text-align: center;
+}
+
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+  margin-top: 18rpx;
 }
 
 .state-tip {

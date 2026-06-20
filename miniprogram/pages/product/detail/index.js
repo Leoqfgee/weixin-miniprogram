@@ -3,7 +3,17 @@ const { requireLogin } = require('../../../utils/auth')
 const { DEFAULT_AVATAR_IMAGE, DEFAULT_PRODUCT_IMAGE, normalizeImageList, normalizeImageUrl } = require('../../../utils/image')
 
 Page({
-  data: { id: '', product: null, gallery: [], currentImage: 0, conditionText: '', coverText: '闲置', quantity: 1, descExpanded: false },
+  data: {
+    id: '',
+    product: null,
+    gallery: [],
+    recommendations: [],
+    currentImage: 0,
+    conditionText: '',
+    coverText: '闲置',
+    quantity: 1,
+    descExpanded: false
+  },
   onLoad(options) {
     this.setData({ id: options.id || '' })
     this.loadProduct()
@@ -27,6 +37,15 @@ Page({
         conditionText: conditionMap[product.condition] || '成色未填写',
         coverText: (product.title || '闲置好物').slice(0, 4)
       })
+      this.loadRecommendations()
+    })
+  },
+  loadRecommendations() {
+    if (!this.data.id) return
+    api.get(`/products/${this.data.id}/recommendations`, { limit: 6 }, { silentError: true }).then((data) => {
+      this.setData({ recommendations: data.items || [] })
+    }).catch(() => {
+      this.setData({ recommendations: [] })
     })
   },
   onImageChange(event) {
@@ -37,6 +56,15 @@ Page({
     const gallery = this.data.gallery.slice()
     gallery[index] = DEFAULT_PRODUCT_IMAGE
     this.setData({ gallery })
+  },
+  previewGallery(event) {
+    const gallery = (this.data.gallery || []).filter(Boolean)
+    if (!gallery.length) return
+    const index = Number(event.currentTarget.dataset.index || this.data.currentImage || 0)
+    wx.previewImage({
+      current: gallery[index] || gallery[0],
+      urls: gallery
+    })
   },
   onSellerAvatarError() {
     this.setData({
@@ -100,5 +128,13 @@ Page({
         })
       }
     })
+  },
+  onShareAppMessage() {
+    const product = this.data.product || {}
+    return {
+      title: product.title ? `校园二手：${product.title}` : '校园二手好物',
+      path: `/pages/product/detail/index?id=${product.id || this.data.id}`,
+      imageUrl: (this.data.gallery && this.data.gallery[0]) || product.cover_image || ''
+    }
   }
 })

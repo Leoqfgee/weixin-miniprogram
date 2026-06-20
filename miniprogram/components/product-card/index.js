@@ -1,4 +1,6 @@
 const { DEFAULT_PRODUCT_IMAGE, normalizeImageMeta } = require('../../utils/image')
+const api = require('../../utils/request')
+const { requireLogin } = require('../../utils/auth')
 const IMAGE_GUARD_VERSION = '20260613-demo-data-cleanup'
 
 function isLegacyUploadUrl(url) {
@@ -20,6 +22,10 @@ Component({
       observer(value) {
         this.prepareProduct(value || {})
       }
+    },
+    layout: {
+      type: String,
+      value: 'list'
     }
   },
   data: {
@@ -27,7 +33,8 @@ Component({
     campusText: '',
     coverImage: '',
     coverText: '闲置',
-    coverFailed: false
+    coverFailed: false,
+    savingFavorite: false
   },
   lifetimes: {
     attached() {
@@ -69,6 +76,26 @@ Component({
       const id = this.data.product && this.data.product.id
       if (!id) return
       wx.navigateTo({ url: `/pages/product/detail/index?id=${id}` })
+    },
+    toggleFavorite() {
+      const product = this.data.product || {}
+      if (!product.id || this.data.savingFavorite) return
+      if (!requireLogin()) return
+      this.setData({ savingFavorite: true })
+      const nextFavorited = !product.is_favorited
+      const request = product.is_favorited ? api.del(`/favorites/${product.id}`) : api.post('/favorites', { product_id: product.id })
+      request.then(() => {
+        const favoriteCount = Math.max(0, Number(product.favorite_count || 0) + (nextFavorited ? 1 : -1))
+        this.setData({
+          product: Object.assign({}, product, {
+            is_favorited: nextFavorited,
+            favorite_count: favoriteCount
+          })
+        })
+        this.triggerEvent('favoritechange', { id: product.id, is_favorited: nextFavorited, favorite_count: favoriteCount })
+      }).finally(() => {
+        this.setData({ savingFavorite: false })
+      })
     }
   }
 })

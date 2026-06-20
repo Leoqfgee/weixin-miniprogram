@@ -63,6 +63,31 @@ const CONDITION_OPTIONS = [
   { label: '有使用痕迹', value: 'fair' }
 ]
 
+const PRODUCT_CATEGORIES = [
+  { code: 'digital', name: '数码电子' },
+  { code: 'book', name: '教材书籍' },
+  { code: 'clothing', name: '服饰鞋包' },
+  { code: 'home', name: '生活家居' },
+  { code: 'other', name: '其他' }
+]
+
+function getCategoryName(code) {
+  const item = PRODUCT_CATEGORIES.find((category) => category.code === code)
+  return item ? item.name : '其他'
+}
+
+function classifyProduct(title, description) {
+  const text = `${title || ''} ${description || ''}`.toLowerCase()
+  const rules = [
+    ['digital', ['手机', '电脑', '耳机', '键盘', '鼠标', '充电宝', '平板', '相机', '数据线', '显示器', '蓝牙', '罗技', '机械键盘']],
+    ['book', ['教材', '高数', '高等数学', '英语', '考研', '四六级', '课本', '小说', '资料', '笔记', '书籍', '图书', '同济']],
+    ['clothing', ['衣服', '外套', '鞋', '包', '背包', '双肩包', '帽子', '裙子', '裤子', '卫衣']],
+    ['home', ['台灯', '收纳', '椅子', '桌子', '床上用品', '水杯', '雨伞', '镜子', '插排', '宿舍']]
+  ]
+  const matched = rules.find(([, words]) => words.some((word) => text.indexOf(word.toLowerCase()) >= 0))
+  return matched ? matched[0] : 'other'
+}
+
 module.exports = {
   API_BASE_URL,
   API_PREFIX,
@@ -75,5 +100,8 @@ module.exports = {
   STORAGE_KEYS,
   PRODUCT_STATUS_TEXT,
   ORDER_STATUS_TEXT,
-  CONDITION_OPTIONS
+  CONDITION_OPTIONS,
+  PRODUCT_CATEGORIES,
+  getCategoryName,
+  classifyProduct
 }

@@ -7,3 +7,9 @@ class CategoryRepository:
 
     def exists(self, category_id):
         return self.db.categories.count_documents({"_id": category_id, "enabled": True}) > 0
+
+    def find_by_code(self, code):
+        return self.db.categories.find_one({"code": code, "enabled": True})
+
+    def find_by_id(self, category_id):
+        return self.db.categories.find_one({"_id": category_id, "enabled": True})

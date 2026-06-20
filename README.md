@@ -63,6 +63,108 @@ downloadFile 合法域名：https://campus-secondhand-1440900946.cos.ap-shanghai
 
 首页默认打开“最新”，这样刚发布且审核通过的商品最容易被看到。
 
+首页分类、关键词和排序会组合生效：
+
+```text
+GET /api/v1/products?category=book&keyword=高数&mode=latest
+GET /api/v1/products?category=digital&mode=hot
+```
+
+商品卡片右上角收藏按钮调用真实收藏接口：
+
+```text
+POST /api/v1/favorites
+DELETE /api/v1/favorites/{product_id}
+```
+
+未登录时，小程序会引导到登录页。
+
+## UI 参考页落地说明
+
+本次已按 `校园二手小程序UI参考页面合集_一次性完整实现版.docx` 收敛页面和功能边界：
+
+- 首页删除大横幅 Banner，保留标题、搜索、分类、推荐/最新/热门、商品双列列表。
+- 登录页保留微信登录、手机号登录/注册和“开发测试账号”卡片。
+- 发布页顺序为图片、标题、AI 标题建议、描述、AI 润色描述、价格、分类、成色、交易信息、底部操作。
+- 商品详情保留轮播、价格、分享、收藏、描述、卖家信息、交易信息、猜你喜欢、底部操作。
+- 聊天页保留订单/商品卡片、文字消息、图片/视频上传、已读状态和发送按钮。
+- 订单详情按买家/卖家视角切换联系人和操作按钮。
+- 售后列表保留“我买的 / 我卖的”和中文状态筛选，售后详情只展示当前视角的对方联系人。
+- 我的页面展示当前账号真实统计，空数据为 0，切换账号后刷新 `/users/me`。
+
+明确不展示的内容：
+
+- 地图导航、查看地图按钮。
+- 标签体系、原价/划线价、保修。
+- 假认证、回复快、态度好、交易愉快等没有真实数据支撑的标签。
+- 底部“分类”Tab；分类入口只保留在首页和筛选页。
+
+## 统一商品分类
+
+统一分类字典定义在：
+
+```text
+backend/app/domain/categories.py
+miniprogram/utils/constants.js
+```
+
+稳定编码和中文名如下：
+
+```text
+digital  数码电子
+book     教材书籍
+clothing 服饰鞋包
+home     生活家居
+other    其他
+```
+
+数据库商品字段：
+
+```text
+category         稳定分类编码
+category_name    前端展示中文名
+category_source  manual / auto / seed / legacy
+category_id      兼容旧分类表的 ObjectId
+```
+
+后端接口支持：
+
+- `POST /api/v1/products`：发布时保存分类；未传分类时自动分类。
+- `PUT /api/v1/products/{id}`：编辑时支持修改分类。
+- `GET /api/v1/products`：支持 `category`，并能与 `keyword`、`mode`、`min_price`、`max_price`、`date_from`、`date_to` 组合。
+- `GET /api/v1/products/{id}`：返回 `category/category_name/category_source`。
+- `GET /api/v1/products/{id}/recommendations`：返回真实猜你喜欢商品，排除当前商品和不可交易商品。
+
+自动分类优先使用关键词规则，不生成字典外分类。手动选择分类时写入 `category_source=manual`，不会被自动分类覆盖；无法判断时归为 `other`。
+
+验收样例：
+
+```text
+高等数学 同济七版 上册 -> 教材书籍
+罗技机械键盘 茶轴 -> 数码电子
+白色双肩包 -> 服饰鞋包
+宿舍台灯 -> 生活家居
+无法判断的商品 -> 其他
+```
+
+## 猜你喜欢与分享
+
+商品详情页的“猜你喜欢”来自真实接口：
+
+```text
+GET /api/v1/products/{product_id}/recommendations?limit=6
+```
+
+推荐逻辑优先同分类、同校区和价格相近商品，再参考浏览/收藏热度与发布时间；没有真实推荐时前端隐藏模块。
+
+商品详情页分享使用小程序 `onShareAppMessage`，分享路径携带商品 ID：
+
+```text
+/pages/product/detail/index?id={product_id}
+```
+
+如果分享进入的商品已不可见，后端会返回明确的 404 提示，而不是展示空页面。
+
 ## 测试账号
 
 开发版小程序会显示测试账号按钮：
@@ -145,6 +247,17 @@ gunicorn --bind 0.0.0.0:${PORT:-80} wsgi:app
 `.dockerignore` 已排除 `.env`、`.env.*`，云托管优先读取服务设置里的环境变量。
 
 ## 验证
+
+本地后端验证：
+
+```powershell
+cd "F:\A 软件工程\campus_secondhand_platform\backend"
+$env:PYTHONNOUSERSITE='1'
+F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m compileall app scripts
+F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest -q
+```
+
+本次代码验证结果：`46 passed`。
 
 1. 重新部署云托管。
 2. 调用 `POST /api/v1/debug/demo-products/reset` 清理旧测试商品。

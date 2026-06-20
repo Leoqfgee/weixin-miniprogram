@@ -100,6 +100,10 @@ class ProductRepository:
             query["category_id"] = filters["category_id"]
         elif filters.get("category_ids"):
             query["category_id"] = {"$in": filters["category_ids"]}
+        if filters.get("category"):
+            query["category"] = filters["category"]
+        if filters.get("exclude_product_id"):
+            query["_id"] = {"$ne": filters["exclude_product_id"]}
         if filters.get("exclude_seller_id"):
             query["seller_id"] = {"$ne": filters["exclude_seller_id"]}
         if filters.get("condition"):

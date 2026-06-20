@@ -4,6 +4,7 @@
     <view class="product-main">
       <view class="text-strong">{{product.title}}</view>
       <view wx:if="{{product.price}}" class="price">¥{{product.price}}</view>
+      <view class="context-tip">{{orderId ? '订单会话 · 点击查看订单详情' : '商品会话 · 点击查看商品'}}</view>
     </view>
     <view class="chevron">›</view>
   </view>
@@ -33,7 +34,8 @@
     <button wx:if="{{voiceMode}}" class="voice-btn" bindtouchstart="startVoice" bindtouchend="stopVoice">{{recording ? '松开发送' : '按住说话'}}</button>
     <input wx:else class="message-input" value="{{content}}" bindinput="onInput" confirm-type="send" bindconfirm="sendText" placeholder="输入消息..." />
     <button wx:if="{{content}}" class="send-btn" bindtap="sendText">发送</button>
-    <button wx:else class="icon-btn" bindtap="toggleEmoji">☺</button>
+    <button wx:else class="icon-btn" data-source="album" bindtap="chooseMedia">＋</button>
+    <button wx:if="{{!content}}" class="icon-btn" bindtap="toggleEmoji">☺</button>
   </view>
   <view wx:if="{{showEmoji}}" class="tray emoji-tray"><view wx:for="{{emojis}}" wx:key="*this" data-value="{{item}}" bindtap="addEmoji">{{item}}</view></view>
 </view>

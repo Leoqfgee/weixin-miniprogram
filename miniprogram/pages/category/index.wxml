@@ -6,7 +6,7 @@
 
   <view class="filters">
     <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
-      <view class="filter">{{categoryIndex >= 0 ? categories[categoryIndex].name : '全部分类'}}</view>
+      <view class="filter">{{categoryIndex >= 0 ? categories[categoryIndex].name : '全部'}}</view>
     </picker>
     <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
       <view class="filter">{{conditionIndex >= 0 ? conditionOptions[conditionIndex].label : '全部成色'}}</view>

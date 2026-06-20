@@ -9,28 +9,11 @@
     <button class="primary-btn search-btn" bindtap="goSearch">搜索</button>
   </view>
 
-  <view class="hero-card">
-    <view>
-      <view class="hero-title">闲置不闲置 · 校园更有爱</view>
-      <view class="hero-sub">校内面交更安全，低价好物在身边</view>
-      <button class="hero-btn" bindtap="goSearch">去逛逛</button>
-    </view>
-    <view class="hero-visual">
-      <view class="bag"></view>
-      <view class="book one"></view>
-      <view class="book two"></view>
-    </view>
-  </view>
-
   <view class="category-panel" wx:if="{{categories.length}}">
     <view class="category-grid">
-      <button wx:for="{{categories}}" wx:key="id" class="category-item" data-id="{{item.id}}" bindtap="goCategory">
+      <button wx:for="{{categories}}" wx:key="code" class="category-item {{activeCategory === item.code ? 'active' : ''}}" data-code="{{item.code}}" bindtap="goCategory">
         <view class="category-icon">{{item.short_name}}</view>
         <text>{{item.name}}</text>
-      </button>
-      <button class="category-item" bindtap="goSearch">
-        <view class="category-icon more">...</view>
-        <text>全部分类</text>
       </button>
     </view>
   </view>
@@ -45,7 +28,7 @@
   </view>
 
   <view wx:if="{{products.length}}" class="product-list">
-    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}"></product-card>
+    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
   </view>
 
   <empty-state wx:else title="{{emptyTitle}}"></empty-state>

@@ -4,6 +4,7 @@ from bson import ObjectId
 from flask import current_app
 
 from ..adapters.payment import get_payment_adapter
+from ..domain.categories import category_name, normalize_category_code
 from ..repositories.deliveries import DeliveryRepository
 from ..repositories.escrows import EscrowRepository
 from ..repositories.logs import BusinessLogRepository
@@ -631,6 +632,7 @@ def _validate_quantity(value):
 
 
 def _product_snapshot(product):
+    category = normalize_category_code(product.get("category")) or "other"
     return {
         "product_id": product["_id"],
         "seller_id": product["seller_id"],
@@ -640,6 +642,9 @@ def _product_snapshot(product):
         "cover_image": normalize_image_url(product.get("cover_image")),
         "condition": product.get("condition"),
         "category_id": product.get("category_id"),
+        "category": category,
+        "category_name": product.get("category_name") or category_name(category),
+        "category_source": product.get("category_source") or "legacy",
         "defect_note": product.get("defect_note", ""),
     }
 

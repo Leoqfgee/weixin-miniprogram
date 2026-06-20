@@ -28,6 +28,17 @@ def get_product(product_id):
     return success_response(data)
 
 
+@products_bp.get("/products/<product_id>/recommendations")
+def list_product_recommendations(product_id):
+    current_user = get_current_user_from_request(required=False)
+    data = ProductService(current_app.db).list_recommendations(
+        product_id,
+        current_user,
+        limit=request.args.get("limit", 6),
+    )
+    return success_response(data)
+
+
 @products_bp.post("/products")
 @auth_required
 def create_product():

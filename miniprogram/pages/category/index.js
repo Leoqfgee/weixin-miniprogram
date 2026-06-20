@@ -7,6 +7,7 @@ Page({
     products: [],
     categories: [],
     selectedCategoryId: '',
+    selectedCategory: '',
     categoryIndex: -1,
     conditionIndex: -1,
     conditionOptions: CONDITION_OPTIONS,
@@ -26,7 +27,8 @@ Page({
   onLoad(options) {
     this.setData({
       keyword: options.keyword ? decodeURIComponent(options.keyword) : '',
-      selectedCategoryId: options.category_id || ''
+      selectedCategoryId: options.category_id || '',
+      selectedCategory: options.category || ''
     })
     this.loadCategories()
     this.loadProducts()
@@ -58,7 +60,7 @@ Page({
   loadCategories() {
     api.get('/categories').then((data) => {
       const categories = data.items || []
-      const categoryIndex = categories.findIndex((item) => item.id === this.data.selectedCategoryId)
+      const categoryIndex = categories.findIndex((item) => item.code === this.data.selectedCategory || item.id === this.data.selectedCategoryId)
       this.setData({ categories, categoryIndex })
     })
   },
@@ -66,7 +68,8 @@ Page({
     const categoryIndex = Number(event.detail.value)
     this.setData({
       categoryIndex,
-      selectedCategoryId: this.data.categories[categoryIndex] ? this.data.categories[categoryIndex].id : ''
+      selectedCategoryId: this.data.categories[categoryIndex] ? this.data.categories[categoryIndex].id : '',
+      selectedCategory: this.data.categories[categoryIndex] ? this.data.categories[categoryIndex].code : ''
     })
     this.loadProducts()
   },
@@ -80,7 +83,8 @@ Page({
   loadProducts() {
     const params = { page: 1, page_size: 20 }
     if (this.data.keyword) params.keyword = this.data.keyword
-    if (this.data.selectedCategoryId) params.category_id = this.data.selectedCategoryId
+    if (this.data.selectedCategory) params.category = this.data.selectedCategory
+    else if (this.data.selectedCategoryId) params.category_id = this.data.selectedCategoryId
     if (this.data.conditionIndex >= 0) params.condition = this.data.conditionOptions[this.data.conditionIndex].value
     if (this.data.campus) params.campus = this.data.campus
     if (this.data.minPrice) params.min_price = this.data.minPrice

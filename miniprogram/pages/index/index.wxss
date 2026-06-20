@@ -50,93 +50,6 @@
   padding: 0;
 }
 
-.hero-card {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  min-height: 190rpx;
-  margin-top: 24rpx;
-  padding: 34rpx;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f3fbf4 0%, #e5f7e8 100%);
-  border-radius: 28rpx;
-  box-shadow: 0 18rpx 40rpx rgba(21, 99, 69, 0.09);
-}
-
-.hero-title {
-  color: #1f2933;
-  font-size: 38rpx;
-  line-height: 1.2;
-  font-weight: 900;
-}
-
-.hero-sub {
-  margin-top: 14rpx;
-  color: #5e6874;
-  font-size: 25rpx;
-}
-
-.hero-btn {
-  width: 136rpx;
-  height: 58rpx;
-  line-height: 58rpx;
-  margin: 26rpx 0 0;
-  color: #fff;
-  background: #20bd5f;
-  border-radius: 999rpx;
-  font-size: 24rpx;
-}
-
-.hero-visual {
-  position: absolute;
-  right: 24rpx;
-  bottom: 14rpx;
-  width: 190rpx;
-  height: 150rpx;
-}
-
-.bag {
-  position: absolute;
-  right: 20rpx;
-  bottom: 0;
-  width: 104rpx;
-  height: 120rpx;
-  background: linear-gradient(135deg, #27c96b, #0f9f55);
-  border-radius: 24rpx 24rpx 18rpx 18rpx;
-}
-
-.bag::before {
-  content: "";
-  position: absolute;
-  left: 26rpx;
-  top: -22rpx;
-  width: 48rpx;
-  height: 44rpx;
-  border: 10rpx solid #21b85e;
-  border-bottom: 0;
-  border-radius: 40rpx 40rpx 0 0;
-}
-
-.book {
-  position: absolute;
-  left: 12rpx;
-  bottom: 10rpx;
-  width: 78rpx;
-  height: 18rpx;
-  background: #ffffff;
-  border-radius: 8rpx;
-}
-
-.book.one {
-  bottom: 38rpx;
-  background: #dff4e5;
-}
-
-.book.two {
-  bottom: 66rpx;
-  background: #fff7d6;
-}
-
 .category-panel,
 .mode-panel {
   margin-top: 22rpx;
@@ -147,7 +60,7 @@
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 18rpx 8rpx;
   padding: 24rpx 14rpx;
 }
@@ -159,6 +72,16 @@
   background: transparent;
   border: 0;
   font-size: 23rpx;
+}
+
+.category-item.active {
+  color: #0f8f4f;
+  font-weight: 800;
+}
+
+.category-item.active .category-icon {
+  color: #ffffff;
+  background: #16b85e;
 }
 
 .category-icon {
@@ -220,8 +143,8 @@
 }
 
 .product-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
   margin-top: 22rpx;
 }

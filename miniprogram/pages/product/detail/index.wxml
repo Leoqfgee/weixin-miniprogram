@@ -3,11 +3,12 @@
     <view class="cover-shell">
       <swiper wx:if="{{gallery.length}}" class="cover-swiper" current="{{currentImage}}" bindchange="onImageChange">
         <swiper-item wx:for="{{gallery}}" wx:key="*this">
-          <image class="cover-wrap" src="{{item}}" mode="aspectFill" data-index="{{index}}" binderror="onGalleryImageError"></image>
+          <image class="cover-wrap" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewGallery" binderror="onGalleryImageError"></image>
         </swiper-item>
       </swiper>
       <view wx:else class="cover-wrap placeholder"><view class="cover-tag">{{conditionText}}</view><view class="cover-title">{{coverText}}</view></view>
       <view class="image-count">{{currentImage + 1}}/{{gallery.length || 1}}</view>
+      <view wx:if="{{gallery.length}}" class="preview-chip">点击查看大图</view>
       <view wx:if="{{gallery.length > 1}}" class="album-chip">图集</view>
     </view>
 
@@ -16,11 +17,14 @@
         <view class="title">{{product.title}}</view>
         <status-badge status="{{product.status}}"></status-badge>
       </view>
-      <view class="price-line"><text class="price">¥{{product.price}}</text><text class="origin-price">¥{{product.original_price || ''}}</text></view>
+      <view class="price-line">
+        <text class="price">¥{{product.price}}</text>
+        <button class="share-btn" open-type="share">分享</button>
+      </view>
       <view class="sub-desc">{{conditionText}}｜{{product.description || '校内好物，欢迎咨询'}}</view>
       <view class="meta-line">
         <text>校内面交</text>
-        <text>可现场验货</text>
+        <text wx:if="{{product.category_name}}">{{product.category_name}}</text>
         <text>{{product.campus || product.seller.campus || '校内'}}</text>
       </view>
       <view class="metric-row">
@@ -38,7 +42,6 @@
       <view class="seller-main">
         <view class="seller-name">{{product.seller.nickname || '校园同学'}}</view>
         <view class="muted">{{product.seller.campus || product.campus || '校内交易'}}</view>
-        <view class="seller-tags"><text>实名认证</text><text>信用优良</text><text>交易评价</text></view>
       </view>
       <text class="chevron">›</text>
     </view>
@@ -47,6 +50,13 @@
       <view class="block-title">商品描述</view>
       <view class="desc {{descExpanded ? 'expanded' : ''}}">{{product.description || '卖家暂未填写描述'}}</view>
       <view class="expand" bindtap="toggleDescription">{{descExpanded ? '收起' : '展开'}}⌄</view>
+    </view>
+
+    <view wx:if="{{recommendations.length}}" class="recommend-panel panel">
+      <view class="block-title">猜你喜欢</view>
+      <view class="recommend-grid">
+        <product-card wx:for="{{recommendations}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
+      </view>
     </view>
 
     <view class="actions bottom-bar">

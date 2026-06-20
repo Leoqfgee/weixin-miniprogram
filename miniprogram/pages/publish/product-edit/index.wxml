@@ -11,9 +11,11 @@
 
   <view class="panel form-panel">
     <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="标题：品牌、型号或关键词" />
-    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、使用情况和瑕疵"></textarea>
     <view class="ai-actions">
       <button class="ai-btn" bindtap="useAiTitle">AI 标题建议</button>
+    </view>
+    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、使用情况和瑕疵"></textarea>
+    <view class="ai-actions">
       <button class="ai-btn" bindtap="useAiDescription">AI 润色描述</button>
     </view>
   </view>
@@ -22,7 +24,7 @@
     <view class="row"><text>价格</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="¥ 0.00" /></view>
     <view class="row"><text>库存</text><input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" /></view>
     <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
-      <view class="row"><text>分类（选填）</text><text class="muted">{{categoryIndex >= 0 ? categories[categoryIndex].name : '暂不填写'}}</text></view>
+      <view class="row"><text>分类（可自动识别）</text><text class="muted">{{categoryIndex >= 0 ? categories[categoryIndex].name : autoCategoryText}}</text></view>
     </picker>
     <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
       <view class="row"><text>成色（选填）</text><text class="muted">{{conditionOptions[conditionIndex].label}}</text></view>
