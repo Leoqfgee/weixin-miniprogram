@@ -1,6 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin, hasRole } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
+const { safeText, formatMoney, formatDateTime, refundStatusText } = require('../../../utils/format')
 
 const TABS = [
   { label: '全部', value: '' },
@@ -20,6 +21,21 @@ const ADMIN_ROLE_TABS = [
   { label: '买家申请', value: 'buyer' },
   { label: '卖家处理', value: 'seller' }
 ]
+
+
+function normalizeRefund(item, role) {
+  const product = item.product || {}
+  const counterparty = item.counterparty || {}
+  return Object.assign({}, item, {
+    status_text: refundStatusText(item.status_group || item.status),
+    display_amount: formatMoney(item.request_amount || item.amount),
+    display_time: formatDateTime(item.created_at || item.apply_time),
+    display_product_title: safeText(product.title, '\u552e\u540e\u5546\u54c1'),
+    display_reason: safeText(item.reason_text || item.reason, '\u672a\u586b\u5199'),
+    counterparty: Object.assign({}, counterparty, { display_name: safeText(counterparty.nickname, '\u6821\u56ed\u540c\u5b66') }),
+    counterparty_label: item.counterparty_label || (role === 'buyer' ? '\u5356\u5bb6' : '\u4e70\u5bb6')
+  })
+}
 
 Page({
   data: {
@@ -89,7 +105,8 @@ Page({
     return api.get(url, params, { loading: reset, loadingText: '加载售后' }).then((data) => {
       const items = data.items || []
       const pagination = data.pagination || {}
-      const refunds = reset ? items : this.data.refunds.concat(items)
+      const mappedItems = items.map((item) => normalizeRefund(item, this.data.role))
+      const refunds = reset ? mappedItems : this.data.refunds.concat(mappedItems)
       const total = Number(pagination.total || refunds.length)
       this.setData({
         refunds,

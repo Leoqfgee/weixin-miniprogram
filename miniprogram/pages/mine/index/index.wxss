@@ -160,6 +160,11 @@
   font-weight: 900;
 }
 
+.service-icon image {
+  width: 38rpx;
+  height: 38rpx;
+}
+
 .green { color: #16a45a; background: #eaf8ef; }
 .blue { color: #3277ff; background: #eef4ff; }
 .orange { color: #e6861d; background: #fff1db; }

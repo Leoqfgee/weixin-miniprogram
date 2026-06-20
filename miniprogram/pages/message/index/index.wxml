@@ -1,14 +1,13 @@
 <view class="page message-page">
-  <view class="mini-nav">消息</view>
-  <view wx:if="{{conversations.length}}" class="list">
-    <view wx:for="{{conversations}}" wx:key="id" class="panel item" data-index="{{index}}" bindtap="goChat">
-      <image class="avatar" src="{{item.other_user.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
+  <view wx:if="{{conversations.length}}" class="conversation-list">
+    <view wx:for="{{conversations}}" wx:key="id" class="conversation-card {{item.is_service ? 'service' : ''}}" data-index="{{index}}" bindtap="goChat">
+      <image class="avatar" src="{{item.avatar_url}}" mode="aspectFill"></image>
       <view class="main">
-        <view class="text-strong">{{item.other_user ? item.other_user.nickname : '会话'}}</view>
-        <view wx:if="{{item.product}}" class="product-line">{{item.product.title}}</view>
-        <view class="muted last">{{item.last_message.message_type === 'image' ? '[图片]' : item.last_message.content}}</view>
+        <view class="row-top"><view class="nickname">{{item.display_name}}</view><text class="time">{{item.display_time}}</text></view>
+        <view class="product-line">{{item.display_product}}</view>
+        <view class="last">{{item.display_message}}</view>
       </view>
-      <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view>
+      <view class="side"><view class="status-tag">{{item.display_status}}</view><view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view></view>
     </view>
   </view>
   <empty-state wx:else title="暂无消息"></empty-state>

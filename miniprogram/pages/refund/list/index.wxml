@@ -1,10 +1,5 @@
 <view class="refund-page">
-  <view class="top-bar">
-    <view class="back-btn" bindtap="goBack">‹</view>
-    <view class="nav-title">售后管理</view>
-  </view>
-
-  <view class="role-tabs">
+<view class="role-tabs">
     <view wx:for="{{roleTabs}}" wx:key="value" class="role-tab {{index === activeRoleIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectRole">{{item.label}}</view>
   </view>
 
@@ -48,7 +43,7 @@
         <image class="avatar" src="{{item.counterparty.avatar || '/assets/tabbar/mine.png'}}" mode="aspectFill"></image>
         <text class="buyer-name">{{item.counterparty_label}}：{{item.counterparty.nickname || '校园同学'}}</text>
         <text class="phone">☎ {{item.counterparty.phone_masked || '未留手机号'}}</text>
-        <text class="apply-time">申请时间：{{item.created_at}}</text>
+        <text class="apply-time">申请时间：{{item.display_time}}</text>
       </view>
 
       <view class="reason-row">

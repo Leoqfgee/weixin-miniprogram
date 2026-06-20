@@ -1,6 +1,5 @@
 <view class="page order-detail-page green-page">
-  <view class="mini-nav light">订单详情</view>
-  <view wx:if="{{order}}" class="order-wrap">
+<view wx:if="{{order}}" class="order-wrap">
     <view class="status-hero">
       <view class="role-tag">{{order.current_role === 'buyer' ? '我买到的' : '我卖出的'}}</view>
       <view class="status-title">{{order.status_text || '订单详情'}}</view>
@@ -22,8 +21,8 @@
         <view class="amount">￥{{order.total_amount}}</view>
       </view>
       <view class="order-meta">
-        <view>订单编号：{{order.order_no}}</view>
-        <view>创建时间：{{order.created_at}}</view>
+        <view>订单编号：{{order.display_no}}</view>
+        <view>创建时间：{{order.display_time}}</view>
       </view>
     </view>
 
@@ -33,7 +32,7 @@
         <image wx:if="{{item.product_snapshot.cover_image}}" src="{{item.product_snapshot.cover_image}}" mode="aspectFill" class="thumb"></image>
         <view wx:else class="thumb placeholder">图</view>
         <view class="product-info">
-          <view class="text-strong">{{item.product_snapshot.title}}</view>
+          <view class="text-strong">{{item.product_snapshot.display_title}}</view>
           <view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.condition || '未填写'}} · 单价 ￥{{item.unit_price}}</view>
           <view wx:if="{{item.product_snapshot.description}}" class="snapshot-desc">{{item.product_snapshot.description}}</view>
         </view>

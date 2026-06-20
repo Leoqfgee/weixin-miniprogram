@@ -2,12 +2,8 @@
   padding-bottom: 80rpx;
 }
 
-.mini-nav.light {
-  color: #ffffff;
-}
-
 .profile-hero {
-  margin-top: 18rpx;
+  margin-top: 0;
   padding: 30rpx;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16rpx;
@@ -46,9 +42,9 @@
 }
 
 .list {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
 }
 .bio {
   margin-top: 10rpx;

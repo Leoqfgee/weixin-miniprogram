@@ -111,12 +111,13 @@ Page({
     api.get('/categories')
       .then((data) => {
         const remote = data.items || []
-        const categories = PRODUCT_CATEGORIES.map((base) => {
+        const baseCategories = PRODUCT_CATEGORIES.filter((base) => base.code !== 'other').concat([{ code: '', name: '\u5168\u90e8\u5206\u7c7b' }])
+        const categories = baseCategories.map((base) => {
           const matched = remote.find((item) => item.code === base.code) || {}
           return Object.assign({}, base, matched, {
             code: base.code,
             name: base.name,
-            short_name: CATEGORY_ICONS[base.code] || base.name.slice(0, 1)
+            short_name: CATEGORY_ICONS[base.code || 'all'] || base.name.slice(0, 1)
           })
         })
         this.setData({
@@ -125,9 +126,9 @@ Page({
       })
       .catch(() => {
         this.setData({
-          categories: PRODUCT_CATEGORIES.map((item) => ({
+          categories: PRODUCT_CATEGORIES.filter((item) => item.code !== 'other').concat([{ code: '', name: '\u5168\u90e8\u5206\u7c7b' }]).map((item) => ({
             ...item,
-            short_name: CATEGORY_ICONS[item.code] || item.name.slice(0, 1)
+            short_name: CATEGORY_ICONS[item.code || 'all'] || item.name.slice(0, 1)
           }))
         })
       })

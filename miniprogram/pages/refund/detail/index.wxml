@@ -1,10 +1,5 @@
 <view class="detail-page" wx:if="{{refund}}">
-  <view class="top-bar">
-    <view class="back-btn" bindtap="goBack">‹</view>
-    <view class="nav-title">售后详情</view>
-  </view>
-
-  <view class="status-tip status-{{refund.status_group}}">
+<view class="status-tip status-{{refund.status_group}}">
     <text class="status-text">{{refund.status_text}}</text>
     <text>{{refund.status_tip}}</text>
   </view>
@@ -19,7 +14,7 @@
       <text>订单编号</text>
       <view><text>{{refund.order_no}}</text><text class="copy" data-value="{{refund.order_no}}" bindtap="copyText">复制</text></view>
     </view>
-    <view class="kv"><text>申请时间</text><text>{{refund.created_at}}</text></view>
+    <view class="kv"><text>申请时间</text><text>{{refund.display_time}}</text></view>
     <view class="kv"><text>当前状态</text><text class="state">{{refund.status_text}}</text></view>
   </view>
 

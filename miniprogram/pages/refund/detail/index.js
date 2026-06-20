@@ -1,6 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
+const { safeText, formatMoney, formatDateTime, refundStatusText } = require('../../../utils/format')
 
 const STATUS_TIP = {
   pending: '请在规定时间内处理，超时将自动同意退款',
@@ -35,7 +36,13 @@ Page({
     this.setData({ loading: true })
     api.get(`/refunds/${this.data.id}`, {}, { loading: true, loadingText: '加载售后' }).then((data) => {
       const group = data.status_group || ''
+      data.status_text = refundStatusText(group || data.status)
       data.status_tip = STATUS_TIP[group] || STATUS_TIP[data.status] || ''
+      data.display_amount = formatMoney(data.request_amount || data.amount)
+      data.display_time = formatDateTime(data.created_at || data.apply_time)
+      data.product = Object.assign({}, data.product || {}, { display_title: safeText(data.product && data.product.title, '\u552e\u540e\u5546\u54c1') })
+      data.contact_user = Object.assign({}, data.contact_user || {}, { display_name: safeText(data.contact_user && data.contact_user.nickname, '\u6821\u56ed\u540c\u5b66') })
+      data.contact_label = data.contact_label || (data.current_role === 'buyer' ? '\u8054\u7cfb\u5356\u5bb6' : '\u8054\u7cfb\u4e70\u5bb6')
       this.setData({ refund: data })
       refreshUnreadBadge()
     }).catch(() => {

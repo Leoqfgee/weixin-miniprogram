@@ -23,14 +23,27 @@
   font-weight: 900;
 }
 
-.list {
+.order-list {
   display: flex;
   flex-direction: column;
   gap: 20rpx;
 }
 
-.item {
+.order-card {
   border-radius: 24rpx;
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18rpx;
+  color: #9aa2ad;
+  font-size: 23rpx;
+}
+
+.card-head text:first-child {
+  color: #10a65d;
+  font-weight: 900;
 }
 
 .item-main {
@@ -62,6 +75,13 @@
 .info .muted {
   margin-top: 8rpx;
   font-size: 24rpx;
+}
+
+.price {
+  margin-top: 10rpx;
+  color: #10a65d;
+  font-size: 30rpx;
+  font-weight: 900;
 }
 
 .actions {

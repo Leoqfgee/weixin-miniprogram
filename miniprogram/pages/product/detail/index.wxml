@@ -1,6 +1,5 @@
 <view class="page product-page">
-  <view class="mini-nav">校园二手</view>
-  <view wx:if="{{product}}" class="detail-shell">
+<view wx:if="{{product}}" class="detail-shell">
     <view class="cover-shell">
       <swiper wx:if="{{gallery.length}}" class="cover-swiper" current="{{currentImage}}" bindchange="onImageChange">
         <swiper-item wx:for="{{gallery}}" wx:key="*this">
@@ -15,7 +14,7 @@
 
     <view class="summary-panel panel">
       <view class="summary-head">
-        <view class="title">{{product.title}}</view>
+        <view class="title">{{product.display_title}}</view>
         <status-badge status="{{product.status}}"></status-badge>
       </view>
       <view class="price-line">
@@ -25,13 +24,13 @@
       <view class="sub-desc">{{conditionText}}｜{{product.description || '校内好物，欢迎咨询'}}</view>
       <view class="meta-line">
         <text>校内面交</text>
-        <text wx:if="{{product.category_name}}">{{product.category_name}}</text>
+        <text wx:if="{{product.display_category}}">{{product.display_category}}</text>
         <text>{{product.campus || product.seller.campus || '校内'}}</text>
       </view>
       <view class="metric-row">
-        <view>浏览 {{product.view_count || 0}}</view>
-        <view>库存 {{product.stock}}</view>
-        <view>收藏 {{product.favorite_count || 0}}</view>
+        <view>浏览 {{product.display_views}}</view>
+        <view>库存 {{product.display_stock}}</view>
+        <view>收藏 {{product.display_favorites}}</view>
       </view>
       <view wx:if="{{product.status === 'locked'}}" class="state-tip">买家已下单，交易完成或取消前暂不可再次购买。</view>
       <view wx:if="{{product.status === 'sold'}}" class="state-tip">商品已卖出，可查看历史订单。</view>

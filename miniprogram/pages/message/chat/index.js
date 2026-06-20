@@ -2,6 +2,7 @@ const api = require('../../../utils/request')
 const { getUser, requireLogin } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
 const { normalizeImageUrl } = require('../../../utils/image')
+const { formatMoney } = require('../../../utils/format')
 
 function displayTime(value) {
   if (!value) return ''
@@ -42,6 +43,7 @@ Page({
       product: {
         title: options.product_title ? decodeURIComponent(options.product_title) : '',
         price: options.product_price || '',
+        display_price: options.product_price ? formatMoney(options.product_price) : '',
         cover_image: normalizeImageUrl(options.product_cover ? decodeURIComponent(options.product_cover) : '', 'product')
       }
     })
@@ -88,6 +90,7 @@ Page({
         nextData.product = {
           title: contextProduct.title || '',
           price: contextProduct.price || '',
+          display_price: contextProduct.price ? formatMoney(contextProduct.price) : '',
           cover_image: normalizeImageUrl(contextProduct.cover_image || '', 'product')
         }
       }

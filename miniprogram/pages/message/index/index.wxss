@@ -3,18 +3,26 @@
   background: #f6f8f6;
 }
 
-.list {
+.conversation-list {
   display: flex;
   flex-direction: column;
   gap: 18rpx;
 }
 
-.item {
+.conversation-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 18rpx;
   padding: 24rpx;
+  background: #ffffff;
+  border: 1rpx solid #edf1ed;
   border-radius: 14rpx;
+  box-shadow: 0 10rpx 24rpx rgba(31, 41, 51, 0.05);
+}
+
+.conversation-card.service {
+  border-color: #dff1e8;
+  background: #fbfffd;
 }
 
 .avatar {
@@ -30,8 +38,32 @@
   min-width: 0;
 }
 
+.row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+}
+
+.nickname {
+  min-width: 0;
+  color: #1f2933;
+  font-size: 29rpx;
+  font-weight: 900;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.time {
+  flex: none;
+  color: #9aa2ad;
+  font-size: 22rpx;
+}
+
 .last {
-  margin-top: 8rpx;
+  margin-top: 10rpx;
+  color: #687380;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -39,7 +71,7 @@
 }
 
 .product-line {
-  display: inline-block;
+  display: block;
   max-width: 440rpx;
   margin-top: 8rpx;
   padding: 4rpx 12rpx;
@@ -50,6 +82,23 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+  flex: none;
+}
+
+.status-tag {
+  padding: 6rpx 14rpx;
+  color: #10a65d;
+  background: #eaf8ef;
+  border-radius: 999rpx;
+  font-size: 21rpx;
+  white-space: nowrap;
 }
 
 .badge {
