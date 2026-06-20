@@ -1,7 +1,7 @@
 const { DEFAULT_PRODUCT_IMAGE, normalizeImageMeta } = require('../../utils/image')
 const api = require('../../utils/request')
 const { requireLogin } = require('../../utils/auth')
-const { safeText, formatMoney, productStatusText, conditionText } = require('../../utils/format')
+const { safeText, formatMoney, normalizeCampusText, productStatusText, conditionText } = require('../../utils/format')
 
 const IMAGE_GUARD_VERSION = '20260620-ui-card-safe'
 
@@ -40,13 +40,13 @@ Component({
       if (imageMeta.url === DEFAULT_PRODUCT_IMAGE && rawImage) console.warn('[product-card fallback]', IMAGE_GUARD_VERSION, product.id || '', title, rawImage)
       this.setData({
         conditionText: conditionText(product.condition),
-        campusText: safeText(product.campus || (product.seller && product.seller.campus), '\u6821\u5185'),
+        campusText: normalizeCampusText(product.campus || (product.seller && product.seller.campus), '\u6821\u5185'),
         categoryText: safeText(product.category_name, '\u5176\u4ed6'),
         statusText: productStatusText(product.status || 'on_sale'),
         displayTitle: title,
         displayPrice: formatMoney(product.price),
         sellerText: safeText(product.seller && product.seller.nickname, '\u6821\u56ed\u540c\u5b66'),
-        stockText: String(Number(product.stock || 0)),
+        stockText: String(Number(product.stock || product.inventory || product.quantity || product.count || product.available_stock || 1)),
         viewText: String(Number(product.view_count || 0)),
         coverImage: imageMeta.url,
         coverText: title.slice(0, 2),

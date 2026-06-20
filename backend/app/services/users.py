@@ -6,6 +6,7 @@ from pymongo.errors import DuplicateKeyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..adapters.wechat import WechatAuthAdapter
+from ..domain.campus import is_allowed_campus, normalize_campus
 from ..repositories.products import ProductRepository
 from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError
@@ -190,6 +191,9 @@ class AuthService:
         }
         if openid:
             user_doc["openid"] = openid
+        campus = (payload.get("campus") or "").strip()
+        if campus and not is_allowed_campus(campus):
+            raise ValidationError("参数校验失败", [{"field": "campus", "message": "校区只能选择东校区或西校区"}])
         user = self.users.create_user(
             user_doc,
             {
@@ -198,7 +202,7 @@ class AuthService:
                 "avatar": "",
                 "profile_completed": False,
                 "identity_type": "custom",
-                "campus": (payload.get("campus") or "").strip(),
+                "campus": campus,
                 "student_no": "",
                 "contact_phone": "",
                 "contact_wechat": "",
@@ -322,7 +326,10 @@ class UserService:
             fields["identity_type"] = identity_type
             user_fields["identity_type"] = identity_type
         if "campus" in payload:
-            fields["campus"] = (payload.get("campus") or "").strip()
+            campus = (payload.get("campus") or "").strip()
+            if campus and not is_allowed_campus(campus):
+                raise ValidationError("参数校验失败", [{"field": "campus", "message": "校区只能选择东校区或西校区"}])
+            fields["campus"] = campus
         if "bio" in payload:
             bio = (payload.get("bio") or "").strip()
             if len(bio) > 120:
@@ -360,7 +367,7 @@ class UserService:
             "nickname": profile.get("nickname", "校园用户"),
             "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
             "avatar_url": profile.get("avatar_url") or profile.get("avatar", ""),
-            "campus": profile.get("campus", ""),
+            "campus": normalize_campus(profile.get("campus"), ""),
             "bio": profile.get("bio", ""),
             "credit_score": profile.get("credit_score", 100),
             "campus_verified": profile.get("verified_status") == "approved",
@@ -532,6 +539,7 @@ def build_user_summary(user, profile=None):
         profile_data["avatar"] = avatar_url
     if "bio" not in profile_data:
         profile_data["bio"] = ""
+    profile_data["campus"] = normalize_campus(profile_data.get("campus"), "")
     return {
         "id": str(user["_id"]),
         "openid_mask": _mask_openid(user.get("openid")),
@@ -564,7 +572,7 @@ def _public_product(product, profile):
         "cover_image": normalize_image_url(product.get("cover_image")) or (normalize_image_list(product.get("images") or [])[:1] or [""])[0],
         "images": normalize_image_list(product.get("images") or []),
         "condition": product.get("condition"),
-        "campus": product.get("campus") or profile.get("campus", ""),
+        "campus": normalize_campus(product.get("campus") or profile.get("campus"), ""),
         "status": product.get("status"),
         "created_at": product.get("created_at").isoformat() if product.get("created_at") else None,
         "view_count": product.get("view_count", 0),
@@ -572,7 +580,7 @@ def _public_product(product, profile):
         "seller": {
             "id": str(product.get("seller_id")),
             "nickname": profile.get("nickname", "校园用户"),
-            "campus": profile.get("campus", ""),
+            "campus": normalize_campus(profile.get("campus"), ""),
         },
     }
 

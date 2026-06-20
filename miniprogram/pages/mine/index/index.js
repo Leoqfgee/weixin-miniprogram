@@ -1,5 +1,6 @@
 const api = require('../../../utils/request')
 const { getToken, getUser, clearAuth, hasRole, saveAuth } = require('../../../utils/auth')
+const { normalizeCampusText } = require('../../../utils/format')
 
 Page({
   data: {
@@ -18,10 +19,15 @@ Page({
     })
   },
   applyUser(user) {
+    const normalizedUser = user ? Object.assign({}, user, {
+      profile: Object.assign({}, user.profile || {}, {
+        campus: normalizeCampusText(user.profile && user.profile.campus, '')
+      })
+    }) : null
     const nickname = user && user.profile ? user.profile.nickname || '我' : '?'
     const stats = (user && user.stats) || {}
     this.setData({
-      user,
+      user: normalizedUser,
       isAdmin: hasRole('admin'),
       avatarText: nickname.slice(0, 1),
       stats: {

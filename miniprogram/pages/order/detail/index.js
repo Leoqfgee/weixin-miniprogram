@@ -1,6 +1,6 @@
 const { requireLogin } = require('../../../utils/auth')
 const api = require('../../../utils/request')
-const { safeText, formatMoney, formatDateTime, orderStatusText, orderTip, conditionText } = require('../../../utils/format')
+const { safeText, formatMoney, formatDateTime, normalizeCampusText, orderStatusText, orderTip, conditionText, refundStatusText, refundReasonText } = require('../../../utils/format')
 
 const DELIVERY_TEXT = { offline_meetup: '校内面交', campus_pickup: '校园自提', campus_delivery: '校内送达', express: '快递邮寄' }
 
@@ -44,12 +44,19 @@ Page({
         display_price: formatMoney(item.unit_price),
         product_snapshot: Object.assign({}, item.product_snapshot || {}, {
           display_title: safeText((item.product_snapshot || {}).title, '\u8ba2\u5355\u5546\u54c1'),
-          display_condition: conditionText((item.product_snapshot || {}).condition)
+          display_condition: conditionText((item.product_snapshot || {}).condition || (item.product_snapshot || {}).condition_text)
         })
       }))
+      if (order.refund) {
+        order.refund = Object.assign({}, order.refund, {
+          status_text: refundStatusText(order.refund.status_group || order.refund.status),
+          display_reason: refundReasonText(order.refund.reason_text || order.refund.reason)
+        })
+      }
+      order.product_snapshot = order.product_snapshot || ((order.items[0] || {}).product_snapshot || {})
       order.contact_user = Object.assign({}, order.contact_user || {}, {
         display_name: safeText(order.contact_user && order.contact_user.nickname, '\u6821\u56ed\u540c\u5b66'),
-        display_campus: safeText(order.contact_user && order.contact_user.campus, '\u672a\u586b\u5199')
+        display_campus: normalizeCampusText(order.contact_user && order.contact_user.campus, '\u672a\u586b\u5199')
       })
       this.setData({
         order,

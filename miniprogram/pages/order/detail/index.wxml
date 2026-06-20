@@ -18,7 +18,7 @@
     <view class="panel amount-panel">
       <view>
         <view class="muted">订单金额</view>
-        <view class="amount">￥{{order.total_amount}}</view>
+        <view class="amount">{{order.display_amount}}</view>
       </view>
       <view class="order-meta">
         <view>订单编号：{{order.display_no}}</view>
@@ -33,7 +33,7 @@
         <view wx:else class="thumb placeholder">图</view>
         <view class="product-info">
           <view class="text-strong">{{item.product_snapshot.display_title}}</view>
-          <view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.condition || '未填写'}} · 单价 ￥{{item.unit_price}}</view>
+          <view class="muted">数量 {{item.quantity}} · 成色 {{item.product_snapshot.display_condition}} · 单价 {{item.display_price}}</view>
           <view wx:if="{{item.product_snapshot.description}}" class="snapshot-desc">{{item.product_snapshot.description}}</view>
         </view>
       </view>
@@ -46,7 +46,7 @@
         <view class="contact-main">
           <view class="text-strong">{{order.contact_user.nickname || '校园同学'}}</view>
           <view class="muted">手机号：{{order.contact_user.phone_masked || '未留手机号'}}</view>
-          <view class="muted">校区：{{order.contact_user.campus || '未填写'}}</view>
+          <view class="muted">校区：{{order.contact_user.display_campus}}</view>
         </view>
         <button class="ghost-btn contact-btn" bindtap="contactCounterparty">{{order.contact_label}}</button>
       </view>
@@ -64,7 +64,7 @@
       <view class="block-title">支付与售后</view>
       <view class="kv"><text>资金状态</text><view>{{fundText}}</view></view>
       <view class="kv"><text>当前状态</text><view>{{order.status_text}}</view></view>
-      <view wx:if="{{order.refund}}" class="kv"><text>售后状态</text><view>{{order.refund.status_text || '处理中'}}<view class="muted">{{order.refund.reason}}</view></view></view>
+      <view wx:if="{{order.refund}}" class="kv"><text>售后状态</text><view>{{order.refund.status_text || '处理中'}}<view class="muted">{{order.refund.display_reason}}</view></view></view>
       <view wx:else class="kv"><text>售后状态</text><view>暂无售后</view></view>
     </view>
 

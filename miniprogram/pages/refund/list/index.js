@@ -1,7 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin, hasRole } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
-const { safeText, formatMoney, formatDateTime, refundStatusText } = require('../../../utils/format')
+const { safeText, formatMoney, formatDateTime, refundStatusText, refundReasonText, conditionText } = require('../../../utils/format')
 
 const TABS = [
   { label: '全部', value: '' },
@@ -23,15 +23,36 @@ const ADMIN_ROLE_TABS = [
 ]
 
 
+function refundTypeText(value) {
+  const key = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  const map = {
+    refund_only: '仅退款',
+    only_refund: '仅退款',
+    return_and_refund: '退货退款',
+    return_refund: '退货退款',
+    refund: '仅退款'
+  }
+  if (!key) return '仅退款'
+  return map[key] || value
+}
+
+
 function normalizeRefund(item, role) {
   const product = item.product || {}
   const counterparty = item.counterparty || {}
+  const rawCondition = product.condition || product.condition_text || product.spec_text
+  const displayAmount = formatMoney(item.request_amount || item.amount)
   return Object.assign({}, item, {
     status_text: refundStatusText(item.status_group || item.status),
-    display_amount: formatMoney(item.request_amount || item.amount),
+    display_amount: displayAmount,
     display_time: formatDateTime(item.created_at || item.apply_time),
     display_product_title: safeText(product.title, '\u552e\u540e\u5546\u54c1'),
-    display_reason: safeText(item.reason_text || item.reason, '\u672a\u586b\u5199'),
+    display_reason: refundReasonText(item.reason_text || item.reason),
+    display_refund_type: refundTypeText(item.refund_type_text || item.refund_type),
+    product: Object.assign({}, product, {
+      display_condition: conditionText(rawCondition),
+      display_price: formatMoney(product.price || item.request_amount || item.amount)
+    }),
     counterparty: Object.assign({}, counterparty, { display_name: safeText(counterparty.nickname, '\u6821\u56ed\u540c\u5b66') }),
     counterparty_label: item.counterparty_label || (role === 'buyer' ? '\u5356\u5bb6' : '\u4e70\u5bb6')
   })

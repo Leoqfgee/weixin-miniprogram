@@ -1,4 +1,5 @@
 <view class="refund-page">
+  <view class="top-bar"><view class="back-btn" bindtap="goBack">‹</view><view class="nav-title">售后管理</view></view>
 <view class="role-tabs">
     <view wx:for="{{roleTabs}}" wx:key="value" class="role-tab {{index === activeRoleIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="selectRole">{{item.label}}</view>
   </view>
@@ -34,8 +35,8 @@
         <view wx:else class="product-img placeholder">图</view>
         <view class="product-info">
           <view class="product-title">{{item.product.title || '售后商品'}}</view>
-          <view class="product-spec">{{item.product.spec_text || item.product.condition_text || '规格/成色暂无'}}</view>
-          <view class="amount-line">退款金额：<text>￥{{item.display_amount || item.request_amount || item.amount}}</text></view>
+          <view class="product-spec">{{item.product.display_condition || '规格/成色暂无'}}</view>
+          <view class="amount-line">退款金额：<text>{{item.display_amount}}</text></view>
         </view>
       </view>
 
@@ -47,8 +48,8 @@
       </view>
 
       <view class="reason-row">
-        <text>售后类型：{{item.refund_type_text || '仅退款'}}</text>
-        <text>退款原因：{{item.reason_text || item.reason || '未填写'}}</text>
+        <text>售后类型：{{item.display_refund_type || '仅退款'}}</text>
+        <text>退款原因：{{item.display_reason}}</text>
       </view>
 
       <view class="card-actions">

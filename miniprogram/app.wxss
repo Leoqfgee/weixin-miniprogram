@@ -65,15 +65,15 @@ page {
 
 .primary-btn {
   color: #ffffff;
-  background: linear-gradient(135deg, #22c86a 0%, #10a65d 100%);
+  background: linear-gradient(135deg, #22c77a 0%, #16a66a 100%);
   border: 0;
   box-shadow: 0 12rpx 24rpx rgba(23, 180, 100, 0.24);
 }
 
 .ghost-btn {
-  color: #12a261;
+  color: #149261;
   background: #ffffff;
-  border: 1rpx solid #16b96b;
+  border: 1rpx solid #18a873;
 }
 
 .ghost-btn.danger,
@@ -133,7 +133,7 @@ textarea {
   height: 30rpx;
   margin-right: 12rpx;
   vertical-align: -5rpx;
-  background: #18b86c;
+  background: #18a873;
   border-radius: 999rpx;
 }
 
@@ -156,7 +156,7 @@ textarea {
 }
 
 .green-page {
-  background: linear-gradient(180deg, #10a65d 0, #13bd70 148rpx, #f5f8f6 148rpx);
+  background: linear-gradient(180deg, #18a873 0, #2ac184 148rpx, #f5f8f6 148rpx);
 }
 
 .bottom-actions,

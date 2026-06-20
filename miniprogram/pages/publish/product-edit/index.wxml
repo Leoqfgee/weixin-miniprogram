@@ -1,38 +1,43 @@
 <view class="page publish-page">
-  <view class="title">编辑商品</view>
-
-  <view class="image-grid">
-    <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap">
-      <image src="{{item}}" mode="aspectFill"></image>
-      <text data-index="{{index}}" bindtap="removeImage">×</text>
-    </view>
-    <view wx:if="{{form.images.length < 9}}" class="image-add" bindtap="chooseImages">＋<text>添加图片</text></view>
+  <view class="panel image-panel">
+    <view class="panel-head"><view class="block-title">商品图片</view><text>{{form.images.length}}/9</text></view>
+    <scroll-view scroll-x class="image-scroll"><view class="image-row">
+      <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap"><image src="{{item}}" mode="aspectFill"></image><text data-index="{{index}}" bindtap="removeImage">×</text></view>
+      <view wx:if="{{form.images.length < 9}}" class="image-add" bindtap="chooseImages"><view>+</view><text>添加图片</text></view>
+    </view></scroll-view>
   </view>
 
   <view class="panel form-panel">
-    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="标题：品牌、型号或关键词" />
-    <view class="ai-actions">
-      <button class="ai-btn" bindtap="useAiTitle">AI 标题建议</button>
-    </view>
-    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="描述成色、使用情况和瑕疵"></textarea>
-    <view class="ai-actions">
-      <button class="ai-btn" bindtap="useAiDescription">AI 润色描述</button>
+    <view class="block-title">商品标题</view>
+    <input class="title-input" value="{{form.title}}" data-field="title" bindinput="setField" maxlength="40" placeholder="请简明描述商品名称" />
+    <view class="ai-actions"><button class="ai-btn" bindtap="useAiTitle"><text>AI</text> 标题建议</button></view>
+  </view>
+
+  <view class="panel form-panel">
+    <view class="block-title">商品描述</view>
+    <textarea value="{{form.description}}" data-field="description" bindinput="setField" maxlength="1000" placeholder="请详细描述品牌、型号、功能、使用情况等"></textarea>
+    <view class="ai-actions"><button class="ai-btn" bindtap="useAiDescription"><text>AI</text> 润色描述</button></view>
+  </view>
+
+  <view class="panel form-panel price-panel">
+    <view class="block-title">价格</view>
+    <view class="price-input-row"><text>￥</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="请输入售价" /></view>
+  </view>
+
+  <view class="option-grid">
+    <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange"><view class="option-card"><view class="option-icon icon-category"></view><view><view class="text-strong">商品分类</view><view class="muted">{{selectedCategoryText}}</view></view><view class="chevron"></view></view></picker>
+    <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange"><view class="option-card"><view class="option-icon warm icon-condition"></view><view><view class="text-strong">商品成色</view><view class="muted">{{selectedConditionText}}</view></view><view class="chevron"></view></view></picker>
+  </view>
+
+  <view class="panel form-panel trade-panel">
+    <view class="block-title">交易校区</view>
+    <view class="campus-row campus-choice-row">
+      <text>所在校区</text>
+      <view class="campus-choice-group">
+        <view wx:for="{{campusOptions}}" wx:key="value" class="campus-choice {{index === campusIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="onCampusTap">{{item.label}}</view>
+      </view>
     </view>
   </view>
 
-  <view class="panel option-panel">
-    <view class="row"><text>价格</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="¥ 0.00" /></view>
-    <view class="row"><text>库存</text><input type="number" value="{{form.stock}}" data-field="stock" bindinput="setField" /></view>
-    <picker mode="selector" range="{{categories}}" range-key="name" bindchange="onCategoryChange">
-      <view class="row"><text>分类（可自动识别）</text><text class="muted">{{categoryIndex >= 0 ? categories[categoryIndex].name : autoCategoryText}}</text></view>
-    </picker>
-    <picker mode="selector" range="{{conditionOptions}}" range-key="label" bindchange="onConditionChange">
-      <view class="row"><text>成色（选填）</text><text class="muted">{{conditionOptions[conditionIndex].label}}</text></view>
-    </picker>
-  </view>
-
-  <view class="bottom-actions">
-    <button class="{{canSubmitReview ? 'ghost-btn' : 'primary-btn'}}" data-action="draft" bindtap="submit">保存修改</button>
-    <button wx:if="{{canSubmitReview}}" class="primary-btn" data-action="review" bindtap="submit">提交审核</button>
-  </view>
+  <view class="bottom-actions"><button class="ghost-btn" data-action="draft" bindtap="submit">保存修改</button><button wx:if="{{canSubmitReview}}" class="primary-btn" data-action="review" bindtap="submit">提交审核</button></view>
 </view>

@@ -1,3 +1,5 @@
+const { CAMPUS_OPTIONS } = require('./constants')
+
 function required(value) {
   if (Array.isArray(value)) {
     return value.length > 0
@@ -39,6 +41,11 @@ function validateProductForm(form) {
   }
   if (!validateImages(form.images, 9)) {
     errors.images = '图片最多 9 张'
+  }
+  if (!required(form.campus)) {
+    errors.campus = '请选择校区'
+  } else if (!CAMPUS_OPTIONS.some((item) => item.value === form.campus)) {
+    errors.campus = '校区只能选择东校区或西校区'
   }
   return {
     valid: Object.keys(errors).length === 0,

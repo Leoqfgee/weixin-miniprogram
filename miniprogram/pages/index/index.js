@@ -18,11 +18,12 @@ const EMPTY_TEXT = {
 }
 
 const CATEGORY_ICONS = {
-  digital: '▥',
-  book: '书',
-  clothing: '衣',
-  home: '灯',
-  other: '••'
+  digital: '/assets/icons/cat-digital.png',
+  book: '/assets/icons/cat-book.png',
+  clothing: '/assets/icons/cat-clothing.png',
+  home: '/assets/icons/cat-home.png',
+  all: '/assets/icons/cat-all.png',
+  other: '/assets/icons/cat-all.png'
 }
 
 Page({
@@ -117,7 +118,7 @@ Page({
           return Object.assign({}, base, matched, {
             code: base.code,
             name: base.name,
-            short_name: CATEGORY_ICONS[base.code || 'all'] || base.name.slice(0, 1)
+            icon: CATEGORY_ICONS[base.code || 'all'] || CATEGORY_ICONS.all
           })
         })
         this.setData({
@@ -128,7 +129,7 @@ Page({
         this.setData({
           categories: PRODUCT_CATEGORIES.filter((item) => item.code !== 'other').concat([{ code: '', name: '\u5168\u90e8\u5206\u7c7b' }]).map((item) => ({
             ...item,
-            short_name: CATEGORY_ICONS[item.code || 'all'] || item.name.slice(0, 1)
+            icon: CATEGORY_ICONS[item.code || 'all'] || CATEGORY_ICONS.all
           }))
         })
       })

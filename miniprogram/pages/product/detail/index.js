@@ -1,7 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { DEFAULT_AVATAR_IMAGE, DEFAULT_PRODUCT_IMAGE, normalizeImageList, normalizeImageUrl } = require('../../../utils/image')
-const { safeText, formatMoney, productStatusText, conditionText } = require('../../../utils/format')
+const { safeText, formatMoney, normalizeCampusText, productStatusText, conditionText } = require('../../../utils/format')
 
 Page({
   data: {
@@ -31,7 +31,7 @@ Page({
           display_title: safeText(product.title, '\u672a\u547d\u540d\u5546\u54c1'),
           display_price: formatMoney(product.price),
           display_status: productStatusText(product.status || 'on_sale'),
-          display_campus: safeText(product.campus || seller.campus, '\u6821\u5185'),
+          display_campus: normalizeCampusText(product.campus || seller.campus, '\u6821\u5185'),
           display_category: safeText(product.category_name, '\u5176\u4ed6'),
           display_stock: Number(product.stock || 0),
           display_views: Number(product.view_count || 0),
@@ -41,7 +41,7 @@ Page({
             avatar: sellerAvatar,
             avatar_url: sellerAvatar,
             display_name: safeText(seller.nickname, '\u6821\u56ed\u540c\u5b66'),
-            display_campus: safeText(seller.campus || product.campus, '\u6821\u5185\u4ea4\u6613'),
+            display_campus: normalizeCampusText(seller.campus || product.campus, '\u6821\u5185\u4ea4\u6613'),
             display_credit: Number(seller.credit_score || 100)
           })
         }),

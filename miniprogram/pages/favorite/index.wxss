@@ -1,5 +1,8 @@
-.tabs {
+.tabs { position: sticky; top: 0; z-index: 35;
   display: grid;
+  background: rgba(245,248,246,.98);
+  backdrop-filter: blur(12rpx);
+  padding: 12rpx 0;
   grid-template-columns: repeat(4, 1fr);
   gap: 10rpx;
   margin-bottom: 20rpx;

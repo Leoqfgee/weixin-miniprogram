@@ -1,5 +1,5 @@
-<view class="page">
-  <view class="panel search-box">
+<view class="page category-page">
+  <view class="search-box">
     <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索教材、耳机、台灯..." />
     <button class="primary-btn" bindtap="onSearch">搜索</button>
   </view>
@@ -16,17 +16,22 @@
     </picker>
   </view>
 
-  <view class="panel more-filters">
-    <input value="{{campus}}" bindinput="onCampusInput" bindconfirm="onSearch" placeholder="校区" />
-    <input value="{{minPrice}}" type="digit" bindinput="onMinPriceInput" bindconfirm="onSearch" placeholder="最低价" />
-    <input value="{{maxPrice}}" type="digit" bindinput="onMaxPriceInput" bindconfirm="onSearch" placeholder="最高价" />
-    <picker mode="date" bindchange="onDateFromChange">
-      <view class="date-filter">{{dateFrom || '开始日期'}}</view>
-    </picker>
-    <picker mode="date" bindchange="onDateToChange">
-      <view class="date-filter">{{dateTo || '结束日期'}}</view>
-    </picker>
-    <button class="ghost-btn" bindtap="onSearch">应用筛选</button>
+  <view class="more-filters">
+    <view class="filter-section-title">更多筛选</view>
+    <view class="field-grid">
+      <picker mode="selector" range="{{campusOptions}}" range-key="label" value="{{campusIndex}}" bindchange="onCampusChange">
+        <view class="date-filter">{{campusOptions[campusIndex].label}}</view>
+      </picker>
+      <input value="{{minPrice}}" type="digit" bindinput="onMinPriceInput" bindconfirm="onSearch" placeholder="最低价" />
+      <input value="{{maxPrice}}" type="digit" bindinput="onMaxPriceInput" bindconfirm="onSearch" placeholder="最高价" />
+      <picker mode="date" bindchange="onDateFromChange">
+        <view class="date-filter">{{dateFrom || '开始日期'}}</view>
+      </picker>
+      <picker mode="date" bindchange="onDateToChange">
+        <view class="date-filter">{{dateTo || '结束日期'}}</view>
+      </picker>
+    </view>
+    <button class="ghost-btn apply-btn" bindtap="onSearch">应用筛选</button>
   </view>
 
   <view wx:if="{{products.length}}" class="list">

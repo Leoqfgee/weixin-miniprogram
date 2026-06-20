@@ -1,7 +1,14 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { refreshUnreadBadge } = require('../../../utils/unread')
-const { safeText, formatMoney, formatDateTime, refundStatusText } = require('../../../utils/format')
+const { safeText, formatMoney, formatDateTime, refundStatusText, refundReasonText, conditionText } = require('../../../utils/format')
+
+function refundTypeText(value) {
+  const key = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+  const map = { refund_only: '仅退款', only_refund: '仅退款', return_and_refund: '退货退款', return_refund: '退货退款', refund: '仅退款' }
+  if (!key) return '仅退款'
+  return map[key] || value
+}
 
 const STATUS_TIP = {
   pending: '请在规定时间内处理，超时将自动同意退款',
@@ -37,10 +44,17 @@ Page({
     api.get(`/refunds/${this.data.id}`, {}, { loading: true, loadingText: '加载售后' }).then((data) => {
       const group = data.status_group || ''
       data.status_text = refundStatusText(group || data.status)
+      data.display_reason = refundReasonText(data.reason_text || data.reason)
+      data.display_refund_type = refundTypeText(data.refund_type_text || data.refund_type)
       data.status_tip = STATUS_TIP[group] || STATUS_TIP[data.status] || ''
       data.display_amount = formatMoney(data.request_amount || data.amount)
       data.display_time = formatDateTime(data.created_at || data.apply_time)
-      data.product = Object.assign({}, data.product || {}, { display_title: safeText(data.product && data.product.title, '\u552e\u540e\u5546\u54c1') })
+      const refundProduct = data.product || {}
+      data.product = Object.assign({}, refundProduct, {
+        display_title: safeText(refundProduct.title, '\u552e\u540e\u5546\u54c1'),
+        display_condition: conditionText(refundProduct.condition || refundProduct.condition_text || refundProduct.spec_text),
+        display_price: formatMoney(refundProduct.price || data.request_amount || data.amount)
+      })
       data.contact_user = Object.assign({}, data.contact_user || {}, { display_name: safeText(data.contact_user && data.contact_user.nickname, '\u6821\u56ed\u540c\u5b66') })
       data.contact_label = data.contact_label || (data.current_role === 'buyer' ? '\u8054\u7cfb\u5356\u5bb6' : '\u8054\u7cfb\u4e70\u5bb6')
       this.setData({ refund: data })

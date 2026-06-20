@@ -4,10 +4,11 @@
       <image class="avatar" src="{{item.avatar_url}}" mode="aspectFill"></image>
       <view class="main">
         <view class="row-top"><view class="nickname">{{item.display_name}}</view><text class="time">{{item.display_time}}</text></view>
-        <view class="product-line">{{item.display_product}}</view>
+        <view class="product-line"><text>{{item.display_status}}</text><text>{{item.display_product}}</text></view>
         <view class="last">{{item.display_message}}</view>
       </view>
-      <view class="side"><view class="status-tag">{{item.display_status}}</view><view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view></view>
+      <image wx:if="{{!item.is_service && item.product_cover_url}}" class="product-thumb" src="{{item.product_cover_url}}" mode="aspectFill"></image>
+      <view wx:if="{{item.unread_count}}" class="badge">{{item.unread_count}}</view>
     </view>
   </view>
   <empty-state wx:else title="暂无消息"></empty-state>

@@ -63,6 +63,11 @@ const CONDITION_OPTIONS = [
   { label: '有使用痕迹', value: 'fair' }
 ]
 
+const CAMPUS_OPTIONS = [
+  { label: '东校区', value: '东校区' },
+  { label: '西校区', value: '西校区' }
+]
+
 const PRODUCT_CATEGORIES = [
   { code: 'digital', name: '数码电子' },
   { code: 'book', name: '教材书籍' },
@@ -101,6 +106,7 @@ module.exports = {
   PRODUCT_STATUS_TEXT,
   ORDER_STATUS_TEXT,
   CONDITION_OPTIONS,
+  CAMPUS_OPTIONS,
   PRODUCT_CATEGORIES,
   getCategoryName,
   classifyProduct

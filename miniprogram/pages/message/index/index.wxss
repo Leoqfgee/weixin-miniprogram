@@ -1,115 +1,18 @@
-.message-page {
-  padding-bottom: 118rpx;
-  background: #f6f8f6;
-}
+.message-page { padding: 22rpx 22rpx 120rpx; background: #f5f8f6; }
+.conversation-list { display: flex; flex-direction: column; gap: 18rpx; }
+.conversation-card { position: relative; display: flex; align-items: center; gap: 18rpx; min-height: 136rpx; padding: 18rpx; background: #fff; border: 1rpx solid #e8f0ea; border-radius: 20rpx; box-shadow: 0 10rpx 24rpx rgba(31,41,51,.06); }
+.conversation-card.service { background: linear-gradient(135deg,#ffffff,#f5fff9); }
+.avatar { flex: none; width: 82rpx; height: 82rpx; border-radius: 50%; background: #edf3ef; }
+.main { flex: 1; min-width: 0; }
+.row-top { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
+.nickname { color: #1d2730; font-size: 28rpx; font-weight: 900; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.time { flex: none; color: #99a3ad; font-size: 22rpx; }
+.product-line { display: flex; align-items: center; gap: 10rpx; margin-top: 8rpx; color: #66717d; font-size: 23rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.product-line text:first-child { flex: none; padding: 4rpx 10rpx; color: #0c9a56; background: #eaf8f0; border-radius: 999rpx; font-size: 20rpx; }
+.product-line text:last-child { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.last { margin-top: 8rpx; color: #4b5563; font-size: 24rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.badge { position: absolute; right: 18rpx; top: 18rpx; min-width: 30rpx; height: 30rpx; line-height: 30rpx; padding: 0 7rpx; text-align: center; color: #fff; background: #ef4444; border-radius: 999rpx; font-size: 20rpx; }
 
-.conversation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18rpx;
-}
-
-.conversation-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 18rpx;
-  padding: 24rpx;
-  background: #ffffff;
-  border: 1rpx solid #edf1ed;
-  border-radius: 14rpx;
-  box-shadow: 0 10rpx 24rpx rgba(31, 41, 51, 0.05);
-}
-
-.conversation-card.service {
-  border-color: #dff1e8;
-  background: #fbfffd;
-}
-
-.avatar {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 50%;
-  background: #edf3ee;
-  flex: none;
-}
-
-.main {
-  flex: 1;
-  min-width: 0;
-}
-
-.row-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
-}
-
-.nickname {
-  min-width: 0;
-  color: #1f2933;
-  font-size: 29rpx;
-  font-weight: 900;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.time {
-  flex: none;
-  color: #9aa2ad;
-  font-size: 22rpx;
-}
-
-.last {
-  margin-top: 10rpx;
-  color: #687380;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 24rpx;
-}
-
-.product-line {
-  display: block;
-  max-width: 440rpx;
-  margin-top: 8rpx;
-  padding: 4rpx 12rpx;
-  color: #0f9f5b;
-  background: #eaf8ef;
-  border-radius: 999rpx;
-  font-size: 22rpx;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.side {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12rpx;
-  flex: none;
-}
-
-.status-tag {
-  padding: 6rpx 14rpx;
-  color: #10a65d;
-  background: #eaf8ef;
-  border-radius: 999rpx;
-  font-size: 21rpx;
-  white-space: nowrap;
-}
-
-.badge {
-  min-width: 36rpx;
-  height: 36rpx;
-  line-height: 36rpx;
-  padding: 0 7rpx;
-  text-align: center;
-  color: #ffffff;
-  background: #f04438;
-  border-radius: 999rpx;
-  font-size: 20rpx;
-  font-weight: 800;
-}
+.product-thumb { flex: none; width: 92rpx; height: 92rpx; border-radius: 16rpx; background: #eef3ef; }
+.conversation-card .badge { right: 104rpx; top: 14rpx; }
+.conversation-card.service .badge { right: 18rpx; }

@@ -17,7 +17,9 @@
     </view>
     <view class="field">
       <text>校区</text>
-      <input value="{{form.campus}}" data-field="campus" bindinput="onInput" placeholder="例如 主校区" />
+      <picker mode="selector" range="{{campusOptions}}" range-key="label" value="{{campusIndex}}" bindchange="onCampusChange">
+        <view class="picker-value">{{selectedCampusText}}</view>
+      </picker>
     </view>
     <view class="field">
       <text>联系电话</text>

@@ -50,4 +50,4 @@
   margin-top: 18rpx;
 }
 .actions button{flex:1;min-width:150rpx;margin:0}.status-note{margin-top:8rpx;color:#a66b20;font-size:22rpx;line-height:1.45}
-.tabs{margin-bottom:20rpx;white-space:nowrap;background:#fff;border-bottom:1rpx solid #e6ebf1}.tabs-inner{display:inline-flex;gap:30rpx;padding:0 8rpx}.tab{position:relative;padding:22rpx 4rpx;color:#7a869a}.tab.active{color:#17202a;font-weight:800}.tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:5rpx;background:#1f7a68;border-radius:4rpx}
+.tabs{position:sticky;top:0;z-index:35;margin:-24rpx -24rpx 20rpx;padding:16rpx 24rpx 0;white-space:nowrap;background:rgba(245,248,246,.98);backdrop-filter:blur(12rpx);border-bottom:1rpx solid #e6ebf1}.tabs-inner{display:inline-flex;gap:30rpx;padding:0 8rpx}.tab{position:relative;padding:22rpx 4rpx;color:#7a869a}.tab.active{color:#17202a;font-weight:800}.tab.active::after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:5rpx;background:#1f7a68;border-radius:4rpx}

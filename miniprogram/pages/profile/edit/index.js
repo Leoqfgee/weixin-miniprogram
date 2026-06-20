@@ -1,9 +1,13 @@
 const api = require('../../../utils/request')
 const { getLoginType, getToken, getUser, requireLogin, saveAuth } = require('../../../utils/auth')
+const { CAMPUS_OPTIONS } = require('../../../utils/constants')
 
 Page({
   data: {
     completeMode: false,
+    campusOptions: CAMPUS_OPTIONS,
+    campusIndex: 0,
+    selectedCampusText: CAMPUS_OPTIONS[0].label,
     form: {
       avatar: '',
       nickname: '',
@@ -25,14 +29,17 @@ Page({
     const user = getUser()
     const profile = (user && user.profile) || {}
     const loginType = getLoginType()
+    const campusIndex = campusIndexOf(profile.campus)
     this.setData({
       canUseWechatAvatar: loginType === 'wechat',
       avatarUploading: false,
       avatarUploadError: false,
+      campusIndex,
+      selectedCampusText: CAMPUS_OPTIONS[campusIndex].label,
       form: {
         avatar: profile.avatar || profile.avatar_url || '',
         nickname: profile.nickname || '',
-        campus: profile.campus || '',
+        campus: campusValue(profile.campus),
         bio: profile.bio || '',
         contact_phone: profile.contact_phone || '',
         contact_wechat: profile.contact_wechat || '',
@@ -47,6 +54,11 @@ Page({
       value = String(value || '').replace(/\D/g, '').slice(0, 11)
     }
     this.setData({ [`form.${field}`]: value })
+  },
+  onCampusChange(event) {
+    const index = Number(event.detail.value)
+    const campus = this.data.campusOptions[index] || this.data.campusOptions[0]
+    this.setData({ campusIndex: index, selectedCampusText: campus.label, 'form.campus': campus.value })
   },
   onChooseWechatAvatar(event) {
     if (!this.data.canUseWechatAvatar) {
@@ -134,7 +146,7 @@ Page({
     api.put('/users/me', {
       avatar_url: form.avatar,
       nickname: form.nickname,
-      campus: form.campus,
+      campus: campusValue(form.campus),
       bio: form.bio,
       contact_phone: contactPhone,
       contact_wechat: form.contact_wechat,
@@ -160,4 +172,13 @@ function withCacheBuster(url) {
 function isLocalTempFile(url) {
   const value = String(url || '')
   return value.indexOf('wxfile://') === 0 || value.indexOf('http://tmp/') === 0 || value.indexOf('file://') === 0
+}
+
+function campusIndexOf(value) {
+  const index = CAMPUS_OPTIONS.findIndex((item) => item.value === value)
+  return index >= 0 ? index : 0
+}
+
+function campusValue(value) {
+  return CAMPUS_OPTIONS[campusIndexOf(value)].value
 }

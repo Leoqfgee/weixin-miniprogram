@@ -1,325 +1,39 @@
-.refund-page {
-  min-height: 100vh;
-  background: #f5f7f5;
-  color: #202733;
-}
-
-.top-bar {
-  position: relative;
-  height: 150rpx;
-  padding-top: 54rpx;
-  box-sizing: border-box;
-  background: linear-gradient(135deg, #0a9d58, #12b872);
-}
-
-.back-btn {
-  position: absolute;
-  left: 26rpx;
-  top: 52rpx;
-  width: 64rpx;
-  height: 64rpx;
-  line-height: 58rpx;
-  color: #ffffff;
-  text-align: center;
-  font-size: 56rpx;
-  font-weight: 300;
-}
-
-.nav-title {
-  color: #ffffff;
-  text-align: center;
-  font-size: 34rpx;
-  font-weight: 800;
-}
-
-.role-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14rpx;
-  padding: 18rpx 24rpx;
-  background: #ffffff;
-}
-
-.role-tab {
-  height: 76rpx;
-  line-height: 76rpx;
-  color: #667281;
-  text-align: center;
-  background: #eef5f1;
-  border-radius: 999rpx;
-  font-size: 28rpx;
-  font-weight: 800;
-}
-
-.role-tab.active {
-  color: #ffffff;
-  background: #13b86b;
-}
-
-.tabs {
-  background: #ffffff;
-  white-space: nowrap;
-}
-
-.tabs-inner {
-  display: flex;
-  min-width: 100%;
-}
-
-.tab {
-  position: relative;
-  flex: 1;
-  min-width: 142rpx;
-  height: 90rpx;
-  line-height: 90rpx;
-  color: #6b7280;
-  text-align: center;
-  font-size: 29rpx;
-  font-weight: 700;
-}
-
-.tab.active {
-  color: #151b24;
-}
-
-.tab.active::after {
-  content: '';
-  position: absolute;
-  left: 42rpx;
-  right: 42rpx;
-  bottom: 12rpx;
-  height: 6rpx;
-  border-radius: 6rpx;
-  background: #13b86b;
-}
-
-.tab-badge {
-  position: absolute;
-  top: 12rpx;
-  right: 22rpx;
-  min-width: 32rpx;
-  height: 32rpx;
-  line-height: 32rpx;
-  padding: 0 7rpx;
-  color: #ffffff;
-  background: #ff2b37;
-  border-radius: 32rpx;
-  font-size: 21rpx;
-}
-
-.hint-row {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 22rpx 28rpx 4rpx;
-  color: #68717d;
-  font-size: 24rpx;
-}
-
-.hint-icon {
-  width: 30rpx;
-  height: 30rpx;
-  line-height: 30rpx;
-  color: #ffffff;
-  text-align: center;
-  background: #16a45a;
-  border-radius: 50%;
-  font-size: 20rpx;
-}
-
-.refund-list {
-  padding: 18rpx 24rpx 30rpx;
-}
-
-.refund-card {
-  margin-bottom: 22rpx;
-  padding: 24rpx;
-  background: #ffffff;
-  border-radius: 14rpx;
-  box-shadow: 0 12rpx 30rpx rgba(26, 39, 50, 0.08);
-}
-
-.card-head,
-.buyer-row,
-.card-actions {
-  display: flex;
-  align-items: center;
-}
-
-.card-head {
-  justify-content: space-between;
-  gap: 16rpx;
-}
-
-.refund-no {
-  flex: 1;
-  color: #1f2937;
-  font-size: 25rpx;
-}
-
-.copy {
-  margin-left: 12rpx;
-  color: #7b8794;
-  font-size: 22rpx;
-}
-
-.status {
-  flex: none;
-  padding: 8rpx 16rpx;
-  border-radius: 999rpx;
-  font-size: 24rpx;
-  font-weight: 800;
-}
-
-.status-pending {
-  color: #ff5a1f;
-  background: #fff0e5;
-}
-
-.status-refunding {
-  color: #1677ff;
-  background: #e9f2ff;
-}
-
-.status-refunded {
-  color: #12a05b;
-  background: #e9fbf2;
-}
-
-.status-rejected,
-.status-closed {
-  color: #697386;
-  background: #f0f2f5;
-}
-
-.product-row {
-  display: flex;
-  gap: 22rpx;
-  margin-top: 22rpx;
-}
-
-.product-img {
-  width: 142rpx;
-  height: 142rpx;
-  flex: none;
-  border-radius: 10rpx;
-  background: #edf1f5;
-}
-
-.placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  background: #16b85e;
-  font-weight: 900;
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.product-title {
-  color: #202733;
-  font-size: 29rpx;
-  font-weight: 900;
-  line-height: 1.35;
-}
-
-.product-spec {
-  margin-top: 10rpx;
-  color: #6c7684;
-  font-size: 25rpx;
-}
-
-.amount-line {
-  margin-top: 14rpx;
-  color: #697386;
-  font-size: 25rpx;
-}
-
-.amount-line text {
-  color: #ff1f2d;
-  font-size: 34rpx;
-  font-weight: 900;
-}
-
-.buyer-row {
-  gap: 12rpx;
-  margin-top: 22rpx;
-  padding-top: 18rpx;
-  border-top: 1rpx solid #edf0f3;
-  color: #394150;
-  font-size: 24rpx;
-}
-
-.avatar {
-  width: 44rpx;
-  height: 44rpx;
-  border-radius: 50%;
-  background: #edf1f5;
-}
-
-.buyer-name {
-  max-width: 160rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.phone {
-  color: #384352;
-}
-
-.apply-time {
-  margin-left: auto;
-  color: #7a8492;
-  font-size: 22rpx;
-}
-
-.reason-row {
-  display: flex;
-  gap: 26rpx;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1rpx solid #edf0f3;
-  color: #5b6572;
-  font-size: 24rpx;
-  line-height: 1.45;
-}
-
-.reason-row text {
-  flex: 1;
-}
-
-.card-actions {
-  justify-content: flex-end;
-  gap: 18rpx;
-  margin-top: 20rpx;
-}
-
-.card-actions button {
-  width: 170rpx;
-  height: 68rpx;
-  line-height: 68rpx;
-  margin: 0;
-  border-radius: 10rpx;
-  font-size: 25rpx;
-}
-
-.error-panel {
-  margin: 24rpx;
-  padding: 28rpx;
-  color: #b42318;
-  background: #fff1f0;
-  border-radius: 8rpx;
-  font-size: 26rpx;
-}
-
-.bottom-text {
-  padding: 4rpx 0 32rpx;
-  color: #9aa3af;
-  text-align: center;
-  font-size: 24rpx;
-}
+.refund-page { min-height: 100vh; background: #f5f8f6; color: #202733; padding-bottom: 40rpx; }
+.top-bar { position: sticky; top: 0; z-index: 120; height: 150rpx; padding-top: 58rpx; box-sizing: border-box; color: #fff; background: linear-gradient(135deg,#18a873,#28bf83); }
+.back-btn { position: absolute; left: 22rpx; top: 54rpx; width: 66rpx; height: 66rpx; line-height: 60rpx; text-align: center; font-size: 56rpx; font-weight: 300; }
+.nav-title { text-align: center; font-size: 34rpx; font-weight: 900; }
+.role-tabs { position: sticky; top: 150rpx; z-index: 110; display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; padding: 18rpx 24rpx; background: #fff; }
+.role-tab { height: 72rpx; line-height: 72rpx; color: #667281; text-align: center; background: #eef5f1; border-radius: 999rpx; font-size: 28rpx; font-weight: 800; }
+.role-tab.active { color: #fff; background: #13b86b; }
+.tabs { position: sticky; top: 240rpx; z-index: 105; background: #fff; white-space: nowrap; border-bottom: 1rpx solid #edf2ee; }
+.tabs-inner { display: inline-flex; gap: 8rpx; padding: 0 18rpx; }
+.tab { position: relative; min-width: 124rpx; height: 82rpx; line-height: 82rpx; color: #6b7280; text-align: center; font-size: 26rpx; font-weight: 700; }
+.tab.active { color: #0f9f5b; }
+.tab.active::after { content: ''; position: absolute; left: 30rpx; right: 30rpx; bottom: 10rpx; height: 6rpx; border-radius: 6rpx; background: #13b86b; }
+.tab-badge { position: absolute; top: 10rpx; right: 14rpx; min-width: 30rpx; height: 30rpx; line-height: 30rpx; color: #fff; background: #ef4444; border-radius: 999rpx; font-size: 20rpx; }
+.hint-row { display: flex; align-items: center; gap: 10rpx; padding: 18rpx 24rpx 0; color: #66717d; font-size: 24rpx; }
+.hint-icon { width: 28rpx; height: 28rpx; line-height: 28rpx; color: #fff; background: #16a45a; border-radius: 50%; text-align: center; font-size: 18rpx; }
+.refund-list { padding: 18rpx 22rpx 30rpx; }
+.refund-card { margin-bottom: 18rpx; padding: 22rpx; background: #fff; border: 1rpx solid #e8f0ea; border-radius: 22rpx; box-shadow: 0 10rpx 26rpx rgba(31,41,51,.06); }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.refund-no { flex: 1; min-width: 0; color: #5f6b77; font-size: 23rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.copy { margin-left: 10rpx; color: #0f9f5b; font-size: 22rpx; }
+.status { flex: none; padding: 7rpx 14rpx; border-radius: 999rpx; font-size: 23rpx; font-weight: 800; }
+.status-pending { color: #f97316; background: #fff3e8; } .status-refunding { color: #2563eb; background: #eaf1ff; } .status-refunded { color: #0f9f5b; background: #eaf8f0; } .status-rejected, .status-closed { color: #66717d; background: #f1f4f6; }
+.product-row { display: flex; gap: 18rpx; margin-top: 18rpx; }
+.product-img { width: 144rpx; height: 144rpx; flex: none; border-radius: 16rpx; background: #edf3ef; }
+.placeholder { display: flex; align-items: center; justify-content: center; color: #fff; background: #16b86b; font-weight: 900; }
+.product-info { flex: 1; min-width: 0; }
+.product-title { display: -webkit-box; color: #17212b; font-size: 28rpx; line-height: 1.35; font-weight: 900; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.product-spec { margin-top: 8rpx; color: #7b8794; font-size: 23rpx; }
+.amount-line { margin-top: 12rpx; color: #66717d; font-size: 24rpx; } .amount-line text { color: #ef4444; font-size: 30rpx; font-weight: 900; }
+.buyer-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10rpx; margin-top: 18rpx; padding-top: 16rpx; border-top: 1rpx solid #edf2ee; color: #66717d; font-size: 23rpx; }
+.avatar { width: 38rpx; height: 38rpx; border-radius: 50%; background: #edf3ef; }
+.buyer-name { color: #344054; font-weight: 700; }
+.phone { display: none; }
+.apply-time { margin-left: auto; }
+.reason-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8rpx 18rpx; margin-top: 14rpx; color: #566170; font-size: 23rpx; }
+.card-actions { display: flex; justify-content: flex-end; gap: 14rpx; margin-top: 18rpx; }
+.card-actions button { min-width: 168rpx; height: 64rpx; line-height: 62rpx; margin: 0; border-radius: 999rpx; font-size: 24rpx; }
+.error-panel { margin: 22rpx; padding: 24rpx; color: #ef4444; background: #fff; border-radius: 18rpx; }
+.bottom-text { padding: 18rpx 0 28rpx; text-align: center; color: #9aa5ad; font-size: 24rpx; }

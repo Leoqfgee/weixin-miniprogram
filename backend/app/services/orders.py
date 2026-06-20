@@ -4,6 +4,7 @@ from bson import ObjectId
 from flask import current_app
 
 from ..adapters.payment import get_payment_adapter
+from ..domain.campus import normalize_campus
 from ..domain.categories import category_name, normalize_category_code
 from ..repositories.deliveries import DeliveryRepository
 from ..repositories.escrows import EscrowRepository
@@ -431,7 +432,7 @@ class OrderService:
             "id": str(user_id),
             "nickname": profile.get("nickname", "校园用户"),
             "avatar": profile.get("avatar") or profile.get("avatar_url", ""),
-            "campus": profile.get("campus", ""),
+            "campus": normalize_campus(profile.get("campus"), ""),
             "phone_masked": _mask_phone(phone),
         }
 

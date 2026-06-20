@@ -343,7 +343,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
             "phone": "19900000011",
             "password": "test123456",
             "nickname": "Account A",
-            "campus": "Campus A",
+            "campus": "东校区",
             "openid": "pytest-profile-a",
         },
     )
@@ -357,7 +357,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
         json={
             "nickname": "Account A Updated",
             "avatar_url": "https://example.com/account-a-avatar.png",
-            "campus": "Campus A Updated",
+            "campus": "西校区",
             "contact_phone": "19900000011",
         },
     )
@@ -365,7 +365,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
     updated_a = update_a.get_json()["data"]
     assert updated_a["id"] == user_a_id
     assert updated_a["profile"]["avatar_url"] == "https://example.com/account-a-avatar.png"
-    assert updated_a["profile"]["campus"] == "Campus A Updated"
+    assert updated_a["profile"]["campus"] == "西校区"
 
     account_b = client.post(
         "/api/v1/auth/register",
@@ -373,7 +373,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
             "phone": "19900000012",
             "password": "test123456",
             "nickname": "Account B",
-            "campus": "Campus B",
+            "campus": "东校区",
             "openid": "pytest-profile-b",
         },
     )
@@ -387,7 +387,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
     assert body_b["id"] == user_b["id"]
     assert body_b["id"] != user_a_id
     assert body_b["profile"]["nickname"] == "Account B"
-    assert body_b["profile"]["campus"] == "Campus B"
+    assert body_b["profile"]["campus"] == "东校区"
     assert body_b["profile"]["avatar_url"] == ""
     assert body_b["stats"] == {"published": 0, "bought": 0, "sold": 0, "favorites": 0}
 
@@ -403,7 +403,7 @@ def test_profile_avatar_is_isolated_between_phone_accounts():
     assert body_a["id"] == user_a_id
     assert body_a["profile"]["nickname"] == "Account A Updated"
     assert body_a["profile"]["avatar_url"] == "https://example.com/account-a-avatar.png"
-    assert body_a["profile"]["campus"] == "Campus A Updated"
+    assert body_a["profile"]["campus"] == "西校区"
 
 
 def test_phone_account_cannot_save_wechat_avatar_identity():

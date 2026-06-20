@@ -31,6 +31,7 @@ const CONDITION_TEXT = {
   new: '\u5168\u65b0',
   like_new: '\u51e0\u4e4e\u5168\u65b0',
   good: '\u8f7b\u5fae\u4f7f\u7528\u75d5\u8ff9',
+  line_new: '\u51e0\u4e4e\u5168\u65b0',
   fair: '\u660e\u663e\u4f7f\u7528\u75d5\u8ff9'
 }
 
@@ -42,8 +43,11 @@ function safeText(value, fallback = '\u6682\u65e0') {
 }
 
 function formatMoney(value) {
-  const number = Number(value || 0)
-  return `\uffe5${number.toFixed(Number.isInteger(number) ? 0 : 2)}`
+  if (value === undefined || value === null || value === '') return '￥0'
+  const cleaned = String(value).replace(/[￥¥,\s]/g, '')
+  const number = Number(cleaned || 0)
+  if (Number.isNaN(number)) return '￥0'
+  return `￥${number.toFixed(Number.isInteger(number) ? 0 : 2)}`
 }
 
 function toDate(value) {
@@ -73,20 +77,85 @@ function formatChatTime(value) {
   return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+function normalizeCampusText(value, fallback = '校内') {
+  const text = safeText(value, '')
+  if (text === '主校区') return '东校区'
+  if (text === '东校区' || text === '西校区') return text
+  return fallback
+}
+
+
+function normalizeKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
+}
+
 function productStatusText(status) {
-  return PRODUCT_STATUS_TEXT[status] || PRODUCT_STATUS_TEXT.on_sale
+  const key = normalizeKey(status)
+  const map = Object.assign({}, PRODUCT_STATUS_TEXT, {
+    on_sale: '在售', onsale: '在售', sale: '在售', selling: '在售',
+    offsale: '已下架', off_shelf: '已下架', removed: '已下架',
+    sold_out: '已售出'
+  })
+  return map[key] || PRODUCT_STATUS_TEXT.on_sale
 }
 
 function orderStatusText(status) {
-  return ORDER_STATUS_TEXT[status] || safeText(status, '\u5f85\u5904\u7406')
+  const key = normalizeKey(status)
+  const map = Object.assign({}, ORDER_STATUS_TEXT, {
+    paid: '已付款', delivered: '已发货', shipped: '已发货',
+    cancel: '已取消', cancelled: '已取消', complete: '已完成',
+    after_sale: '售后中', aftersale: '售后中'
+  })
+  return map[key] || '处理中'
 }
 
 function refundStatusText(status) {
-  return REFUND_STATUS_TEXT[status] || safeText(status, '\u5f85\u5904\u7406')
+  const key = normalizeKey(status)
+  const map = Object.assign({}, REFUND_STATUS_TEXT, {
+    requested: '待处理', request: '待处理', processing: '退款中',
+    approved: '已同意', agree: '已同意', refused: '已拒绝'
+  })
+  return map[key] || '待处理'
+}
+
+function refundReasonText(value) {
+  const key = normalizeKey(value)
+  const map = {
+    good: '商品与描述不符',
+    quality: '商品质量问题',
+    damaged: '商品有破损',
+    not_as_described: '商品与描述不符',
+    mismatch: '商品与描述不符',
+    fake: '疑似非正品',
+    dislike: '不喜欢了',
+    change_mind: '不想要了',
+    no_need: '不需要了',
+    received: '买家拒收/收货问题',
+    has_defect: '商品有瑕疵',
+    defect: '商品有瑕疵',
+    broken: '商品有破损',
+    wrong_item: '商品与描述不符',
+    other: '其他原因'
+  }
+  return map[key] || safeText(value, '未填写')
 }
 
 function conditionText(condition) {
-  return CONDITION_TEXT[condition] || '\u6210\u8272\u672a\u586b\u5199'
+  const raw = safeText(condition, '')
+  const key = normalizeKey(raw)
+  if (CONDITION_TEXT[key]) return CONDITION_TEXT[key]
+  const extra = {
+    likenew: '几乎全新',
+    line_new: '几乎全新',
+    almost_new: '几乎全新',
+    lightly_used: '轻微使用痕迹',
+    used_good: '轻微使用痕迹',
+    normal: '成色良好',
+    old: '明显使用痕迹'
+  }
+  if (extra[key]) return extra[key]
+  if (/^[a-z_\-\s]+$/.test(raw)) return '成色未填写'
+  return raw || '成色未填写'
 }
 
 function orderTip(status, role) {
@@ -113,9 +182,11 @@ module.exports = {
   formatMoney,
   formatDateTime,
   formatChatTime,
+  normalizeCampusText,
   productStatusText,
   orderStatusText,
   refundStatusText,
+  refundReasonText,
   conditionText,
   orderTip
 }

@@ -1,5 +1,5 @@
 const api = require('../../utils/request')
-const { CONDITION_OPTIONS } = require('../../utils/constants')
+const { CAMPUS_OPTIONS, CONDITION_OPTIONS } = require('../../utils/constants')
 
 Page({
   data: {
@@ -11,6 +11,8 @@ Page({
     categoryIndex: -1,
     conditionIndex: -1,
     conditionOptions: CONDITION_OPTIONS,
+    campusOptions: [{ label: '全部校区', value: '' }].concat(CAMPUS_OPTIONS),
+    campusIndex: 0,
     campus: '',
     minPrice: '',
     maxPrice: '',
@@ -36,8 +38,11 @@ Page({
   onKeywordInput(event) {
     this.setData({ keyword: event.detail.value })
   },
-  onCampusInput(event) {
-    this.setData({ campus: event.detail.value })
+  onCampusChange(event) {
+    const campusIndex = Number(event.detail.value)
+    const campus = this.data.campusOptions[campusIndex] || this.data.campusOptions[0]
+    this.setData({ campusIndex, campus: campus.value })
+    this.loadProducts()
   },
   onMinPriceInput(event) {
     this.setData({ minPrice: event.detail.value })

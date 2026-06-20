@@ -85,8 +85,8 @@ DELETE /api/v1/favorites/{product_id}
 
 - 首页删除大横幅 Banner，保留标题、搜索、分类、推荐/最新/热门、商品双列列表。
 - 登录页保留微信登录、手机号登录/注册和“开发测试账号”卡片。
-- 发布页顺序为图片、标题、AI 标题建议、描述、AI 润色描述、价格、分类、成色、交易信息、底部操作。
-- 商品详情保留轮播、价格、分享、收藏、描述、卖家信息、交易信息、猜你喜欢、底部操作。
+- 发布页顺序为图片、标题、AI 标题建议、描述、AI 润色描述、价格、分类、成色、交易校区、底部操作。
+- 商品详情保留轮播、价格、分享、收藏、描述、卖家信息、所在校区、猜你喜欢、底部操作。
 - 聊天页保留订单/商品卡片、文字消息、图片/视频上传、已读状态和发送按钮。
 - 订单详情按买家/卖家视角切换联系人和操作按钮。
 - 售后列表保留“我买的 / 我卖的”和中文状态筛选，售后详情只展示当前视角的对方联系人。
@@ -114,7 +114,7 @@ DELETE /api/v1/favorites/{product_id}
 
 - 首页“筛选”进入真实分类筛选页，不保留无功能假入口。
 - 登录页保留微信登录、手机号登录、手机号注册和开发测试账号入口。
-- 商品详情页只展示后端已有的商品描述、卖家信息、交易信息、推荐、收藏、私聊和购买；不展示无真实字段支撑的认证、保修、态度标签。
+- 商品详情页只展示后端已有的商品描述、卖家信息、所在校区、推荐、收藏、私聊和购买；不展示无真实字段支撑的认证、保修、态度标签。
 - 订单和售后页只显示中文状态文案，不展示裸 ID、`undefined`、`null` 或横杠占位。
 
 本地静态预览图板位于：
@@ -172,6 +172,27 @@ category_id      兼容旧分类表的 ObjectId
 宿舍台灯 -> 生活家居
 无法判断的商品 -> 其他
 ```
+
+## 统一校区
+
+商品和个人资料里的校区只允许以下两个值：
+
+```text
+东校区
+西校区
+```
+
+发布商品、编辑商品、资料编辑和分类筛选均使用固定选项，不再支持手填校区。后端会校验商品发布、商品编辑、商品列表筛选、注册和资料更新中的 `campus` 字段；传入其他值会返回参数校验错误。
+
+历史数据中的 `主校区` 统一映射为 `东校区`。如果部署环境还有旧数据，可在后端目录运行迁移脚本：
+
+```powershell
+cd "F:\A 软件工程\campus_secondhand_platform\backend"
+F:\ProgramData\anaconda3\envs\weixin-app\python.exe .\scripts\normalize_campus.py
+F:\ProgramData\anaconda3\envs\weixin-app\python.exe .\scripts\normalize_campus.py --apply
+```
+
+第一条命令只统计匹配数量，第二条命令才会实际写入。
 
 ## 猜你喜欢与分享
 
@@ -283,7 +304,7 @@ F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m compileall app scripts
 F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest -q
 ```
 
-本次代码验证结果：`46 passed`。
+本次校区与发布页相关验证结果：`24 passed`。
 
 1. 重新部署云托管。
 2. 调用 `POST /api/v1/debug/demo-products/reset` 清理旧测试商品。
@@ -297,7 +318,7 @@ F:\ProgramData\anaconda3\envs\weixin-app\python.exe -m pytest -q
 
 - 已按 `miniprogram/app.json` 确认真实路由，未新建未路由的假页面。
 - 重构页面：首页、发布商品、消息列表、我的、商品详情、个人主页、我买到的、我卖出的、订单详情、售后管理、售后详情、聊天页。
-- 新增 `miniprogram/utils/format.js` 统一金额、时间、商品/订单/售后状态映射，避免模板直出 `undefined`、`null`、`--` 或 ISO 时间。
+- 新增 `miniprogram/utils/format.js` 统一金额、时间、校区、商品/订单/售后状态映射，避免模板直出 `undefined`、`null`、`--`、`主校区` 或 ISO 时间。
 - 商品卡片组件已改为图片内右上角收藏按钮，并格式化价格、校区、分类、库存、卖家和浏览量。
 - 验证：`node --check` 通过；目标 WXML 标签配对检查通过；目标文件无 BOM。
 - 本机未找到可调用的微信开发者工具 CLI 或 miniprogram-ci，因此未伪造模拟器截图，需在微信开发者工具中进一步真机预览。

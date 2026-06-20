@@ -1,6 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { PRODUCT_STATUS_TEXT } = require('../../../utils/constants')
+const { formatDateTime, normalizeCampusText } = require('../../../utils/format')
 const { DEFAULT_PRODUCT_IMAGE, normalizeImageUrl } = require('../../../utils/image')
 
 const STATUS_NOTES = {
@@ -35,7 +36,9 @@ Page({
         ...item,
         cover_image: normalizeImageUrl(item.cover_image || (Array.isArray(item.images) && item.images[0]), 'product'),
         status_text: PRODUCT_STATUS_TEXT[item.status] || item.status,
-        status_note: STATUS_NOTES[item.status] || ''
+        status_note: STATUS_NOTES[item.status] || '',
+        campus_text: normalizeCampusText(item.campus, ''),
+        created_at_text: formatDateTime(item.created_at || item.updated_at)
       }))
       this.setData({ products })
     })

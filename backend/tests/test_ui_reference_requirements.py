@@ -11,7 +11,7 @@ def _create_product(client, seller_token, admin_token, title, description, categ
         "condition": "good",
         "stock": 1,
         "images": [],
-        "campus": "主校区",
+        "campus": "东校区",
         "delivery_options": ["meetup"],
         "submit_action": "review",
     }

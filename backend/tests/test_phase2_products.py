@@ -48,7 +48,7 @@ def test_product_review_flow():
             "condition": "good",
             "stock": 2,
             "images": [image_url],
-            "campus": "主校区",
+            "campus": "东校区",
             "delivery_options": ["meetup"],
             "submit_action": "draft",
         },
@@ -113,7 +113,7 @@ def test_product_review_flow():
             "condition": "good",
             "stock": 1,
             "images": [],
-            "campus": "主校区",
+            "campus": "东校区",
             "delivery_options": ["meetup"],
             "submit_action": "review",
         },
@@ -221,7 +221,7 @@ def test_non_owner_cannot_edit_product():
             "condition": "fair",
             "stock": 1,
             "images": [],
-            "campus": "主校区",
+            "campus": "西校区",
             "delivery_options": ["meetup"],
         },
     )
@@ -233,3 +233,35 @@ def test_non_owner_cannot_edit_product():
         json={"title": "不应该成功"},
     )
     assert edit_response.status_code == 403
+
+
+def test_product_campus_must_be_east_or_west():
+    init_db()
+    app = create_app()
+    client = app.test_client()
+
+    seller_token = login(client, "18800000001", "seller123456")
+    category_id = client.get("/api/v1/categories").get_json()["data"]["items"][0]["id"]
+
+    response = client.post(
+        "/api/v1/products",
+        headers=auth_headers(seller_token),
+        json={
+            "title": f"pytest-{uuid4().hex}",
+            "description": "非法校区测试。",
+            "price": 12,
+            "category_id": category_id,
+            "condition": "fair",
+            "stock": 1,
+            "images": [],
+            "campus": "主校区",
+            "delivery_options": ["meetup"],
+            "submit_action": "review",
+        },
+    )
+    assert response.status_code == 422
+    assert response.get_json()["errors"][0]["field"] == "campus"
+
+    filter_response = client.get("/api/v1/products?campus=主校区")
+    assert filter_response.status_code == 422
+    assert filter_response.get_json()["errors"][0]["field"] == "campus"

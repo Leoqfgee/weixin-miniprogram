@@ -1,4 +1,5 @@
 <view class="detail-page" wx:if="{{refund}}">
+  <view class="top-bar"><view class="back-btn" bindtap="goBack">‹</view><view class="nav-title">售后详情</view></view>
 <view class="status-tip status-{{refund.status_group}}">
     <text class="status-text">{{refund.status_text}}</text>
     <text>{{refund.status_tip}}</text>
@@ -25,8 +26,8 @@
       <view wx:else class="product-img placeholder">图</view>
       <view class="product-info">
         <view class="product-title">{{refund.product.title || '售后商品'}}</view>
-        <view class="product-spec">{{refund.product.spec_text || refund.product.condition_text || '规格/成色暂无'}}</view>
-        <view class="product-price">￥{{refund.product.price || refund.display_amount}} <text>x{{refund.product.quantity || 1}}</text></view>
+        <view class="product-spec">{{refund.product.display_condition || '规格/成色暂无'}}</view>
+        <view class="product-price">{{refund.product.display_price || refund.display_amount}} <text>x{{refund.product.quantity || 1}}</text></view>
       </view>
     </view>
   </view>
@@ -45,9 +46,9 @@
 
   <view class="section">
     <view class="section-title">4. 退款信息</view>
-    <view class="kv"><text>退款金额</text><text class="amount">￥{{refund.display_amount || refund.request_amount || refund.amount}}</text></view>
-    <view class="kv"><text>售后类型</text><text>{{refund.refund_type_text || '仅退款'}}</text></view>
-    <view class="kv"><text>退款原因</text><text>{{refund.reason_text || refund.reason || '未填写'}}</text></view>
+    <view class="kv"><text>退款金额</text><text class="amount">{{refund.display_amount}}</text></view>
+    <view class="kv"><text>售后类型</text><text>{{refund.display_refund_type || '仅退款'}}</text></view>
+    <view class="kv"><text>退款原因</text><text>{{refund.display_reason}}</text></view>
     <view class="kv block"><text>问题描述</text><text>{{refund.description || '未填写'}}</text></view>
     <view wx:if="{{refund.evidence_images && refund.evidence_images.length}}" class="evidence">
       <view class="label">凭证图片</view>
@@ -80,5 +81,6 @@
 </view>
 
 <view wx:else class="detail-page">
+  <view class="top-bar"><view class="back-btn" bindtap="goBack">‹</view><view class="nav-title">售后详情</view></view>
   <empty-state title="售后详情加载中"></empty-state>
 </view>

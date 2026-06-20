@@ -1,7 +1,7 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
 const { validateProductForm, firstError } = require('../../../utils/validator')
-const { CONDITION_OPTIONS, classifyProduct, getCategoryName } = require('../../../utils/constants')
+const { CAMPUS_OPTIONS, CONDITION_OPTIONS, classifyProduct, getCategoryName } = require('../../../utils/constants')
 
 const blankForm = () => ({
   title: '',
@@ -14,8 +14,7 @@ const blankForm = () => ({
   category_source: '',
   condition: '',
   images: [],
-  campus: '主校区',
-  delivery_options: ['meetup', 'express']
+  campus: CAMPUS_OPTIONS[0].value
 })
 
 Page({
@@ -24,10 +23,15 @@ Page({
     categories: [],
     categoryIndex: -1,
     autoCategoryText: '填写标题和描述后自动推荐',
+    selectedCategoryText: '填写标题和描述后自动推荐',
     editingOnSale: false,
     canSubmitReview: false,
     conditionOptions: [{ label: '成色暂不填写', value: '' }].concat(CONDITION_OPTIONS),
     conditionIndex: 0,
+    selectedConditionText: '成色暂不填写',
+    campusOptions: CAMPUS_OPTIONS,
+    campusIndex: 0,
+    selectedCampusText: CAMPUS_OPTIONS[0].label,
     form: blankForm(),
     errors: {}
   },
@@ -39,7 +43,7 @@ Page({
   loadCategories() {
     api.get('/categories').then((data) => {
       const categories = data.items || []
-      this.setData({ categories })
+      this.setData({ categories, selectedCategoryText: this.data.categoryIndex >= 0 && categories[this.data.categoryIndex] ? categories[this.data.categoryIndex].name : this.data.autoCategoryText })
       if (this.data.productId) this.loadProduct()
     })
   },
@@ -47,11 +51,16 @@ Page({
     api.get(`/products/${this.data.productId}`, {}, { loading: true }).then((product) => {
       const categoryIndex = this.data.categories.findIndex((item) => item.code === product.category || item.id === product.category_id)
       const conditionIndex = this.data.conditionOptions.findIndex((item) => item.value === (product.condition || ''))
+      const campusIndex = campusIndexOf(product.campus)
       this.setData({
-        form: Object.assign(blankForm(), product, { price: String(product.price || '') }),
+        form: Object.assign(blankForm(), product, { price: String(product.price || ''), campus: campusValue(product.campus) }),
         categoryIndex,
         autoCategoryText: product.category_name || '填写标题和描述后自动推荐',
+        selectedCategoryText: categoryIndex >= 0 && this.data.categories[categoryIndex] ? this.data.categories[categoryIndex].name : (product.category_name || '填写标题和描述后自动推荐'),
         conditionIndex: conditionIndex < 0 ? 0 : conditionIndex,
+        selectedConditionText: this.data.conditionOptions[conditionIndex < 0 ? 0 : conditionIndex].label,
+        campusIndex,
+        selectedCampusText: CAMPUS_OPTIONS[campusIndex].label,
         editingOnSale: product.status === 'on_sale',
         canSubmitReview: ['draft', 'rejected'].includes(product.status)
       })
@@ -75,6 +84,7 @@ Page({
     this.setData({
       categoryIndex: index,
       autoCategoryText: category.name,
+      selectedCategoryText: category.name,
       'form.category_id': category.id || '',
       'form.category': category.code,
       'form.category_name': category.name,
@@ -83,7 +93,17 @@ Page({
   },
   onConditionChange(event) {
     const index = Number(event.detail.value)
-    this.setData({ conditionIndex: index, 'form.condition': this.data.conditionOptions[index].value })
+    this.setData({ conditionIndex: index, selectedConditionText: this.data.conditionOptions[index].label, 'form.condition': this.data.conditionOptions[index].value })
+  },
+  onCampusChange(event) {
+    const index = Number(event.detail.value)
+    const campus = this.data.campusOptions[index] || this.data.campusOptions[0]
+    this.setData({ campusIndex: index, selectedCampusText: campus.label, 'form.campus': campus.value })
+  },
+  onCampusTap(event) {
+    const index = Number(event.currentTarget.dataset.index)
+    const campus = this.data.campusOptions[index] || this.data.campusOptions[0]
+    this.setData({ campusIndex: index, selectedCampusText: campus.label, 'form.campus': campus.value })
   },
   chooseImages() {
     wx.chooseMedia({
@@ -158,8 +178,7 @@ Page({
       condition: source.condition,
       images: source.images || [],
       cover_image: source.cover_image || '',
-      campus: source.campus || '',
-      delivery_options: source.delivery_options || ['meetup']
+      campus: campusValue(source.campus)
     }
     if (submitAction === 'review') {
       const result = validateProductForm(form)
@@ -182,3 +201,12 @@ Page({
     })
   }
 })
+
+function campusIndexOf(value) {
+  const index = CAMPUS_OPTIONS.findIndex((item) => item.value === value)
+  return index >= 0 ? index : 0
+}
+
+function campusValue(value) {
+  return CAMPUS_OPTIONS[campusIndexOf(value)].value
+}

@@ -61,13 +61,21 @@
 }
 
 input,
-textarea {
+textarea,
+.picker-value {
   width: 100%;
   box-sizing: border-box;
   padding: 18rpx 22rpx;
   border-radius: 18rpx;
   background: #fbfcfb;
   border: 1rpx solid #e1e7e1;
+}
+
+.picker-value {
+  min-height: 72rpx;
+  color: #1f2933;
+  font-size: 28rpx;
+  line-height: 36rpx;
 }
 
 textarea {

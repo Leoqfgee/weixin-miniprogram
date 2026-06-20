@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "商品详情",
   "usingComponents": {
-    "status-badge": "/components/status-badge/index"
+    "status-badge": "/components/status-badge/index",
+    "product-card": "/components/product-card/index"
   }
 }

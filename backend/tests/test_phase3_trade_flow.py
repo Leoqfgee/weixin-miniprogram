@@ -33,7 +33,7 @@ def create_on_sale_product(client, seller_token, admin_token, stock=3, price=99.
             "condition": "good",
             "stock": stock,
             "images": [],
-            "campus": "主校区",
+            "campus": "东校区",
             "delivery_options": ["offline_meetup"],
             "submit_action": "review",
         },

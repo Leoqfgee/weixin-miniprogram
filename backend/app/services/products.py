@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 from bson import ObjectId
+from ..domain.campus import is_allowed_campus, normalize_campus
 from ..domain.categories import CATEGORY_CODES, category_name, classify_category, normalize_category_code
 from ..repositories.categories import CategoryRepository
 from ..repositories.logs import OperationLogRepository
@@ -38,7 +39,7 @@ class ProductService:
             "category": normalize_category_code(args.get("category") or args.get("category_code")),
             "min_price": _optional_float(args.get("min_price"), "min_price"),
             "max_price": _optional_float(args.get("max_price"), "max_price"),
-            "campus": args.get("campus", "").strip(),
+            "campus": (args.get("campus") or "").strip(),
             "sort": (args.get("sort") or "newest").strip(),
             "mode": mode,
             "date_from": _optional_date(args.get("date_from"), "date_from", end=False),
@@ -55,6 +56,8 @@ class ProductService:
             raise ValidationError("参数校验失败", [{"field": "mode", "message": "展示模式不合法"}])
         if filters["condition"] and filters["condition"] not in CONDITIONS:
             raise ValidationError("参数校验失败", [{"field": "condition", "message": "成色不合法"}])
+        if filters["campus"] and not is_allowed_campus(filters["campus"]):
+            raise ValidationError("参数校验失败", [{"field": "campus", "message": "校区只能选择东校区或西校区"}])
         if filters["sort"] not in {"newest", "price_asc", "price_desc", "hot"}:
             raise ValidationError("参数校验失败", [{"field": "sort", "message": "排序方式不合法"}])
 
@@ -459,7 +462,13 @@ class ProductService:
         if "cover_image" in payload and "images" not in payload:
             data["cover_image"] = payload.get("cover_image") or ""
         if "campus" in payload or not partial:
-            data["campus"] = (payload.get("campus") or "").strip()
+            campus = (payload.get("campus") or "").strip()
+            if not campus and not partial:
+                errors.append({"field": "campus", "message": "请选择校区"})
+            elif campus and not is_allowed_campus(campus):
+                errors.append({"field": "campus", "message": "校区只能选择东校区或西校区"})
+            else:
+                data["campus"] = campus
         if "delivery_options" in payload or not partial:
             options = payload.get("delivery_options") or ["meetup"]
             if not isinstance(options, list) or not options:
@@ -509,7 +518,7 @@ class ProductService:
 
     def _ensure_review_ready(self, product):
         missing = []
-        for field in ["title", "description", "price"]:
+        for field in ["title", "description", "price", "campus"]:
             if not product.get(field):
                 missing.append(field)
         if product.get("stock", 0) <= 0:
@@ -550,6 +559,7 @@ class ProductService:
         data["category"] = code
         data["category_name"] = product.get("category_name") or category_name(code)
         data["category_source"] = product.get("category_source") or "legacy"
+        data["campus"] = normalize_campus(product.get("campus"), "")
         data["images"] = normalize_image_list(product.get("images") or [])
         data["cover_image"] = normalize_image_url(product.get("cover_image"))
         data["is_favorited"] = False
@@ -564,7 +574,7 @@ class ProductService:
             "nickname": (profile or {}).get("nickname", "未知用户"),
             "avatar": normalize_image_url((profile or {}).get("avatar") or (profile or {}).get("avatar_url", "")),
             "avatar_url": normalize_image_url((profile or {}).get("avatar_url") or (profile or {}).get("avatar", "")),
-            "campus": (profile or {}).get("campus", ""),
+            "campus": normalize_campus((profile or {}).get("campus"), ""),
         }
         data["allowed_actions"] = self._allowed_actions(product, current_user)
         if not data.get("cover_image") and data.get("images"):

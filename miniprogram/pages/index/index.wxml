@@ -1,36 +1,31 @@
 <view class="page home-page">
-  <view class="brand-block">
-    <view class="brand-title">校园<text>二手</text></view>
-  </view>
-
+  <view class="home-sticky">
   <view class="search-panel">
-    <text class="search-icon">搜</text>
+    <text class="search-icon">⌕</text>
     <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索商品名称 / 分类 / 关键词" confirm-type="search" bindconfirm="goSearch" />
-    <button class="primary-btn search-btn" bindtap="goSearch">搜索</button>
+    <button class="search-btn" bindtap="goSearch">搜索</button>
   </view>
 
-  <view class="category-panel" wx:if="{{categories.length}}">
-    <view class="category-grid">
-      <button wx:for="{{categories}}" wx:key="code" class="category-item {{activeCategory === item.code ? 'active' : ''}}" data-code="{{item.code}}" bindtap="goCategory">
-        <view class="category-icon">{{item.short_name}}</view>
+  <scroll-view wx:if="{{categories.length}}" scroll-x class="category-scroll" show-scrollbar="false">
+    <view class="category-row">
+      <view wx:for="{{categories}}" wx:key="code" class="category-item category-{{item.code || 'all'}} {{activeCategory === item.code ? 'active' : ''}}" data-code="{{item.code}}" bindtap="goCategory">
+        <view class="category-icon"><image src="{{item.icon}}" mode="aspectFit"></image></view>
         <text>{{item.name}}</text>
-      </button>
+      </view>
     </view>
-  </view>
+  </scroll-view>
 
   <view class="mode-panel">
     <view class="mode-tabs">
-      <button wx:for="{{modeTabs}}" wx:key="value" class="mode-tab {{activeMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="switchMode">
-        {{item.label}}
-      </button>
+      <view wx:for="{{modeTabs}}" wx:key="value" class="mode-tab {{activeMode === item.value ? 'active' : ''}}" data-mode="{{item.value}}" bindtap="switchMode">{{item.label}}</view>
     </view>
-    <view class="filter-line" bindtap="openFilter">筛选</view>
-    <view wx:if="{{loading}}" class="mode-loading">加载中...</view>
+    <view class="filter-line" bindtap="openFilter"><text class="filter-icon"></text><text>筛选</text></view>
+  </view>
   </view>
 
+  <view wx:if="{{loading}}" class="mode-loading">加载中...</view>
   <view wx:if="{{products.length}}" class="product-list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
   </view>
-
   <empty-state wx:else title="{{emptyTitle}}"></empty-state>
 </view>

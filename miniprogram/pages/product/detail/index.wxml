@@ -18,14 +18,23 @@
         <status-badge status="{{product.status}}"></status-badge>
       </view>
       <view class="price-line">
-        <text class="price">¥{{product.price}}</text>
-        <button class="share-btn" open-type="share">分享</button>
+        <text class="price">{{product.display_price}}</text>
+        <view class="summary-actions">
+          <button class="mini-action-btn" open-type="share">
+            <image class="mini-action-icon" src="/assets/icons/action-share.png" mode="aspectFit"></image>
+            <text>分享</text>
+          </button>
+          <button class="mini-action-btn" bindtap="toggleFavorite">
+            <image class="mini-action-icon" src="{{product.is_favorited ? '/assets/icons/action-heart-active.png' : '/assets/icons/action-heart.png'}}" mode="aspectFit"></image>
+            <text>{{product.is_favorited ? '已收藏' : '收藏'}}</text>
+          </button>
+        </view>
       </view>
       <view class="sub-desc">{{conditionText}}｜{{product.description || '校内好物，欢迎咨询'}}</view>
       <view class="meta-line">
         <text>校内面交</text>
         <text wx:if="{{product.display_category}}">{{product.display_category}}</text>
-        <text>{{product.campus || product.seller.campus || '校内'}}</text>
+        <text>{{product.display_campus}}</text>
       </view>
       <view class="metric-row">
         <view>浏览 {{product.display_views}}</view>
@@ -41,7 +50,7 @@
       <image class="seller-avatar" src="{{product.seller.avatar || product.seller.avatar_url || '/assets/tabbar/mine.png'}}" mode="aspectFill" binderror="onSellerAvatarError"></image>
       <view class="seller-main">
         <view class="seller-name">{{product.seller.nickname || '校园同学'}}</view>
-        <view class="muted">{{product.seller.campus || product.campus || '校内交易'}}</view>
+        <view class="muted">{{product.seller.display_campus}}</view>
       </view>
       <text class="chevron">›</text>
     </view>
@@ -49,7 +58,7 @@
     <view class="trade-card panel">
       <view class="block-title">交易信息</view>
       <view class="trade-row"><text>交易方式</text><view>{{product.delivery_options && product.delivery_options.length ? '校内面交 / 快递' : '校内面交'}}</view></view>
-      <view class="trade-row"><text>所在校区</text><view>{{product.campus || product.seller.campus || '校内'}}</view></view>
+      <view class="trade-row"><text>所在校区</text><view>{{product.display_campus}}</view></view>
       <view class="trade-row"><text>商品分类</text><view>{{product.category_name || '其他'}}</view></view>
     </view>
 
@@ -67,7 +76,10 @@
     </view>
 
     <view class="actions bottom-bar">
-      <button wx:if="{{product.allowed_actions.can_buy}}" class="collect-btn" bindtap="toggleFavorite">{{product.is_favorited ? '已收藏' : '收藏'}}</button>
+      <button wx:if="{{product.allowed_actions.can_buy}}" class="collect-btn" bindtap="toggleFavorite">
+        <image class="bar-action-icon" src="{{product.is_favorited ? '/assets/icons/action-heart-active.png' : '/assets/icons/action-heart.png'}}" mode="aspectFit"></image>
+        <text class="bar-action-text">{{product.is_favorited ? '已收藏' : '收藏'}}</text>
+      </button>
       <button wx:if="{{product.allowed_actions.can_buy}}" class="ghost-btn" bindtap="contactSeller">联系卖家</button>
       <button wx:if="{{product.allowed_actions.can_buy}}" class="primary-btn" bindtap="buyNow">立即购买</button>
       <button wx:if="{{product.allowed_actions.can_edit}}" class="ghost-btn" bindtap="editProduct">编辑</button>
