@@ -25,7 +25,7 @@ Page({
     autoCategoryText: '填写标题和描述后自动推荐',
     selectedCategoryText: '填写标题和描述后自动推荐',
     editingOnSale: false,
-    canSubmitReview: false,
+    canPublish: false,
     conditionOptions: [{ label: '成色暂不填写', value: '' }].concat(CONDITION_OPTIONS),
     conditionIndex: 0,
     selectedConditionText: '成色暂不填写',
@@ -61,8 +61,8 @@ Page({
         selectedConditionText: this.data.conditionOptions[conditionIndex < 0 ? 0 : conditionIndex].label,
         campusIndex,
         selectedCampusText: CAMPUS_OPTIONS[campusIndex].label,
-        editingOnSale: product.status === 'on_sale',
-        canSubmitReview: ['draft', 'rejected'].includes(product.status)
+        editingOnSale: product.status === 'on_sale' || product.status === 'active',
+        canPublish: ['draft', 'rejected', 'off_shelf'].includes(product.status)
       })
     })
   },
@@ -180,7 +180,7 @@ Page({
       cover_image: source.cover_image || '',
       campus: campusValue(source.campus)
     }
-    if (submitAction === 'review') {
+    if (submitAction === 'publish') {
       const result = validateProductForm(form)
       this.setData({ errors: result.errors })
       if (!result.valid) {
@@ -189,12 +189,12 @@ Page({
       }
     }
     api.put(`/products/${this.data.productId}`, form, { loading: true }).then(() => {
-      if (submitAction === 'review') {
+      if (submitAction === 'publish') {
         return api.post(`/products/${this.data.productId}/submit-review`, {}, { loading: true })
       }
       return null
     }).then(() => {
-      wx.showToast({ title: submitAction === 'review' ? '已提交审核' : '修改已保存', icon: 'success' })
+      wx.showToast({ title: submitAction === 'publish' ? '已发布' : '修改已保存', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 400)
     }).catch(() => {
       wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' })

@@ -2,6 +2,8 @@ from flask import Blueprint, current_app, g, request
 
 from ..services.engagement import AdminReportService, AppealService, RefundService
 from ..services.products import ProductService
+from ..services.credit import CreditService
+from ..services.reports import ReportService
 from ..utils.jwt import roles_required
 from ..utils.response import success_response
 
@@ -25,6 +27,34 @@ def audit_product(product_id):
         payload,
         trace_id=getattr(g, "trace_id", None),
     )
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports")
+@roles_required("admin")
+def list_violation_reports():
+    data = ReportService(current_app.db).list_admin_reports(request.args)
+    return success_response(data)
+
+
+@admin_bp.get("/admin/reports/<report_id>")
+@roles_required("admin")
+def get_violation_report(report_id):
+    data = ReportService(current_app.db).get_admin_report(report_id)
+    return success_response(data)
+
+
+@admin_bp.post("/admin/reports/<report_id>/handle")
+@roles_required("admin")
+def handle_violation_report(report_id):
+    data = ReportService(current_app.db).handle_report(report_id, g.current_user, request.get_json(silent=True) or {})
+    return success_response(data)
+
+
+@admin_bp.post("/admin/users/<user_id>/credit/adjust")
+@roles_required("admin")
+def admin_adjust_credit(user_id):
+    data = CreditService(current_app.db).admin_adjust(user_id, request.get_json(silent=True) or {}, g.current_user)
     return success_response(data)
 
 

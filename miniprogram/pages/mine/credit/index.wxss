@@ -1,0 +1,12 @@
+.score-card { text-align: center; }
+.score { color: #16a06a; font-size: 88rpx; font-weight: 900; line-height: 1.1; }
+.level { margin: 10rpx 0; color: #17202a; font-size: 34rpx; font-weight: 800; }
+.warning { margin-top: 18rpx; padding: 16rpx; color: #b45309; background: #fff7ed; border-radius: 8rpx; }
+.record { display: flex; align-items: center; justify-content: space-between; padding: 22rpx 0; border-bottom: 1rpx solid #edf0f2; }
+.record:last-child { border-bottom: 0; }
+.delta { font-size: 34rpx; font-weight: 900; }
+.delta.plus { color: #16a06a; }
+.delta.minus { color: #d04437; }
+.rules .block-title { margin-top: 28rpx; }
+.rule-line { display: flex; justify-content: space-between; padding: 12rpx 0; color: #334155; border-bottom: 1rpx solid #f0f3f5; }
+.bullet { margin-top: 10rpx; line-height: 1.7; }

@@ -1,12 +1,13 @@
 const api = require('../../../utils/request')
 const { requireLogin } = require('../../../utils/auth')
-const { PRODUCT_STATUS_TEXT } = require('../../../utils/constants')
-const { formatDateTime, normalizeCampusText } = require('../../../utils/format')
+const { productStatusText, formatDateTime, normalizeCampusText } = require('../../../utils/format')
 const { DEFAULT_PRODUCT_IMAGE, normalizeImageUrl } = require('../../../utils/image')
 
 const STATUS_NOTES = {
   sold: '交易已完成，可删除记录或重新发布',
-  off_shelf: '商品已停止展示，可编辑、删除或重新发布'
+  off_shelf: '商品已下架，可编辑、删除或重新发布',
+  taken_down: '因举报成立已下架，可查看处理通知或修改后重新发布',
+  removed: '因举报成立已下架，可查看处理通知或修改后重新发布'
 }
 
 Page({
@@ -15,11 +16,10 @@ Page({
     statusIndex: 0,
     statusOptions: [
       { label: '在售', value: 'on_sale' },
-      { label: '待审核', value: 'pending_review' },
       { label: '草稿', value: 'draft' },
-      { label: '审核驳回', value: 'rejected' },
       { label: '已售出', value: 'sold' },
-      { label: '已下架', value: 'off_shelf' }
+      { label: '已下架', value: 'off_shelf' },
+      { label: '举报下架', value: 'taken_down' }
     ]
   },
   onShow() {
@@ -35,7 +35,7 @@ Page({
       const products = (data.items || []).map((item) => ({
         ...item,
         cover_image: normalizeImageUrl(item.cover_image || (Array.isArray(item.images) && item.images[0]), 'product'),
-        status_text: PRODUCT_STATUS_TEXT[item.status] || item.status,
+        status_text: productStatusText(item.status),
         status_note: STATUS_NOTES[item.status] || '',
         campus_text: normalizeCampusText(item.campus, ''),
         created_at_text: formatDateTime(item.created_at || item.updated_at)
@@ -67,10 +67,11 @@ Page({
       }
     })
   },
-  submitReview(event) {
+  publishNow(event) {
     const id = event.currentTarget.dataset.id
     api.post(`/products/${id}/submit-review`, {}, { loading: true }).then(() => {
-      wx.showToast({ title: '已提交审核', icon: 'success' })
+      wx.showToast({ title: '已发布', icon: 'success' })
+      this.setData({ statusIndex: 0 })
       this.loadProducts()
     })
   },
@@ -78,12 +79,12 @@ Page({
     const id = event.currentTarget.dataset.id
     wx.showModal({
       title: '重新发布商品',
-      content: '商品将重新提交管理员审核，审核通过后恢复在售。',
+      content: '商品将直接恢复在售。',
       success: (res) => {
         if (!res.confirm) return
         api.post(`/products/${id}/republish`, {}, { loading: true }).then(() => {
-          wx.showToast({ title: '已重新提交审核', icon: 'success' })
-          this.setData({ statusIndex: 1 })
+          wx.showToast({ title: '已重新发布', icon: 'success' })
+          this.setData({ statusIndex: 0 })
           this.loadProducts()
         })
       }

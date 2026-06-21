@@ -1,0 +1,36 @@
+<view class="page report-page">
+  <view wx:if="{{product}}" class="panel product-card">
+    <image class="cover" src="{{product.cover_image}}" mode="aspectFill"></image>
+    <view class="info">
+      <view class="title small">{{product.title}}</view>
+      <view class="muted">卖家：{{product.seller.nickname || '校园用户'}}</view>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">举报原因</view>
+    <view wx:for="{{reasons}}" wx:key="value" class="reason {{reasonType === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="chooseReason">
+      <text>{{item.label}}</text>
+      <text>{{reasonType === item.value ? '已选' : ''}}</text>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">补充说明</view>
+    <textarea value="{{description}}" maxlength="200" bindinput="onDescription" placeholder="请补充说明，最多 200 字"></textarea>
+    <view class="muted count">{{description.length}}/200</view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">凭证图片（可选，最多 3 张）</view>
+    <view class="evidence-row">
+      <view wx:for="{{evidenceImages}}" wx:key="*this" class="evidence">
+        <image src="{{item}}" mode="aspectFill"></image>
+        <text data-index="{{index}}" bindtap="removeEvidence">x</text>
+      </view>
+      <view wx:if="{{evidenceImages.length < 3}}" class="add" bindtap="chooseEvidence">+</view>
+    </view>
+  </view>
+
+  <button class="primary-btn submit" bindtap="submitReport">提交举报</button>
+</view>

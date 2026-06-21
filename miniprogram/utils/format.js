@@ -1,41 +1,55 @@
 const PRODUCT_STATUS_TEXT = {
-  draft: '\u8349\u7a3f',
-  pending_review: '\u5f85\u5ba1\u6838',
-  on_sale: '\u5728\u552e',
-  locked: '\u4ea4\u6613\u4e2d',
-  sold: '\u5df2\u552e\u51fa',
-  rejected: '\u672a\u901a\u8fc7',
-  off_shelf: '\u5df2\u4e0b\u67b6'
+  draft: '草稿',
+  pending_review: '待处理',
+  on_sale: '在售',
+  active: '在售',
+  locked: '交易中',
+  sold: '已售出',
+  rejected: '未发现违规',
+  off_shelf: '已下架',
+  taken_down: '已下架',
+  removed: '已下架'
 }
 
 const ORDER_STATUS_TEXT = {
-  pending_payment: '\u5f85\u4ed8\u6b3e',
-  pending_delivery: '\u5f85\u53d1\u8d27',
-  pending_receive: '\u5f85\u6536\u8d27',
-  pending_review: '\u5f85\u8bc4\u4ef7',
-  completed: '\u5df2\u5b8c\u6210',
-  refunding: '\u552e\u540e\u4e2d',
-  refunded: '\u5df2\u9000\u6b3e',
-  closed: '\u5df2\u53d6\u6d88'
+  pending_payment: '待付款',
+  pending_delivery: '待交付',
+  pending_receive: '待收货',
+  pending_review: '待评价',
+  completed: '已完成',
+  refunding: '售后中',
+  refunded: '已退款',
+  closed: '已取消'
 }
 
 const REFUND_STATUS_TEXT = {
-  pending: '\u5f85\u5904\u7406',
-  refunding: '\u9000\u6b3e\u4e2d',
-  refunded: '\u5df2\u9000\u6b3e',
-  rejected: '\u5df2\u62d2\u7edd',
-  closed: '\u5df2\u5173\u95ed'
+  pending: '待处理',
+  requested: '待处理',
+  refunding: '退款中',
+  seller_agreed: '退款中',
+  refunded: '已退款',
+  partial_refunded: '已退款',
+  rejected: '已拒绝',
+  seller_rejected: '已拒绝',
+  closed: '已关闭'
+}
+
+const REPORT_STATUS_TEXT = {
+  pending: '待处理',
+  approved: '举报成立',
+  rejected: '未发现违规',
+  malicious: '恶意举报'
 }
 
 const CONDITION_TEXT = {
-  new: '\u5168\u65b0',
-  like_new: '\u51e0\u4e4e\u5168\u65b0',
-  good: '\u8f7b\u5fae\u4f7f\u7528\u75d5\u8ff9',
-  line_new: '\u51e0\u4e4e\u5168\u65b0',
-  fair: '\u660e\u663e\u4f7f\u7528\u75d5\u8ff9'
+  new: '全新',
+  like_new: '几乎全新',
+  line_new: '几乎全新',
+  good: '轻微使用痕迹',
+  fair: '明显使用痕迹'
 }
 
-function safeText(value, fallback = '\u6682\u65e0') {
+function safeText(value, fallback = '暂无') {
   if (value === undefined || value === null) return fallback
   const text = String(value).trim()
   if (!text || text === 'undefined' || text === 'null' || text === '--' || text === '-') return fallback
@@ -43,11 +57,10 @@ function safeText(value, fallback = '\u6682\u65e0') {
 }
 
 function formatMoney(value) {
-  if (value === undefined || value === null || value === '') return '￥0'
-  const cleaned = String(value).replace(/[￥¥,\s]/g, '')
-  const number = Number(cleaned || 0)
-  if (Number.isNaN(number)) return '￥0'
-  return `￥${number.toFixed(Number.isInteger(number) ? 0 : 2)}`
+  if (value === undefined || value === null || value === '') return '¥--'
+  const number = Number(String(value).replace(/[¥￥\s]/g, ''))
+  if (Number.isNaN(number)) return '¥--'
+  return `¥${number.toFixed(Number.isInteger(number) ? 0 : 2)}`
 }
 
 function toDate(value) {
@@ -62,18 +75,18 @@ function pad(value) {
 
 function formatDateTime(value) {
   const date = toDate(value)
-  if (!date) return '\u6682\u65e0'
+  if (!date) return '暂无'
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 function formatChatTime(value) {
   const date = toDate(value)
-  if (!date) return '\u6682\u65e0'
+  if (!date) return '暂无'
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const thatDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
-  if (thatDay === today) return `\u4eca\u5929 ${pad(date.getHours())}:${pad(date.getMinutes())}`
-  if (thatDay === today - 86400000) return '\u6628\u5929'
+  if (thatDay === today) return `今天 ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  if (thatDay === today - 86400000) return '昨天'
   return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
@@ -84,7 +97,6 @@ function normalizeCampusText(value, fallback = '校内') {
   return fallback
 }
 
-
 function normalizeKey(value) {
   return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_')
 }
@@ -92,30 +104,38 @@ function normalizeKey(value) {
 function productStatusText(status) {
   const key = normalizeKey(status)
   const map = Object.assign({}, PRODUCT_STATUS_TEXT, {
-    on_sale: '在售', onsale: '在售', sale: '在售', selling: '在售',
-    offsale: '已下架', off_shelf: '已下架', removed: '已下架',
+    onsale: '在售',
+    sale: '在售',
+    selling: '在售',
+    offsale: '已下架',
     sold_out: '已售出'
   })
-  return map[key] || PRODUCT_STATUS_TEXT.on_sale
+  return map[key] || '处理中'
 }
 
 function orderStatusText(status) {
   const key = normalizeKey(status)
   const map = Object.assign({}, ORDER_STATUS_TEXT, {
-    paid: '已付款', delivered: '已发货', shipped: '已发货',
-    cancel: '已取消', cancelled: '已取消', complete: '已完成',
-    after_sale: '售后中', aftersale: '售后中'
+    paid: '已付款',
+    delivered: '已发货',
+    shipped: '已发货',
+    cancel: '已取消',
+    cancelled: '已取消',
+    complete: '已完成',
+    after_sale: '售后中',
+    aftersale: '售后中'
   })
-  return map[key] || '处理中'
+  return map[key] || '订单处理中'
 }
 
 function refundStatusText(status) {
   const key = normalizeKey(status)
-  const map = Object.assign({}, REFUND_STATUS_TEXT, {
-    requested: '待处理', request: '待处理', processing: '退款中',
-    approved: '已同意', agree: '已同意', refused: '已拒绝'
-  })
-  return map[key] || '待处理'
+  return REFUND_STATUS_TEXT[key] || '待处理'
+}
+
+function reportStatusText(status) {
+  const key = normalizeKey(status)
+  return REPORT_STATUS_TEXT[key] || '待处理'
 }
 
 function refundReasonText(value) {
@@ -144,16 +164,6 @@ function conditionText(condition) {
   const raw = safeText(condition, '')
   const key = normalizeKey(raw)
   if (CONDITION_TEXT[key]) return CONDITION_TEXT[key]
-  const extra = {
-    likenew: '几乎全新',
-    line_new: '几乎全新',
-    almost_new: '几乎全新',
-    lightly_used: '轻微使用痕迹',
-    used_good: '轻微使用痕迹',
-    normal: '成色良好',
-    old: '明显使用痕迹'
-  }
-  if (extra[key]) return extra[key]
   if (/^[a-z_\-\s]+$/.test(raw)) return '成色未填写'
   return raw || '成色未填写'
 }
@@ -161,22 +171,23 @@ function conditionText(condition) {
 function orderTip(status, role) {
   const seller = role === 'seller'
   const map = {
-    pending_payment: '\u7b49\u5f85\u4e70\u5bb6\u4ed8\u6b3e',
-    pending_delivery: seller ? '\u4e70\u5bb6\u5df2\u4ed8\u6b3e\uff0c\u5f85\u60a8\u53d1\u8d27' : '\u7b49\u5f85\u5356\u5bb6\u53d1\u8d27',
-    pending_receive: seller ? '\u5df2\u53d1\u8d27\uff0c\u7b49\u5f85\u4e70\u5bb6\u6536\u8d27' : '\u5356\u5bb6\u5df2\u53d1\u8d27\uff0c\u8bf7\u786e\u8ba4\u6536\u8d27',
-    pending_review: '\u4ea4\u6613\u5b8c\u6210\uff0c\u7b49\u5f85\u8bc4\u4ef7',
-    completed: '\u8ba2\u5355\u5df2\u5b8c\u6210',
-    refunding: '\u8ba2\u5355\u6b63\u5728\u552e\u540e\u5904\u7406\u4e2d',
-    refunded: '\u8ba2\u5355\u5df2\u9000\u6b3e',
-    closed: '\u8ba2\u5355\u5df2\u53d6\u6d88'
+    pending_payment: '等待买家付款',
+    pending_delivery: seller ? '买家已付款，待您交付' : '等待卖家交付',
+    pending_receive: seller ? '已交付，等待买家收货' : '卖家已交付，请确认收货',
+    pending_review: '交易完成，等待评价',
+    completed: '订单已完成',
+    refunding: '订单正在售后处理中',
+    refunded: '订单已退款',
+    closed: '订单已取消'
   }
-  return map[status] || '\u8ba2\u5355\u5904\u7406\u4e2d'
+  return map[status] || '订单处理中'
 }
 
 module.exports = {
   PRODUCT_STATUS_TEXT,
   ORDER_STATUS_TEXT,
   REFUND_STATUS_TEXT,
+  REPORT_STATUS_TEXT,
   CONDITION_TEXT,
   safeText,
   formatMoney,
@@ -186,6 +197,7 @@ module.exports = {
   productStatusText,
   orderStatusText,
   refundStatusText,
+  reportStatusText,
   refundReasonText,
   conditionText,
   orderTip

@@ -32,17 +32,28 @@ Page({
     campusIndex: 0,
     selectedCampusText: CAMPUS_OPTIONS[0].label,
     form: blankForm(),
-    errors: {}
+    errors: {},
+    credit: { credit_score: 100, can_publish: true, need_score_to_publish: 0 }
   },
   onLoad(options) {
     requireLogin()
     this.setData({ productId: options.id || '' })
     this.loadCategories()
+    this.loadCredit()
+  },
+  onShow() {
+    if (requireLogin()) this.loadCredit()
+  },
+  loadCredit() {
+    api.get('/users/me/credit', {}, { silentError: true }).then((credit) => this.setData({ credit }))
   },
   loadCategories() {
     api.get('/categories').then((data) => {
       const categories = data.items || []
-      this.setData({ categories, selectedCategoryText: this.data.categoryIndex >= 0 && categories[this.data.categoryIndex] ? categories[this.data.categoryIndex].name : this.data.autoCategoryText })
+      this.setData({
+        categories,
+        selectedCategoryText: this.data.categoryIndex >= 0 && categories[this.data.categoryIndex] ? categories[this.data.categoryIndex].name : this.data.autoCategoryText
+      })
       if (this.data.productId) this.loadProduct()
     })
   },
@@ -60,7 +71,7 @@ Page({
         selectedConditionText: this.data.conditionOptions[conditionIndex < 0 ? 0 : conditionIndex].label,
         campusIndex,
         selectedCampusText: CAMPUS_OPTIONS[campusIndex].label,
-        editingOnSale: product.status === 'on_sale'
+        editingOnSale: product.status === 'on_sale' || product.status === 'active'
       })
     })
   },
@@ -97,11 +108,6 @@ Page({
     const index = Number(event.detail.value)
     this.setData({ conditionIndex: index, selectedConditionText: this.data.conditionOptions[index].label, 'form.condition': this.data.conditionOptions[index].value })
   },
-  onCampusChange(event) {
-    const index = Number(event.detail.value)
-    const campus = this.data.campusOptions[index] || this.data.campusOptions[0]
-    this.setData({ campusIndex: index, selectedCampusText: campus.label, 'form.campus': campus.value })
-  },
   onCampusTap(event) {
     const index = Number(event.currentTarget.dataset.index)
     const campus = this.data.campusOptions[index] || this.data.campusOptions[0]
@@ -124,9 +130,7 @@ Page({
       loading: true
     }))).then((items) => {
       this.setData({ 'form.images': this.data.form.images.concat(items.map((item) => item.url)) })
-    }).catch(() => {
-      wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' })
-    })
+    }).catch(() => wx.showToast({ title: '图片上传失败，请稍后重试', icon: 'none' }))
   },
   removeImage(event) {
     const images = this.data.form.images.slice()
@@ -134,11 +138,7 @@ Page({
     this.setData({ 'form.images': images })
   },
   requestAi(action) {
-    const endpointMap = {
-      title: '/ai/title',
-      description: '/ai/description',
-      polish: '/ai/polish'
-    }
+    const endpointMap = { title: '/ai/title', description: '/ai/description', polish: '/ai/polish' }
     return api.post(endpointMap[action] || '/ai/description', {
       keywords: this.data.form.title || '校园闲置好物',
       title: this.data.form.title,
@@ -152,10 +152,7 @@ Page({
         wx.showToast({ title: '暂未生成标题建议', icon: 'none' })
         return
       }
-      wx.showActionSheet({
-        itemList: suggestions,
-        success: (res) => this.setData({ 'form.title': suggestions[res.tapIndex] })
-      })
+      wx.showActionSheet({ itemList: suggestions, success: (res) => this.setData({ 'form.title': suggestions[res.tapIndex] }) })
     })
   },
   useAiDescription() {
@@ -165,14 +162,18 @@ Page({
   },
   submit(event) {
     const submitAction = this.data.editingOnSale ? 'draft' : event.currentTarget.dataset.action
+    if (submitAction === 'publish' && this.data.credit && this.data.credit.can_publish === false) {
+      wx.showToast({ title: '信用分低于 60 分，暂时无法发布商品', icon: 'none' })
+      return
+    }
     const source = this.data.form
     const autoCode = source.category || classifyProduct(source.title, source.description)
     const selectedCategory = this.data.categoryIndex >= 0 ? this.data.categories[this.data.categoryIndex] : null
     const form = {
       title: source.title,
       description: source.description,
-      price: this.data.form.price === '' ? '' : Number(this.data.form.price),
-      stock: Number(this.data.form.stock || 1),
+      price: source.price === '' ? '' : Number(source.price),
+      stock: Number(source.stock || 1),
       category_id: selectedCategory ? (selectedCategory.id || '') : '',
       category: selectedCategory ? selectedCategory.code : autoCode,
       category_name: selectedCategory ? selectedCategory.name : getCategoryName(autoCode),
@@ -182,7 +183,7 @@ Page({
       cover_image: source.cover_image || '',
       campus: campusValue(source.campus)
     }
-    if (submitAction === 'review') {
+    if (submitAction === 'publish') {
       const result = validateProductForm(form)
       this.setData({ errors: result.errors })
       if (!result.valid) {
@@ -195,20 +196,21 @@ Page({
       : api.post('/products', Object.assign({}, form, { submit_action: submitAction }), { loading: true })
     save.then((product) => {
       const id = product.id || this.data.productId
-      if (this.data.productId && submitAction === 'review') {
+      if (this.data.productId && submitAction === 'publish') {
         return api.post(`/products/${id}/submit-review`, {}, { loading: true }).then(() => ({ id }))
       }
       return { id }
     }).then((product) => {
-      wx.showToast({ title: this.data.editingOnSale ? '修改已保存' : (submitAction === 'review' ? '已提交审核' : '草稿已保存'), icon: 'success' })
+      wx.showToast({ title: this.data.editingOnSale ? '修改已保存' : (submitAction === 'publish' ? '已发布' : '草稿已保存'), icon: 'success' })
       if (this.data.productId) {
         setTimeout(() => wx.navigateBack(), 400)
       } else {
         wx.redirectTo({ url: `/pages/product/detail/index?id=${product.id}` })
       }
-    }).catch(() => {
-      wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' })
-    })
+    }).catch(() => wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' }))
+  },
+  goCreditDetail() {
+    wx.navigateTo({ url: '/pages/mine/credit/index' })
   }
 })
 

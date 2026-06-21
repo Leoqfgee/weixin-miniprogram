@@ -2,14 +2,13 @@
   <view wx:if="{{products.length}}" class="list">
     <view wx:for="{{products}}" wx:key="id" class="panel item">
       <view class="title small">{{item.title}}</view>
-      <view class="muted">卖家：{{item.seller.nickname}} · ￥{{item.price}}</view>
+      <view class="muted">卖家：{{item.seller.nickname}} · ¥{{item.price}}</view>
       <view class="desc">{{item.description}}</view>
       <view class="actions">
-        <button class="ghost-btn danger" data-id="{{item.id}}" data-result="rejected" bindtap="audit">驳回</button>
-        <button class="primary-btn" data-id="{{item.id}}" data-result="approved" bindtap="audit">通过</button>
+        <button class="ghost-btn danger" data-id="{{item.id}}" bindtap="offShelf">下架</button>
       </view>
     </view>
   </view>
-  <empty-state wx:else title="暂无待审核商品"></empty-state>
-  <button class="ghost-btn refresh" bindtap="loadPending">刷新待审核</button>
+  <empty-state wx:else title="暂无在售商品"></empty-state>
+  <button class="ghost-btn refresh" bindtap="loadProducts">刷新在售商品</button>
 </view>

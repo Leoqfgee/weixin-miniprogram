@@ -1,5 +1,11 @@
 <view class="page publish-page">
-    <view class="panel image-panel">
+  <view wx:if="{{credit && credit.can_publish === false && !editingOnSale}}" class="panel credit-warning">
+    <view class="block-title">暂时无法发布</view>
+    <view class="muted">信用分低于 60 分，暂时无法发布商品。当前信用分 {{credit.credit_score}}，还差 {{credit.need_score_to_publish}} 分。</view>
+    <button class="ghost-btn" bindtap="goCreditDetail">查看信用分详情</button>
+  </view>
+
+  <view class="panel image-panel">
     <view class="panel-head"><view class="block-title">商品图片</view><text>{{form.images.length}}/9</text></view>
     <scroll-view scroll-x class="image-scroll"><view class="image-row">
       <view wx:for="{{form.images}}" wx:key="*this" class="image-wrap"><image src="{{item}}" mode="aspectFill"></image><text data-index="{{index}}" bindtap="removeImage">x</text></view>
@@ -21,7 +27,7 @@
 
   <view class="panel form-panel price-panel">
     <view class="block-title">价格 *</view>
-    <view class="price-input-row"><text>￥</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="请输入售价" /></view>
+    <view class="price-input-row"><text>¥</text><input type="digit" value="{{form.price}}" data-field="price" bindinput="setField" placeholder="请输入售价" /></view>
   </view>
 
   <view class="option-grid">
@@ -40,6 +46,10 @@
     <view class="muted trade-note">请选择商品所在校区，方便买家按校区筛选和联系交易。</view>
   </view>
 
-  <view class="agreement">提交后等待平台审核，通过后将展示给买家</view>
-  <view class="bottom-actions"><button wx:if="{{editingOnSale}}" class="primary-btn" data-action="draft" bindtap="submit">保存修改</button><button wx:else class="ghost-btn" data-action="draft" bindtap="submit">保存草稿</button><button wx:if="{{!editingOnSale}}" class="primary-btn" data-action="review" bindtap="submit">提交审核</button></view>
+  <view class="agreement">发布后商品将直接进入在售状态，买家可在首页和分类中看到。</view>
+  <view class="bottom-actions">
+    <button wx:if="{{editingOnSale}}" class="primary-btn" data-action="draft" bindtap="submit">保存修改</button>
+    <button wx:else class="ghost-btn" data-action="draft" bindtap="submit">保存草稿</button>
+    <button wx:if="{{!editingOnSale}}" class="primary-btn {{credit && credit.can_publish === false ? 'disabled' : ''}}" disabled="{{credit && credit.can_publish === false}}" data-action="publish" bindtap="submit">立即发布</button>
+  </view>
 </view>

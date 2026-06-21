@@ -1,0 +1,13 @@
+.product-card { display: flex; gap: 20rpx; align-items: center; }
+.cover { width: 132rpx; height: 132rpx; border-radius: 8rpx; background: #eef2f5; }
+.info { flex: 1; min-width: 0; }
+.reason { display: flex; justify-content: space-between; padding: 24rpx 0; border-bottom: 1rpx solid #edf0f2; }
+.reason.active { color: #16a06a; font-weight: 800; }
+textarea { box-sizing: border-box; width: 100%; height: 220rpx; padding: 20rpx; background: #f6f8fa; border-radius: 8rpx; }
+.count { margin-top: 10rpx; text-align: right; }
+.evidence-row { display: flex; gap: 16rpx; flex-wrap: wrap; }
+.evidence, .add { position: relative; width: 150rpx; height: 150rpx; border-radius: 8rpx; overflow: hidden; background: #f1f5f9; }
+.evidence image { width: 100%; height: 100%; }
+.evidence text { position: absolute; right: 8rpx; top: 8rpx; width: 36rpx; height: 36rpx; color: #fff; line-height: 36rpx; text-align: center; background: rgba(0,0,0,.45); border-radius: 50%; }
+.add { color: #16a06a; font-size: 60rpx; line-height: 150rpx; text-align: center; border: 1rpx dashed #b7d8c8; }
+.submit { margin-top: 28rpx; }

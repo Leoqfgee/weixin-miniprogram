@@ -1,0 +1,24 @@
+.metric { text-align: center; }
+.num { color: #16a06a; font-size: 56rpx; font-weight: 900; }
+.tabs { margin: 0 -24rpx 20rpx; white-space: nowrap; }
+.tabs-inner { display: inline-flex; gap: 18rpx; padding: 0 24rpx; }
+.tab { padding: 16rpx 24rpx; color: #667085; background: #fff; border-radius: 999rpx; }
+.tab.active { color: #fff; background: #16a06a; font-weight: 800; }
+.report-item { display: flex; gap: 18rpx; }
+.thumb { width: 132rpx; height: 132rpx; flex: none; border-radius: 8rpx; background: #eef2f5; }
+.main { flex: 1; min-width: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
+.detail-btn { width: 180rpx; margin: 16rpx 0 0; font-size: 24rpx; }
+.detail-mask { position: fixed; inset: 0; z-index: 99; padding: 40rpx 24rpx; background: rgba(15,23,42,.45); box-sizing: border-box; }
+.detail-panel { max-height: 92vh; overflow-y: auto; padding: 24rpx; background: #fff; border-radius: 8rpx; }
+.detail-head, .product-line, .kv { display: flex; align-items: center; justify-content: space-between; gap: 18rpx; }
+.detail-head text { color: #16a06a; }
+.product-line { justify-content: flex-start; margin: 18rpx 0; }
+.kv { align-items: flex-start; padding: 16rpx 0; border-bottom: 1rpx solid #edf0f2; }
+.kv text { color: #667085; flex: none; }
+.kv view { text-align: right; }
+.evidence-row { display: flex; gap: 14rpx; flex-wrap: wrap; }
+.evidence { width: 150rpx; height: 150rpx; border-radius: 8rpx; }
+textarea { box-sizing: border-box; width: 100%; height: 160rpx; padding: 18rpx; background: #f6f8fa; border-radius: 8rpx; }
+.deduct-input { padding: 18rpx; background: #f6f8fa; border-radius: 8rpx; }
+.handle-actions { display: grid; grid-template-columns: 1fr; gap: 14rpx; margin-top: 22rpx; }

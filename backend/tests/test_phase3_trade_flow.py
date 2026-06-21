@@ -35,7 +35,7 @@ def create_on_sale_product(client, seller_token, admin_token, stock=3, price=99.
             "images": [],
             "campus": "东校区",
             "delivery_options": ["offline_meetup"],
-            "submit_action": "review",
+            "submit_action": "publish",
         },
     )
     product_id = response.get_json()["data"]["id"]

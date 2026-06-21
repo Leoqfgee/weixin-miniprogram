@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "商品审核",
+  "navigationBarTitleText": "商品处理",
   "usingComponents": {
     "empty-state": "/components/empty-state/index"
   }

@@ -7,7 +7,7 @@
         <view class="name-line">{{user ? user.profile.nickname : '未登录'}}</view>
         <view class="campus-line">{{user ? (user.profile.campus || '未填写校区') : '请先登录'}}</view>
         <view wx:if="{{user}}" class="profile-tags">
-          <text>信用分 {{user.credit_score || 100}}</text>
+          <text catchtap="goCredit">信用分 {{user.credit_score || 100}} · {{user.credit_level || '信用良好'}}</text>
         </view>
       </view>
       <button wx:if="{{!user}}" class="primary-btn action" catchtap="goLogin">去登录</button>
@@ -33,6 +33,7 @@
   <view wx:if="{{user}}" class="panel grid-panel">
     <view class="section-title">我的服务</view>
     <view class="service-grid">
+      <view class="service-item" bindtap="goCredit"><image class="service-icon-img" src="/assets/icons/my-service.png" mode="aspectFit"></image><view>信用分详情</view></view>
       <view class="service-item" bindtap="goFavorites"><image class="service-icon-img" src="/assets/icons/my-favorite.png" mode="aspectFit"></image><view>我的收藏</view></view>
       <view class="service-item" bindtap="goAddresses"><image class="service-icon-img" src="/assets/icons/my-address.png" mode="aspectFit"></image><view>收货地址</view></view>
       <view class="service-item" bindtap="goRefunds"><image class="service-icon-img" src="/assets/icons/my-refund.png" mode="aspectFit"></image><view>售后</view></view>
@@ -44,8 +45,8 @@
 
   <view wx:if="{{isAdmin}}" class="panel admin-panel">
     <view class="section-title">管理员工具</view>
-    <view class="admin-entry" bindtap="goAdminProducts"><view class="title small">商品审核</view><view class="muted">审核待上架商品</view></view>
-    <view class="admin-entry" bindtap="goRefunds"><view class="title small">售后退款单</view><view class="muted">查看和跟踪平台售后申请</view></view>
+    <view class="admin-entry" bindtap="goAdminReportHandle"><view class="title small">举报处理</view><view class="muted">处理待处理举报、扣分和商品下架</view></view>
+    <view class="admin-entry" bindtap="goRefunds"><view class="title small">售后退款单</view><view class="muted">查看和跟进平台售后申请</view></view>
     <view class="admin-entry" bindtap="goAdminAppeals"><view class="title small">申诉仲裁</view><view class="muted">处理平台介入申请</view></view>
     <view class="admin-entry" bindtap="goAdminReports"><view class="title small">统计报表</view><view class="muted">查看发布、成交和活跃数据</view></view>
     <view class="admin-entry" bindtap="goAdminLogs"><view class="title small">后台日志</view><view class="muted">查看操作日志和基础统计</view></view>

@@ -92,7 +92,7 @@ class ProductRepository:
 
     def build_public_query(self, filters):
         query = {
-            "status": "on_sale",
+            "status": {"$in": ["on_sale", "active"]},
             "deleted_at": {"$exists": False},
             "stock": {"$gt": 0},
         }

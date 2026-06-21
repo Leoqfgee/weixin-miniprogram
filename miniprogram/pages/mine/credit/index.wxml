@@ -1,0 +1,36 @@
+<view class="page credit-page">
+  <view wx:if="{{credit}}" class="panel score-card">
+    <view class="score">{{credit.credit_score}}</view>
+    <view class="level">{{credit.credit_level}}</view>
+    <view class="muted">发布商品：{{credit.can_publish ? '允许' : '暂时限制'}} · 聊天：{{credit.can_chat ? '允许' : '暂时限制'}}</view>
+    <view wx:if="{{!credit.can_publish}}" class="warning">距离恢复发布还差 {{credit.need_score_to_publish}} 分</view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">信用分变动流水</view>
+    <view wx:if="{{records.length}}" class="record-list">
+      <view wx:for="{{records}}" wx:key="id" class="record">
+        <view>
+          <view class="text-strong">{{item.reason_text || item.reason_type}}</view>
+          <view class="muted">{{item.change_type_text}} · {{item.created_at_text}}</view>
+        </view>
+        <view class="delta {{item.change_value > 0 ? 'plus' : 'minus'}}">{{item.sign}}{{item.change_value}}</view>
+      </view>
+    </view>
+    <empty-state wx:else title="暂无信用分变动"></empty-state>
+  </view>
+
+  <view wx:if="{{credit}}" class="panel rules">
+    <view class="section-title">信用分机制说明</view>
+    <view class="block-title">信用等级</view>
+    <view wx:for="{{credit.rules.level_rules}}" wx:key="range" class="rule-line"><text>{{item.range}}</text><text>{{item.label}}</text></view>
+    <view class="block-title">扣分规则</view>
+    <view wx:for="{{credit.rules.deduct_rules}}" wx:key="reason_type" class="rule-line"><text>{{item.label}}</text><text>-{{item.score}} 分</text></view>
+    <view class="block-title">恢复规则</view>
+    <view wx:for="{{credit.rules.recover_rules}}" wx:key="*this" class="muted bullet">- {{item}}</view>
+    <view class="block-title">发布与聊天限制</view>
+    <view class="muted">{{credit.rules.limits}}</view>
+    <view class="block-title">申诉说明</view>
+    <view class="muted">{{credit.rules.appeal}}</view>
+  </view>
+</view>

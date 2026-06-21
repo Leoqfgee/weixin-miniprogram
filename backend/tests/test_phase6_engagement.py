@@ -32,7 +32,7 @@ def create_product_and_order(client, seller_token, admin_token, buyer_token):
             "images": [],
             "campus": "东校区",
             "delivery_options": ["meetup"],
-            "submit_action": "review",
+            "submit_action": "publish",
         },
     )
     product_id = product_response.get_json()["data"]["id"]

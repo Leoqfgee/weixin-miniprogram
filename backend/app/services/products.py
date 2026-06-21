@@ -11,10 +11,11 @@ from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
+from .credit import CreditService
 
 
-PRODUCT_STATUSES = {"draft", "pending_review", "rejected", "on_sale", "locked", "sold", "off_shelf"}
-EDITABLE_STATUSES = {"draft", "rejected", "off_shelf", "on_sale"}
+PRODUCT_STATUSES = {"draft", "pending_review", "rejected", "on_sale", "active", "locked", "sold", "off_shelf", "taken_down", "removed"}
+EDITABLE_STATUSES = {"draft", "rejected", "off_shelf", "on_sale", "active"}
 CONDITIONS = {"new", "like_new", "good", "fair"}
 
 
@@ -25,6 +26,7 @@ class ProductService:
         self.categories = CategoryRepository(db)
         self.users = UserRepository(db)
         self.operation_logs = OperationLogRepository(db)
+        self.credit = CreditService(db)
 
     def list_products(self, args, current_user=None):
         page = max(int(args.get("page", 1)), 1)
@@ -251,9 +253,13 @@ class ProductService:
     def create_product(self, user_id, payload):
         self._reject_client_status(payload)
         submit_action = payload.get("submit_action", "draft")
-        status = "pending_review" if submit_action == "review" else "draft"
-        if submit_action not in {"draft", "review"}:
+        if submit_action == "review":
+            submit_action = "publish"
+        status = "draft" if submit_action == "draft" else "on_sale"
+        if submit_action not in {"draft", "publish"}:
             raise ValidationError("参数校验失败", [{"field": "submit_action", "message": "提交动作不合法"}])
+        if submit_action == "publish":
+            self.credit.ensure_can_publish(user_id)
         data = self._validate_product_payload(payload, partial=submit_action == "draft")
 
         product = {
@@ -276,9 +282,9 @@ class ProductService:
             "review": {"reason": "", "audited_by": None, "audited_at": None},
             "sold_count": 0,
         }
+        if submit_action == "publish":
+            self._ensure_publish_ready(product)
         created = self.products.create(product)
-        if submit_action == "review":
-            self._ensure_review_ready(created)
         return self._present(created, {"_id": ObjectId(str(user_id)), "roles": []})
 
     def update_product(self, product_id, user_id, payload):
@@ -298,15 +304,16 @@ class ProductService:
         product = self._get_existing(product_id)
         self._ensure_owner(product, user_id)
         if product["status"] not in {"draft", "rejected", "off_shelf"}:
-            raise ConflictError("当前商品状态不允许提交审核")
-        self._ensure_review_ready(product)
-        updated = self.products.update_fields(product["_id"], {"status": "pending_review"})
+            raise ConflictError("当前商品状态不允许立即发布")
+        self.credit.ensure_can_publish(user_id)
+        self._ensure_publish_ready(product)
+        updated = self.products.update_fields(product["_id"], {"status": "on_sale"})
         return self._present(updated, {"_id": ObjectId(str(user_id)), "roles": []})
 
     def audit_product(self, product_id, admin_user, payload, trace_id=None):
         product = self._get_existing(product_id)
         if product["status"] != "pending_review":
-            raise ConflictError("只有待审核商品可以审核")
+            raise ConflictError("当前商品状态不允许处理")
 
         result = payload.get("result")
         reason = (payload.get("reason") or "").strip()
@@ -343,7 +350,7 @@ class ProductService:
         is_admin = "admin" in current_user.get("roles", [])
         if not is_admin:
             self._ensure_owner(product, current_user["_id"])
-        if product["status"] != "on_sale":
+        if product["status"] not in {"on_sale", "active"}:
             raise ConflictError("只有在售商品可以下架")
 
         reason = ((payload or {}).get("reason") or "").strip()
@@ -362,7 +369,7 @@ class ProductService:
     def delete_product(self, product_id, user_id):
         product = self._get_existing(product_id)
         self._ensure_owner(product, user_id)
-        if product["status"] not in {"sold", "off_shelf"}:
+        if product["status"] not in {"sold", "off_shelf", "taken_down", "removed"}:
             raise ConflictError("只有已售出或已下架商品可以删除")
         self.products.update_fields(product["_id"], {"deleted_at": utc_now()})
         return {"deleted": True, "id": str(product["_id"])}
@@ -370,16 +377,19 @@ class ProductService:
     def republish_product(self, product_id, user_id):
         product = self._get_existing(product_id)
         self._ensure_owner(product, user_id)
-        if product["status"] not in {"sold", "off_shelf"}:
+        if product["status"] not in {"sold", "off_shelf", "taken_down", "removed"}:
             raise ConflictError("只有已售出或已下架商品可以重新发布")
         stock = max(int(product.get("stock", 0) or 0), 1)
-        self._ensure_review_ready({**product, "stock": stock})
+        self.credit.ensure_can_publish(user_id)
+        self._ensure_publish_ready({**product, "stock": stock})
         updated = self.products.update_fields(
             product["_id"],
             {
-                "status": "pending_review",
+                "status": "on_sale",
                 "stock": stock,
                 "review": {"result": "", "reason": "", "audited_by": None, "audited_at": None},
+                "taken_down_reason": "",
+                "taken_down_report_id": None,
             },
         )
         return self._present(updated, {"_id": ObjectId(str(user_id)), "roles": []})
@@ -525,13 +535,26 @@ class ProductService:
             missing.append("stock")
         if missing:
             raise ValidationError(
-                "商品信息不完整，无法提交审核",
-                [{"field": field, "message": "提交审核前必须填写"} for field in missing],
+                "商品信息不完整，无法发布",
+                [{"field": field, "message": "立即发布前必须填写"} for field in missing],
             )
 
     def _reject_client_status(self, payload):
         if "status" in payload:
             raise ValidationError("参数校验失败", [{"field": "status", "message": "商品状态由后端控制"}])
+
+    def _ensure_publish_ready(self, product):
+        missing = []
+        for field in ["title", "description", "price", "campus"]:
+            if not product.get(field):
+                missing.append(field)
+        if product.get("stock", 0) <= 0:
+            missing.append("stock")
+        if missing:
+            raise ValidationError(
+                "商品信息不完整，无法发布",
+                [{"field": field, "message": "立即发布前必须填写"} for field in missing],
+            )
 
     def _ensure_owner(self, product, user_id):
         if str(product.get("seller_id")) != str(user_id):
@@ -615,26 +638,30 @@ class ProductService:
         actions = {
             "can_edit": False,
             "can_submit_review": False,
+            "can_publish": False,
             "can_off_shelf": False,
             "can_buy": False,
             "can_audit": False,
             "can_force_off_shelf": False,
             "can_delete": False,
             "can_republish": False,
+            "can_report": False,
         }
-        if status == "on_sale" and not is_owner:
+        if status in {"on_sale", "active"} and not is_owner:
             actions["can_buy"] = True
+            actions["can_report"] = True
         if is_owner and status in EDITABLE_STATUSES:
             actions["can_edit"] = True
         if is_owner and status in {"draft", "rejected"}:
             actions["can_submit_review"] = True
-        if is_owner and status == "on_sale":
+            actions["can_publish"] = True
+        if is_owner and status in {"on_sale", "active"}:
             actions["can_off_shelf"] = True
         if "admin" in roles and status == "pending_review":
             actions["can_audit"] = True
-        if "admin" in roles and status == "on_sale":
+        if "admin" in roles and status in {"on_sale", "active"}:
             actions["can_force_off_shelf"] = True
-        if is_owner and status in {"sold", "off_shelf"}:
+        if is_owner and status in {"sold", "off_shelf", "taken_down", "removed"}:
             actions["can_delete"] = True
             actions["can_republish"] = True
         return actions
@@ -713,7 +740,7 @@ class FavoriteService:
                 item["favorited_price"] = favorited_price
                 item["favorited_at"] = row.get("created_at").isoformat() if row.get("created_at") else None
                 item["price_dropped"] = favorited_price is not None and current_price < float(favorited_price)
-                item["favorite_invalid"] = product.get("status") == "off_shelf"
+                item["favorite_invalid"] = product.get("status") in {"off_shelf", "taken_down", "removed"}
                 item["favorite_valid"] = product.get("status") in {"on_sale", "locked", "sold"}
                 item["favorite_note"] = _favorite_note(item)
                 stats["all"] += 1
@@ -769,7 +796,7 @@ class FavoriteService:
         removed = 0
         for row in rows:
             product = self.products.find_by_id(row["product_id"])
-            if product and product.get("status") == "off_shelf":
+            if product and product.get("status") in {"off_shelf", "taken_down", "removed"}:
                 result = self.db.favorites.delete_one({"_id": row["_id"]})
                 removed += result.deleted_count
                 if result.deleted_count:

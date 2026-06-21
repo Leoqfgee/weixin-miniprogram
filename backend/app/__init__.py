@@ -15,6 +15,7 @@ from .blueprints.orders import orders_bp
 from .blueprints.payments import payments_bp
 from .blueprints.products import products_bp
 from .blueprints.refunds import refunds_bp
+from .blueprints.reports import reports_bp
 from .blueprints.reviews import reviews_bp
 from .blueprints.users import users_bp
 from .config import Config
@@ -52,6 +53,7 @@ def create_app(config_class=Config):
     app.register_blueprint(messages_bp, url_prefix=api_prefix)
     app.register_blueprint(reviews_bp, url_prefix=api_prefix)
     app.register_blueprint(refunds_bp, url_prefix=api_prefix)
+    app.register_blueprint(reports_bp, url_prefix=api_prefix)
     app.register_blueprint(ai_bp, url_prefix=api_prefix)
     app.register_blueprint(files_bp, url_prefix=api_prefix)
     app.register_blueprint(appeals_bp, url_prefix=api_prefix)

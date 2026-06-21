@@ -4,7 +4,7 @@
     <view class="grid">
       <view>用户 {{stats.users}}</view>
       <view>在售 {{stats.products_on_sale}}</view>
-      <view>待审 {{stats.products_pending_review}}</view>
+      <view>待处理 {{stats.products_pending_review}}</view>
       <view>订单 {{stats.orders}}</view>
     </view>
   </view>

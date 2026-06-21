@@ -14,6 +14,7 @@ from ..repositories.users import UserRepository
 from ..utils.errors import AppError, ConflictError, ForbiddenError, NotFoundError, ValidationError
 from ..utils.images import normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
+from .credit import CreditService
 
 
 def utc_now():
@@ -51,8 +52,10 @@ class MessageService:
         self.db = db
         self.users = UserRepository(db)
         self.products = ProductRepository(db)
+        self.credit = CreditService(db)
 
     def send_message(self, sender_id, payload):
+        self.credit.ensure_can_chat(sender_id)
         receiver_id = to_object_id(payload.get("receiver_id"), "receiver_id")
         product_id = payload.get("product_id")
         order_id = to_object_id(payload.get("order_id"), "order_id") if payload.get("order_id") else None
@@ -253,6 +256,7 @@ class ReviewService:
         self.orders = OrderRepository(db)
         self.products = ProductRepository(db)
         self.logs = BusinessLogRepository(db)
+        self.credit = CreditService(db)
 
     def create_review(self, reviewer_id, payload):
         order_id = to_object_id(payload.get("order_id"), "order_id")
@@ -296,6 +300,9 @@ class ReviewService:
             for item in self.db.order_items.find({"order_id": order_id}):
                 self.products.mark_sold(item["product_id"])
                 self.logs.create("product_sold", "product", item["product_id"], reviewer_object_id, "buyer", "locked", "sold")
+            self.credit.recover_for_completed_order(order["seller_id"], order_id)
+            if rating >= 4:
+                self.credit.recover_for_good_review(order["seller_id"], order_id)
         self.logs.create("create_review", "order", order_id, reviewer_object_id, reviewer_role, order["status"], to_status)
         self._append_review_message(order, review, reviewee_id)
         return self._present_review(review)

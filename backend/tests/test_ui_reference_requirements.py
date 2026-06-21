@@ -13,7 +13,7 @@ def _create_product(client, seller_token, admin_token, title, description, categ
         "images": [],
         "campus": "东校区",
         "delivery_options": ["meetup"],
-        "submit_action": "review",
+        "submit_action": "publish",
     }
     if category:
         payload["category"] = category
@@ -21,13 +21,8 @@ def _create_product(client, seller_token, admin_token, title, description, categ
     response = client.post("/api/v1/products", headers=auth_headers(seller_token), json=payload)
     assert response.status_code == 201
     product = response.get_json()["data"]
-    audit = client.post(
-        f"/api/v1/admin/products/{product['id']}/audit",
-        headers=auth_headers(admin_token),
-        json={"result": "approved", "reason": "ui reference requirement"},
-    )
-    assert audit.status_code == 200
-    return audit.get_json()["data"]
+    assert product["status"] == "on_sale"
+    return product
 
 
 def test_auto_category_and_manual_category_priority():

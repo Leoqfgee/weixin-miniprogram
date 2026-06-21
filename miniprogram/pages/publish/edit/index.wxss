@@ -36,6 +36,9 @@
 .campus-choice-group { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14rpx; min-width: 0; }
 .campus-choice { height: 72rpx; line-height: 70rpx; text-align: center; color: #168b5a; background: #f6fffa; border: 2rpx solid #b8e6d0; border-radius: 16rpx; font-size: 27rpx; font-weight: 900; box-sizing: border-box; }
 .campus-choice.active { color: #fff; background: #18b86c; border-color: #18b86c; box-shadow: 0 8rpx 18rpx rgba(24,184,108,.22); }
+.credit-warning { border: 1rpx solid #fde2c5; background: #fff8ef; }
+.credit-warning .ghost-btn { margin: 18rpx 0 0; width: 260rpx; }
+.primary-btn.disabled, button[disabled].primary-btn { color: #fff; background: #b8c6bf; }
 .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18rpx; margin: 20rpx 0; }
 .option-card { display: flex; align-items: center; gap: 16rpx; min-height: 112rpx; padding: 20rpx; background: #fff; border: 1rpx solid #e8f0ea; border-radius: 20rpx; box-shadow: 0 10rpx 24rpx rgba(31,41,51,.05); }
 .option-icon { display: flex; align-items: center; justify-content: center; flex: none; width: 56rpx; height: 56rpx; color: #0f9f5b; background: #eaf8f0; border-radius: 18rpx; font-size: 30rpx; font-weight: 900; }

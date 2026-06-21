@@ -13,6 +13,7 @@ from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, Unautho
 from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.jwt import create_token
 from ..utils.serializers import serialize_doc, to_object_id
+from .credit import CreditService, credit_level
 
 
 def utc_now():
@@ -254,6 +255,7 @@ class UserService:
         self.db = db
         self.users = UserRepository(db)
         self.products = ProductRepository(db)
+        self.credit = CreditService(db)
 
     def get_me(self, user_id):
         user = self.users.find_by_id(user_id)
@@ -279,6 +281,7 @@ class UserService:
         )
         summary = build_user_summary(user, profile)
         summary["stats"] = self._account_stats(user["_id"])
+        summary["credit"] = self.credit.detail(user["_id"])
         return summary
 
     def update_me(self, user_id, payload):
@@ -353,7 +356,16 @@ class UserService:
         user = self.users.find_by_id(user_id)
         summary = build_user_summary(user, profile)
         summary["stats"] = self._account_stats(user["_id"])
+        summary["credit"] = self.credit.detail(user["_id"])
         return summary
+
+    def get_credit(self, user_id):
+        detail = self.credit.detail(user_id)
+        detail["records"] = self.credit.records(user_id, {"page": 1, "page_size": 10})["items"]
+        return detail
+
+    def list_credit_records(self, user_id, args):
+        return self.credit.records(user_id, args)
 
     def get_public_profile(self, user_id):
         user = self.users.find_by_id(user_id)
@@ -540,6 +552,9 @@ def build_user_summary(user, profile=None):
     if "bio" not in profile_data:
         profile_data["bio"] = ""
     profile_data["campus"] = normalize_campus(profile_data.get("campus"), "")
+    credit_score = int(profile_data.get("credit_score", 100) or 100)
+    profile_data["credit_score"] = credit_score
+    profile_data["credit_level"] = credit_level(credit_score)
     return {
         "id": str(user["_id"]),
         "openid_mask": _mask_openid(user.get("openid")),
@@ -550,6 +565,8 @@ def build_user_summary(user, profile=None):
         "avatar_url": avatar_url,
         "profile_completed": profile_completed,
         "identity_type": identity_type,
+        "credit_score": credit_score,
+        "credit_level": profile_data["credit_level"],
         "last_login_at": user.get("last_login_at").isoformat() if user.get("last_login_at") else None,
         "profile": profile_data,
     }

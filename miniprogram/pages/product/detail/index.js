@@ -104,6 +104,12 @@ Page({
     const request = product.is_favorited ? api.del(`/favorites/${product.id}`) : api.post('/favorites', { product_id: product.id })
     request.then(() => this.loadProduct())
   },
+  reportProduct() {
+    if (!requireLogin()) return
+    const product = this.data.product
+    if (!product || !product.id) return
+    wx.navigateTo({ url: `/pages/report/apply/index?product_id=${product.id}` })
+  },
   goSellerProfile() {
     const seller = this.data.product && this.data.product.seller
     if (seller && seller.id) wx.navigateTo({ url: `/pages/profile/home/index?id=${seller.id}` })
@@ -120,7 +126,7 @@ Page({
   republish() {
     wx.showModal({
       title: '重新发布商品',
-      content: '商品将重新提交管理员审核，审核通过后恢复在售。',
+      content: '商品将直接恢复在售。',
       success: (res) => {
         if (!res.confirm) return
         api.post(`/products/${this.data.id}/republish`, {}, { loading: true }).then(() => this.loadProduct())

@@ -44,6 +44,9 @@ Page({
   goAdminProducts() {
     wx.navigateTo({ url: '/pages/admin/products/index' })
   },
+  goAdminReportHandle() {
+    wx.navigateTo({ url: '/pages/admin/report-handle/index' })
+  },
   goAdminLogs() {
     wx.navigateTo({ url: '/pages/admin/logs/index' })
   },
@@ -84,6 +87,9 @@ Page({
     const user = this.data.user
     if (!user) return
     wx.navigateTo({ url: `/pages/profile/home/index?id=${user.id}` })
+  },
+  goCredit() {
+    wx.navigateTo({ url: '/pages/mine/credit/index' })
   },
   logout() {
     clearAuth()

@@ -1,0 +1,51 @@
+<view class="page admin-report-page">
+  <view class="panel metric">
+    <view class="num">{{pendingCount}}</view>
+    <view class="muted">待处理举报</view>
+  </view>
+
+  <scroll-view scroll-x class="tabs"><view class="tabs-inner">
+    <view wx:for="{{tabs}}" wx:key="value" class="tab {{index === activeIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="switchTab">{{item.label}}</view>
+  </view></scroll-view>
+
+  <view wx:if="{{reports.length}}" class="list">
+    <view wx:for="{{reports}}" wx:key="id" class="panel report-item">
+      <image class="thumb" src="{{item.product_image}}" mode="aspectFill"></image>
+      <view class="main">
+        <view class="row"><view class="title small">{{item.product_title_snapshot}}</view><status-badge type="report" status="{{item.status}}"></status-badge></view>
+        <view class="muted">卖家：{{item.seller_nickname_snapshot}} · 举报人：{{item.reporter_nickname_snapshot}}</view>
+        <view class="muted">原因：{{item.reason_text}} · {{item.created_at_text}}</view>
+        <button class="ghost-btn detail-btn" data-id="{{item.id}}" bindtap="viewDetail">查看详情</button>
+      </view>
+    </view>
+  </view>
+  <empty-state wx:else title="暂无举报记录"></empty-state>
+
+  <view wx:if="{{selected}}" class="detail-mask">
+    <view class="detail-panel">
+      <view class="detail-head"><view class="section-title">举报详情</view><text bindtap="closeDetail">关闭</text></view>
+      <view class="product-line"><image class="thumb" src="{{selected.product_image}}" mode="aspectFill"></image><view><view class="text-strong">{{selected.product_title_snapshot}}</view><view class="muted">状态：{{selected.status_text}}</view></view></view>
+      <view class="kv"><text>卖家</text><view>{{selected.seller_nickname_snapshot}} · 信用分 {{selected.seller.credit_score}}</view></view>
+      <view class="kv"><text>举报人</text><view>{{selected.reporter_nickname_snapshot}} · 信用分 {{selected.reporter.credit_score}}</view></view>
+      <view class="kv"><text>举报原因</text><view>{{selected.reason_text}}</view></view>
+      <view class="kv"><text>补充说明</text><view>{{selected.description || '未填写'}}</view></view>
+      <view class="block-title">凭证图片</view>
+      <view wx:if="{{selected.evidence_images.length}}" class="evidence-row">
+        <image wx:for="{{selected.evidence_images}}" wx:key="*this" class="evidence" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewEvidence"></image>
+      </view>
+      <view wx:else class="muted">未上传凭证图片</view>
+      <view wx:if="{{selected.status === 'pending'}}">
+        <view class="block-title">管理员备注</view>
+        <textarea value="{{adminNote}}" bindinput="onNote" placeholder="填写处理依据"></textarea>
+        <view class="block-title">扣分值</view>
+        <input class="deduct-input" type="number" value="{{creditDeduct}}" bindinput="onDeduct" />
+        <view class="handle-actions">
+          <button class="primary-btn" data-result="approved" bindtap="handle">举报成立</button>
+          <button class="ghost-btn" data-result="rejected" bindtap="handle">举报不成立</button>
+          <button class="ghost-btn danger" data-result="malicious" bindtap="handle">恶意举报</button>
+        </view>
+      </view>
+      <view wx:else class="muted">处理备注：{{selected.admin_note || '无'}}</view>
+    </view>
+  </view>
+</view>

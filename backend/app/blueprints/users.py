@@ -14,6 +14,20 @@ def get_me():
     return success_response(data)
 
 
+@users_bp.get("/users/me/credit")
+@auth_required
+def get_my_credit():
+    data = UserService(current_app.db).get_credit(g.current_user_id)
+    return success_response(data)
+
+
+@users_bp.get("/users/me/credit/records")
+@auth_required
+def list_my_credit_records():
+    data = UserService(current_app.db).list_credit_records(g.current_user_id, request.args)
+    return success_response(data)
+
+
 @users_bp.put("/users/me")
 @auth_required
 def update_me():

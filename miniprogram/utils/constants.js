@@ -4,15 +4,9 @@ const API_PREFIX = '/api/v1'
 const CLOUD_RUN_PUBLIC_BASE_URL = 'https://flask-fnnj-267255-4-1440900946.sh.run.tcloudbase.com/api/v1'
 
 const ENV_CONFIG = {
-  develop: {
-    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
-  },
-  trial: {
-    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
-  },
-  release: {
-    API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL
-  }
+  develop: { API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL },
+  trial: { API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL },
+  release: { API_BASE_URL: CLOUD_RUN_PUBLIC_BASE_URL }
 }
 
 function getEnvVersion() {
@@ -37,12 +31,18 @@ const STORAGE_KEYS = {
 
 const PRODUCT_STATUS_TEXT = {
   draft: '草稿',
-  pending_review: '待审核',
+  pending_review: '待处理',
   on_sale: '在售',
+  active: '在售',
   locked: '交易中',
   sold: '已售出',
-  rejected: '已驳回',
-  off_shelf: '已下架'
+  rejected: '未发现违规',
+  off_shelf: '已下架',
+  taken_down: '已下架',
+  removed: '已下架',
+  pending: '待处理',
+  approved: '举报成立',
+  malicious: '恶意举报'
 }
 
 const ORDER_STATUS_TEXT = {
@@ -52,7 +52,7 @@ const ORDER_STATUS_TEXT = {
   pending_review: '待评价',
   completed: '交易完成',
   closed: '已取消',
-  refunding: '退款/售后中',
+  refunding: '售后中',
   refunded: '已退款'
 }
 
@@ -84,8 +84,8 @@ function getCategoryName(code) {
 function classifyProduct(title, description) {
   const text = `${title || ''} ${description || ''}`.toLowerCase()
   const rules = [
-    ['digital', ['手机', '电脑', '耳机', '键盘', '鼠标', '充电宝', '平板', '相机', '数据线', '显示器', '蓝牙', '罗技', '机械键盘']],
-    ['book', ['教材', '高数', '高等数学', '英语', '考研', '四六级', '课本', '小说', '资料', '笔记', '书籍', '图书', '同济']],
+    ['digital', ['手机', '电脑', '耳机', '键盘', '鼠标', '充电器', '平板', '相机', '数据线', '显示器', '蓝牙']],
+    ['book', ['教材', '高数', '英语', '考研', '四六级', '课本', '小说', '资料', '笔记', '书籍', '图书']],
     ['clothing', ['衣服', '外套', '鞋', '包', '背包', '双肩包', '帽子', '裙子', '裤子', '卫衣']],
     ['home', ['台灯', '收纳', '椅子', '桌子', '床上用品', '水杯', '雨伞', '镜子', '插排', '宿舍']]
   ]

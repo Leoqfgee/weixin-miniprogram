@@ -66,23 +66,22 @@ def test_product_review_flow():
         headers=auth_headers(seller_token),
     )
     assert submit_response.status_code == 200
-    assert submit_response.get_json()["data"]["status"] == "pending_review"
+    assert submit_response.get_json()["data"]["status"] == "on_sale"
 
     admin_list_response = client.get(
-        "/api/v1/admin/products?status=pending_review",
+        "/api/v1/admin/products?status=on_sale",
         headers=auth_headers(admin_token),
     )
     assert admin_list_response.status_code == 200
-    pending_items = admin_list_response.get_json()["data"]["items"]
-    assert any(item["id"] == product["id"] for item in pending_items)
+    on_sale_items = admin_list_response.get_json()["data"]["items"]
+    assert any(item["id"] == product["id"] for item in on_sale_items)
 
     audit_response = client.post(
         f"/api/v1/admin/products/{product['id']}/audit",
         headers=auth_headers(admin_token),
         json={"result": "approved", "reason": "测试通过", "test_case": "phase2"},
     )
-    assert audit_response.status_code == 200
-    assert audit_response.get_json()["data"]["status"] == "on_sale"
+    assert audit_response.status_code == 409
 
     list_response = client.get(f"/api/v1/products?keyword={title}&mode=latest")
     items = list_response.get_json()["data"]["items"]
@@ -115,7 +114,7 @@ def test_product_review_flow():
             "images": [],
             "campus": "东校区",
             "delivery_options": ["meetup"],
-            "submit_action": "review",
+            "submit_action": "publish",
         },
     )
     assert other_create.status_code == 201
@@ -125,7 +124,7 @@ def test_product_review_flow():
         headers=auth_headers(admin_token),
         json={"result": "approved", "reason": "推荐全量排序测试", "test_case": "phase2"},
     )
-    assert other_audit.status_code == 200
+    assert other_audit.status_code == 409
 
     recommend_response = client.get("/api/v1/products?mode=recommend", headers=auth_headers(buyer_token))
     assert recommend_response.status_code == 200
@@ -169,10 +168,10 @@ def test_product_review_flow():
         {
             "target_type": "product",
             "target_id": ObjectId(product["id"]),
-            "action": {"$in": ["product_audit", "product_force_off_shelf"]},
+            "action": {"$in": ["product_force_off_shelf"]},
         }
     )
-    assert log_count == 2
+    assert log_count == 1
 
 
 def test_debug_storage_masks_secrets():

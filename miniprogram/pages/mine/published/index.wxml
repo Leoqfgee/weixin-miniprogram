@@ -15,7 +15,7 @@
       </view>
       <view class="actions">
         <button wx:if="{{item.allowed_actions.can_edit}}" class="ghost-btn" data-id="{{item.id}}" bindtap="editProduct">编辑</button>
-        <button wx:if="{{item.allowed_actions.can_submit_review}}" class="ghost-btn" data-id="{{item.id}}" bindtap="submitReview">提交审核</button>
+        <button wx:if="{{item.allowed_actions.can_publish}}" class="ghost-btn" data-id="{{item.id}}" bindtap="publishNow">立即发布</button>
         <button wx:if="{{item.allowed_actions.can_off_shelf}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="offShelf">下架</button>
         <button wx:if="{{item.allowed_actions.can_republish}}" class="primary-btn" data-id="{{item.id}}" bindtap="republish">重新发布</button>
         <button wx:if="{{item.allowed_actions.can_delete}}" class="ghost-btn danger" data-id="{{item.id}}" bindtap="deleteProduct">删除</button>

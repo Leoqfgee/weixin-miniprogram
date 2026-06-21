@@ -103,18 +103,12 @@ def test_incomplete_draft_edit_and_mutual_anonymous_reviews_in_chat():
     edit = client.put(
         f"/api/v1/products/{product_id}",
         headers=auth_headers(seller_token),
-        json={"title": "Edited draft", "price": 22, "category_id": category_id, "condition": ""},
+        json={"title": "Edited draft", "price": 22, "category_id": category_id, "condition": "", "campus": "东校区"},
     )
     assert edit.status_code == 200
     submit = client.post(f"/api/v1/products/{product_id}/submit-review", headers=auth_headers(seller_token))
     assert submit.status_code == 200
-    assert submit.get_json()["data"]["status"] == "pending_review"
-
-    client.post(
-        f"/api/v1/admin/products/{product_id}/audit",
-        headers=auth_headers(admin_token),
-        json={"result": "approved", "reason": "mobile completion test"},
-    )
+    assert submit.get_json()["data"]["status"] == "on_sale"
     order = client.post(
         "/api/v1/orders",
         headers=auth_headers(buyer_token, "mutual-review-mobile-completion"),
@@ -197,7 +191,7 @@ def test_on_sale_edit_republish_delete_and_admin_support_contact():
 
     republished = client.post(f"/api/v1/products/{editable_id}/republish", headers=auth_headers(seller_token))
     assert republished.status_code == 200
-    assert republished.get_json()["data"]["status"] == "pending_review"
+    assert republished.get_json()["data"]["status"] == "on_sale"
 
     deletable_id = create_on_sale_product(client, seller_token, admin_token, stock=1)
     client.post(f"/api/v1/products/{deletable_id}/off-shelf", headers=auth_headers(seller_token), json={})

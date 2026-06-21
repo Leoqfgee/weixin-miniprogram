@@ -8,6 +8,7 @@
     "pages/message/chat/index",
     "pages/mine/index/index",
     "pages/mine/published/index",
+    "pages/mine/credit/index",
     "pages/settings/index",
     "pages/profile/edit/index",
     "pages/profile/home/index",
@@ -20,6 +21,7 @@
     "pages/favorite/index",
     "pages/login/index",
     "pages/product/detail/index",
+    "pages/report/apply/index",
     "pages/order/confirm/index",
     "pages/order/detail/index",
     "pages/refund/list/index",
@@ -28,6 +30,7 @@
     "pages/appeal/apply/index",
     "pages/delivery/form/index",
     "pages/admin/products/index",
+    "pages/admin/report-handle/index",
     "pages/admin/appeals/index",
     "pages/admin/reports/index",
     "pages/admin/logs/index"
