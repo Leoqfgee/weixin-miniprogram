@@ -13,6 +13,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.config import Config  # noqa: E402
 from app.domain.categories import CATEGORY_DEFINITIONS, category_name  # noqa: E402
+from app.services.content_moderation import DEFAULT_BANNED_WORDS  # noqa: E402
 
 
 COLLECTIONS = [
@@ -29,6 +30,10 @@ COLLECTIONS = [
     "deliveries",
     "messages",
     "reviews",
+    "reports",
+    "student_verifications",
+    "banned_words",
+    "content_block_records",
     "refunds",
     "appeals",
     "operation_logs",
@@ -244,6 +249,15 @@ def ensure_indexes(db):
     db.messages.create_index([("receiver_id", ASCENDING), ("read_at", ASCENDING)])
     db.reviews.create_index([("order_id", ASCENDING), ("reviewer_id", ASCENDING)], unique=True)
     db.reviews.create_index([("reviewee_id", ASCENDING), ("created_at", DESCENDING)])
+    db.reports.create_index([("target_type", ASCENDING), ("status", ASCENDING), ("created_at", DESCENDING)])
+    db.reports.create_index([("reporter_id", ASCENDING), ("target_user_id", ASCENDING), ("status", ASCENDING)])
+    db.reports.create_index([("reporter_id", ASCENDING), ("product_id", ASCENDING), ("status", ASCENDING)])
+    db.student_verifications.create_index([("user_id", ASCENDING), ("status", ASCENDING)])
+    db.student_verifications.create_index([("status", ASCENDING), ("created_at", DESCENDING)])
+    db.banned_words.create_index([("word", ASCENDING)], unique=True)
+    db.banned_words.create_index([("enabled", ASCENDING), ("category", ASCENDING)])
+    db.content_block_records.create_index([("scene", ASCENDING), ("created_at", DESCENDING)])
+    db.content_block_records.create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
     db.refunds.create_index([("order_id", ASCENDING), ("status", ASCENDING)])
     db.refunds.create_index([("buyer_id", ASCENDING), ("status", ASCENDING)])
     db.refunds.create_index([("seller_id", ASCENDING), ("status", ASCENDING)])
@@ -281,6 +295,26 @@ def seed_categories(db):
             upsert=True,
         )
     print(f"seeded categories: {len(BASE_CATEGORIES)}")
+
+
+def seed_banned_words(db):
+    count = 0
+    for item in DEFAULT_BANNED_WORDS:
+        db.banned_words.update_one(
+            {"word": item["word"]},
+            {
+                "$set": {
+                    "category": item.get("category", "default"),
+                    "severity": item.get("severity", "medium"),
+                    "enabled": True,
+                    "updated_at": now(),
+                },
+                "$setOnInsert": {"created_at": now()},
+            },
+            upsert=True,
+        )
+        count += 1
+    print(f"seeded banned words: {count}")
 
 
 def seed_users(db):
@@ -435,6 +469,7 @@ def initialize_database(reset_demo=False):
         ensure_collections(db)
         ensure_indexes(db)
         seed_categories(db)
+        seed_banned_words(db)
         seed_users(db)
         result = reset_demo_products(db) if reset_demo else {"created_or_updated_products": 0}
         if not reset_demo:

@@ -56,8 +56,17 @@ function request(options) {
     header.Authorization = `Bearer ${token}`
   }
 
+  let loadingVisible = false
   if (options.loading) {
     wx.showLoading({ title: options.loadingText || '加载中' })
+    loadingVisible = true
+  }
+
+  const hideLoadingIfNeeded = () => {
+    if (loadingVisible) {
+      wx.hideLoading()
+      loadingVisible = false
+    }
   }
 
   return new Promise((resolve, reject) => {
@@ -73,6 +82,7 @@ function request(options) {
           resolve(payload.data || {})
           return
         }
+        hideLoadingIfNeeded()
         showError(res.statusCode, payload, options)
         reject({ statusCode: res.statusCode, payload, message: extractErrorMessage(res.statusCode, payload) })
       },
@@ -83,9 +93,7 @@ function request(options) {
         reject(err)
       },
       complete() {
-        if (options.loading) {
-          wx.hideLoading()
-        }
+        hideLoadingIfNeeded()
       }
     })
   })
@@ -148,6 +156,7 @@ function uploadFile(options) {
           resolve(payload.data || {})
           return
         }
+        hideLoadingIfNeeded()
         showError(res.statusCode, payload, options)
         reject({ statusCode: res.statusCode, payload, message: extractErrorMessage(res.statusCode, payload) })
       },

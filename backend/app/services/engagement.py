@@ -14,6 +14,7 @@ from ..repositories.users import UserRepository
 from ..utils.errors import AppError, ConflictError, ForbiddenError, NotFoundError, ValidationError
 from ..utils.images import normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
+from .content_moderation import ContentModerationService
 from .credit import CreditService
 
 
@@ -62,6 +63,8 @@ class MessageService:
         message_type = (payload.get("message_type") or "text").strip()
         content = (payload.get("content") or "").strip()
         image_url = (payload.get("image_url") or "").strip()
+        if message_type in {"text", "product", "review"} and content:
+            ContentModerationService(self.db).validate_fields(sender_id, {"chat": content})
         if message_type not in {"text", "image", "video", "voice", "product", "review", "system"}:
             raise ValidationError("参数校验失败", [{"field": "message_type", "message": "消息类型不合法"}])
         if message_type in {"image", "video", "voice"} and not image_url:
@@ -273,6 +276,7 @@ class ReviewService:
         if not isinstance(rating, int) or rating < 1 or rating > 5:
             raise ValidationError("参数校验失败", [{"field": "rating", "message": "评分必须为 1-5"}])
         content = (payload.get("content") or "").strip()
+        ContentModerationService(self.db).validate_fields(reviewer_id, {"review": content})
         reviewer_object_id = ObjectId(str(reviewer_id))
         reviewee_id = order["seller_id"] if is_buyer else order["buyer_id"]
         reviewer_role = "buyer" if is_buyer else "seller"

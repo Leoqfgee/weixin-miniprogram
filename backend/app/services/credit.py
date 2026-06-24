@@ -20,10 +20,12 @@ def clamp_score(value):
 
 def credit_level(score):
     score = clamp_score(score)
+    if score == 100:
+        return "信用优秀"
     if score >= 90:
         return "信用良好"
     if score >= 70:
-        return "信用正常"
+        return "信用一般"
     if score >= 60:
         return "信用偏低"
     return "限制发布"
@@ -151,8 +153,17 @@ class CreditService:
         if change_value is None:
             target_score = payload.get("target_score")
             if target_score is None:
-                raise ValidationError("参数校验失败", [{"field": "change_value", "message": "请填写调整分值"}])
-            change_value = clamp_score(target_score) - self.get_score(user_id)
+                raise ValidationError("参数校验失败", [{"field": "target_score", "message": "请填写调整后的信用分"}])
+            try:
+                target_score = int(target_score)
+            except (TypeError, ValueError) as exc:
+                raise ValidationError("参数校验失败", [{"field": "target_score", "message": "信用分必须是 0-100 的整数"}]) from exc
+            if target_score < 0 or target_score > 100:
+                raise ValidationError("参数校验失败", [{"field": "target_score", "message": "信用分只能是 0-100"}])
+            current_score = self.get_score(user_id)
+            change_value = target_score - current_score
+            if change_value == 0:
+                return {"credit": self.detail(user_id), "record": None}
         return self.adjust(
             user_id=user_id,
             change_value=change_value,
@@ -198,8 +209,9 @@ class CreditService:
 def credit_rules():
     return {
         "level_rules": [
-            {"range": "90-100", "label": "信用良好"},
-            {"range": "70-89", "label": "信用正常"},
+            {"range": "100", "label": "信用优秀"},
+            {"range": "90-99", "label": "信用良好"},
+            {"range": "70-89", "label": "信用一般"},
             {"range": "60-69", "label": "信用偏低"},
             {"range": "0-59", "label": "限制发布"},
         ],

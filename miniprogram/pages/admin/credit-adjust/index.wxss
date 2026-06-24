@@ -1,0 +1,9 @@
+.search-row { display: flex; gap: 12rpx; }
+.search-row input, .input, .textarea { box-sizing: border-box; width: 100%; padding: 18rpx; background: #f6f8fa; border-radius: 8rpx; }
+.search-row input { flex: 1; }
+.search-row button { width: 132rpx; }
+.user-row, .record-row { padding: 18rpx 0; border-bottom: 1rpx solid #edf0f2; }
+.score-line { margin-bottom: 16rpx; color: #16a06a; font-size: 34rpx; font-weight: 900; }
+.input { margin-bottom: 10rpx; }
+.adjust-tip { margin-bottom: 16rpx; color: #8a96a3; font-size: 24rpx; line-height: 1.5; }
+.textarea { height: 150rpx; margin-bottom: 16rpx; }

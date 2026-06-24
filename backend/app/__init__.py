@@ -17,6 +17,7 @@ from .blueprints.products import products_bp
 from .blueprints.refunds import refunds_bp
 from .blueprints.reports import reports_bp
 from .blueprints.reviews import reviews_bp
+from .blueprints.student_verification import student_verification_bp
 from .blueprints.users import users_bp
 from .config import Config
 from .extensions import mongo
@@ -54,6 +55,7 @@ def create_app(config_class=Config):
     app.register_blueprint(reviews_bp, url_prefix=api_prefix)
     app.register_blueprint(refunds_bp, url_prefix=api_prefix)
     app.register_blueprint(reports_bp, url_prefix=api_prefix)
+    app.register_blueprint(student_verification_bp, url_prefix=api_prefix)
     app.register_blueprint(ai_bp, url_prefix=api_prefix)
     app.register_blueprint(files_bp, url_prefix=api_prefix)
     app.register_blueprint(appeals_bp, url_prefix=api_prefix)

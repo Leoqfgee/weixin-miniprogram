@@ -196,8 +196,8 @@ Page({
     }).then(() => {
       wx.showToast({ title: submitAction === 'publish' ? '已发布' : '修改已保存', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 400)
-    }).catch(() => {
-      wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' })
+    }).catch((err) => {
+      wx.showToast({ title: (err && err.message) || '商品保存失败，请稍后重试', icon: 'none' })
     })
   }
 })

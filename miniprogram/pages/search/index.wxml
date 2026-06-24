@@ -1,0 +1,69 @@
+<view class="search-page">
+  <view class="search-top">
+    <view class="back-btn" bindtap="goBack">‹</view>
+    <view class="search-card">
+      <view class="input-line">
+        <input value="{{keyword}}" bindinput="onInput" confirm-type="search" bindconfirm="doSearch" focus placeholder="搜索商品 / 用户 / 关键词" />
+        <view class="camera-icon">⌾</view>
+        <button class="search-submit" bindtap="doSearch">搜索</button>
+      </view>
+      <view class="ai-row">
+        <view class="ai-pill">✦ AI智搜 <text>更精准</text></view>
+        <switch checked="{{aiEnabled}}" color="#16A06A" bindchange="toggleAi"></switch>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{aiMessage}}" class="ai-message">{{aiMessage}}</view>
+
+  <view wx:if="{{!searched}}" class="suggest-panel">
+    <view class="section-title-line">
+      <text>历史搜索</text>
+      <view wx:if="{{history.length}}" class="clear" bindtap="clearHistory">⌫ 全部</view>
+    </view>
+    <view wx:if="{{history.length}}" class="tag-wrap">
+      <view wx:for="{{history}}" wx:key="*this" class="keyword-tag" data-keyword="{{item}}" bindtap="useKeyword">{{item}}</view>
+    </view>
+    <view wx:else class="empty-tip">暂无搜索历史</view>
+
+    <view class="section-title-line second">
+      <text>我常买的</text>
+    </view>
+    <view wx:if="{{commonBought.length}}" class="tag-wrap">
+      <view wx:for="{{commonBought}}" wx:key="*this" class="keyword-tag hot" data-keyword="{{item}}" bindtap="useKeyword">{{item}}</view>
+    </view>
+    <view wx:else class="empty-tip">完成交易后会生成常买推荐</view>
+
+    <view class="section-title-line second">
+      <text>我常看的</text>
+    </view>
+    <view wx:if="{{commonViewed.length}}" class="tag-wrap">
+      <view wx:for="{{commonViewed}}" wx:key="*this" class="keyword-tag blue" data-keyword="{{item}}" bindtap="useKeyword">{{item}}</view>
+    </view>
+    <view wx:else class="empty-tip">浏览商品后会生成常看推荐</view>
+  </view>
+
+  <view wx:if="{{searched}}" class="result-area">
+    <view class="result-tabs">
+      <view wx:for="{{tabs}}" wx:key="value" class="result-tab {{resultTab === item.value ? 'active' : ''}}" data-tab="{{item.value}}" bindtap="switchTab">{{item.label}}</view>
+    </view>
+
+    <view wx:if="{{resultTab === 'products' && products.length}}" class="product-list">
+      <product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
+    </view>
+    <empty-state wx:elif="{{resultTab === 'products'}}" title="未找到相关商品" description="换个关键词再试试"></empty-state>
+
+    <view wx:if="{{resultTab === 'users' && users.length}}" class="user-list">
+      <view wx:for="{{users}}" wx:key="id" class="user-card" data-id="{{item.id}}" bindtap="openUser">
+        <image wx:if="{{item.avatar_url}}" class="avatar" src="{{item.avatar_url}}" mode="aspectFill"></image>
+        <view wx:else class="avatar avatar-text">同</view>
+        <view class="user-info">
+          <view class="user-name">{{item.nickname}} <text wx:if="{{item.student_verify_status === 'verified'}}" class="verify">已认证</text></view>
+          <view class="user-meta">{{item.campus || '未填写校区'}} · 信用分 {{item.credit_score}} · 在售 {{item.on_sale_count}}</view>
+        </view>
+        <view class="arrow">›</view>
+      </view>
+    </view>
+    <empty-state wx:elif="{{resultTab === 'users'}}" title="未找到相关用户" description="可以换昵称、校区或用户名试试"></empty-state>
+  </view>
+</view>

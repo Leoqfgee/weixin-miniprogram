@@ -1,0 +1,47 @@
+<view class="page admin-moderation-page">
+  <view class="panel">
+    <view class="section-title">批量添加违禁词</view>
+    <view class="muted help">基础词库会随数据库初始化自动写入；这里用于后续补充维护。可一次粘贴多个词，用换行、空格或逗号分隔。</view>
+    <textarea class="word-input" placeholder="例如：违规词1&#10;违规词2&#10;违规词3" value="{{wordText}}" bindinput="onWordInput"></textarea>
+
+    <view class="block-title">分类</view>
+    <view class="chip-row">
+      <view wx:for="{{categories}}" wx:key="value" class="chip {{category === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="chooseCategory">{{item.label}}</view>
+    </view>
+
+    <view class="block-title">风险等级</view>
+    <view class="chip-row">
+      <view wx:for="{{severities}}" wx:key="value" class="chip {{severity === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="chooseSeverity">{{item.label}}</view>
+    </view>
+
+    <button class="primary-btn add-btn" bindtap="addWords">添加到词库</button>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">词库列表</view>
+    <view wx:if="{{words.length}}" class="word-list">
+      <view wx:for="{{words}}" wx:key="id" class="word-row">
+        <view class="word-main">
+          <view class="text-strong">{{item.word}}</view>
+          <view class="muted">{{item.category}} · {{item.severity}} · {{item.enabled ? '启用' : '停用'}}</view>
+        </view>
+        <view class="actions">
+          <button class="ghost-btn" data-id="{{item.id}}" data-enabled="{{item.enabled}}" bindtap="toggleWord">{{item.enabled ? '停用' : '启用'}}</button>
+          <button class="ghost-btn danger" data-id="{{item.id}}" bindtap="deleteWord">删除</button>
+        </view>
+      </view>
+    </view>
+    <empty-state wx:else title="暂无违禁词"></empty-state>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">最近拦截记录</view>
+    <view wx:if="{{records.length}}" class="record-list">
+      <view wx:for="{{records}}" wx:key="id" class="record-row">
+        <view class="text-strong">{{item.scene}} · {{item.risk_level}}</view>
+        <view class="muted">{{item.content_snapshot}}</view>
+      </view>
+    </view>
+    <empty-state wx:else title="暂无拦截记录"></empty-state>
+  </view>
+</view>

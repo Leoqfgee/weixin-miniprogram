@@ -30,7 +30,13 @@ Page({
   data: {
     loading: false,
     products: [],
+    users: [],
     keyword: '',
+    resultTab: 'products',
+    resultTabs: [
+      { label: '商品', value: 'products' },
+      { label: '用户', value: 'users' }
+    ],
     categories: [],
     activeCategory: '',
     authKey: '',
@@ -139,8 +145,21 @@ Page({
     this.setData({ keyword: event.detail.value })
   },
 
+  openSearch() {
+    const q = this.data.keyword.trim()
+    wx.navigateTo({ url: `/pages/search/index${q ? `?q=${encodeURIComponent(q)}` : ''}` })
+  },
+
   goSearch() {
-    this.loadProducts(this.data.activeMode, false)
+    this.openSearch()
+  },
+
+  switchResultTab(event) {
+    this.setData({ resultTab: event.currentTarget.dataset.tab || 'products' })
+  },
+
+  openUser(event) {
+    wx.navigateTo({ url: `/pages/profile/home/index?id=${event.currentTarget.dataset.id}` })
   },
 
   goCategory(event) {

@@ -36,3 +36,13 @@
 .filter-icon { width: 22rpx; height: 22rpx; border: 3rpx solid #687380; border-top: 0; border-left: 0; transform: rotate(45deg); }
 .mode-loading { padding: 30rpx 0; color: #8a94a1; text-align: center; }
 .product-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18rpx; }
+.result-tabs { display: flex; gap: 12rpx; margin: 6rpx 0 18rpx; padding: 8rpx; background: #fff; border-radius: 8rpx; }
+.result-tab { flex: 1; height: 56rpx; line-height: 56rpx; text-align: center; color: #667085; border-radius: 8rpx; font-size: 25rpx; }
+.result-tab.active { color: #fff; background: #16a06a; font-weight: 800; }
+.user-result-list { display: flex; flex-direction: column; gap: 16rpx; }
+.user-result { display: flex; align-items: center; gap: 18rpx; padding: 22rpx; background: #fff; border-radius: 8rpx; box-shadow: 0 8rpx 22rpx rgba(31,41,51,.05); }
+.user-avatar { width: 92rpx; height: 92rpx; border-radius: 50%; background: #eaf0ec; }
+.user-avatar.placeholder { display: flex; align-items: center; justify-content: center; color: #fff; background: #16a06a; font-weight: 900; }
+.user-main { flex: 1; min-width: 0; }
+.user-name { color: #202733; font-size: 30rpx; font-weight: 900; }
+.verify-mini { margin-left: 8rpx; padding: 3rpx 8rpx; color: #0f8f58; background: #e8f8ef; border-radius: 8rpx; font-size: 20rpx; }

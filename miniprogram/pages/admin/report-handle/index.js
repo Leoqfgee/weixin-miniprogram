@@ -11,10 +11,18 @@ const tabs = [
   { label: '恶意举报', value: 'malicious' }
 ]
 
+const typeTabs = [
+  { label: '全部', value: '' },
+  { label: '商品举报', value: 'product' },
+  { label: '用户举报', value: 'user' }
+]
+
 Page({
   data: {
     tabs,
+    typeTabs,
     activeIndex: 1,
+    activeTypeIndex: 0,
     reports: [],
     pendingCount: 0,
     selected: null,
@@ -34,30 +42,36 @@ Page({
     this.setData({ activeIndex: Number(event.currentTarget.dataset.index), selected: null })
     this.loadReports()
   },
+  switchType(event) {
+    this.setData({ activeTypeIndex: Number(event.currentTarget.dataset.index), selected: null })
+    this.loadReports()
+  },
   loadReports() {
     const tab = this.data.tabs[this.data.activeIndex]
-    api.get('/admin/reports', { status: tab.value, page: 1, page_size: 50 }, { loading: true }).then((data) => {
+    const type = this.data.typeTabs[this.data.activeTypeIndex]
+    api.get('/admin/reports', { status: tab.value, target_type: type.value, page: 1, page_size: 50 }, { loading: true }).then((data) => {
       this.setData({
         pendingCount: data.pending_count || 0,
-        reports: (data.items || []).map((item) => ({
-          ...item,
-          status_text: item.status_text || reportStatusText(item.status),
-          product_image: normalizeImageUrl(item.product_image_snapshot || (item.product && item.product.cover_image), 'product'),
-          created_at_text: formatDateTime(item.created_at)
-        }))
+        reports: (data.items || []).map((item) => this.prepareReport(item))
       })
+    })
+  },
+  prepareReport(item) {
+    const isUser = item.target_type === 'user'
+    return Object.assign({}, item, {
+      status_text: item.status_text || reportStatusText(item.status),
+      target_title: isUser ? ((item.target_user && item.target_user.nickname) || item.target_user_nickname_snapshot || '被举报用户') : (item.product_title_snapshot || (item.product && item.product.title) || '被举报商品'),
+      target_subtitle: isUser ? '用户举报' : '商品举报',
+      product_image: normalizeImageUrl(item.product_image_snapshot || (item.product && item.product.cover_image), 'product'),
+      created_at_text: formatDateTime(item.created_at),
+      handled_at_text: formatDateTime(item.handled_at)
     })
   },
   viewDetail(event) {
     const id = event.currentTarget.dataset.id
     api.get(`/admin/reports/${id}`, {}, { loading: true }).then((report) => {
       this.setData({
-        selected: Object.assign({}, report, {
-          status_text: report.status_text || reportStatusText(report.status),
-          product_image: normalizeImageUrl(report.product_image_snapshot || (report.product && report.product.cover_image), 'product'),
-          created_at_text: formatDateTime(report.created_at),
-          handled_at_text: formatDateTime(report.handled_at)
-        }),
+        selected: this.prepareReport(report),
         adminNote: report.admin_note || '',
         creditDeduct: report.credit_deduct || defaultDeduct(report.reason_type)
       })
@@ -71,15 +85,11 @@ Page({
   },
   handle(event) {
     const result = event.currentTarget.dataset.result
+    const typeText = this.data.selected && this.data.selected.target_type === 'user' ? '用户举报' : '商品举报'
     const titleMap = { approved: '确认举报成立', rejected: '确认举报不成立', malicious: '确认恶意举报' }
-    const contentMap = {
-      approved: '举报成立后商品将下架，并按扣分值扣除卖家信用分。',
-      rejected: '举报不成立后商品状态不变，不扣卖家信用分。',
-      malicious: '恶意举报会扣除举报人信用分，商品状态不变。'
-    }
     wx.showModal({
       title: titleMap[result],
-      content: contentMap[result],
+      content: `即将处理该${typeText}，处理结果会通知相关用户。`,
       success: (res) => {
         if (!res.confirm) return
         api.post(`/admin/reports/${this.data.selected.id}/handle`, {
@@ -112,6 +122,9 @@ function defaultDeduct(reasonType) {
     spam: 5,
     harassment: 10,
     fraud: 20,
+    illegal_product: 20,
+    malicious_trade: 10,
+    fake_identity: 10,
     other: 5
   }[reasonType] || 5
 }

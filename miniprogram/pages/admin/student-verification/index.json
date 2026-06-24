@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "学生认证审核",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
+}

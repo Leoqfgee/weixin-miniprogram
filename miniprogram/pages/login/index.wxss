@@ -103,15 +103,23 @@
 .phone-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18rpx;
+  gap: 12rpx;
   margin-top: 26rpx;
 }
 
 .phone-actions button {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 78rpx;
   line-height: 78rpx;
   margin: 0;
+  padding: 0 10rpx;
   border-radius: 999rpx;
+  font-size: 26rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .panel-head {

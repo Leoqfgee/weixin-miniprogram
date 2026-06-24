@@ -1,0 +1,34 @@
+<view class="page admin-credit-page">
+  <view class="panel">
+    <view class="section-title">搜索用户</view>
+    <view class="search-row">
+      <input placeholder="输入昵称、手机号、学校或校区" value="{{keyword}}" bindinput="onKeyword" confirm-type="search" bindconfirm="searchUsers" />
+      <button class="primary-btn" bindtap="searchUsers">搜索</button>
+    </view>
+    <view wx:if="{{users.length}}" class="user-list">
+      <view wx:for="{{users}}" wx:key="id" class="user-row" data-id="{{item.id}}" bindtap="selectUser">
+        <view><view class="text-strong">{{item.nickname}}</view><view class="muted">{{item.campus || '未填写校区'}} · 当前 {{item.credit_score}} 分</view></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{selected}}" class="panel">
+    <view class="section-title">调整 {{selected.nickname}} 的信用分</view>
+    <view class="score-line">当前信用分：{{selected.credit_score}}</view>
+    <input class="input" type="number" placeholder="请输入调整后的信用分，0-100" data-field="targetScore" value="{{targetScore}}" bindinput="onInput" confirm-type="done" />
+    <view class="adjust-tip">直接填写最终信用分，例如填 80 表示将该用户信用分改为 80 分。</view>
+    <textarea class="textarea" placeholder="必须填写调整原因" data-field="reasonText" value="{{reasonText}}" bindinput="onInput"></textarea>
+    <button class="primary-btn" bindtap="adjustCredit">确认修改</button>
+  </view>
+
+  <view wx:if="{{selected}}" class="panel">
+    <view class="section-title">最近信用分流水</view>
+    <view wx:if="{{records.length}}">
+      <view wx:for="{{records}}" wx:key="id" class="record-row">
+        <view class="text-strong">{{item.reason_text || item.reason_type}}</view>
+        <view class="muted">{{item.change_value}} 分：{{item.before_score}} → {{item.after_score}}</view>
+      </view>
+    </view>
+    <empty-state wx:else title="暂无信用分流水"></empty-state>
+  </view>
+</view>

@@ -1,0 +1,52 @@
+<view class="page verification-page">
+  <view wx:if="{{application && application.status === 'verified'}}" class="verified-card">
+    <view class="verified-title">已认证</view>
+    <view class="verified-desc">你的学生认证已通过审核</view>
+  </view>
+
+  <view wx:elif="{{application && application.status === 'pending'}}" class="pending-card">
+    <view class="pending-title">认证审核中</view>
+    <view class="pending-desc">申请已提交，请等待管理员审核</view>
+    <view class="pending-info">
+      <view class="info-item"><text class="label">申请编号</text><text class="value">{{application.verification_no}}</text></view>
+      <view class="info-item"><text class="label">学校</text><text class="value">{{application.school}}</text></view>
+    </view>
+  </view>
+
+  <view wx:elif="{{application && application.status === 'rejected'}}" class="rejected-card">
+    <view class="rejected-title">认证未通过</view>
+    <view class="rejected-desc">{{application.reject_reason || application.admin_note || '请核对材料后重新提交'}}</view>
+    <button class="primary-btn reapply-btn" bindtap="reApply">重新提交</button>
+  </view>
+
+  <view wx:else class="form-section">
+    <view class="section-title">学生认证</view>
+    <view class="section-desc">请上传清晰的学生证照片，填写学校、姓名和学号信息。</view>
+
+    <view class="form-item">
+      <view class="form-label">学生证照片 <text class="required">*</text></view>
+      <view wx:if="{{cardImage}}" class="image-item" bindtap="previewCard">
+        <image src="{{cardImage}}" mode="aspectFill"></image>
+      </view>
+      <view wx:else class="image-item add-btn" bindtap="chooseCardImage">
+        <text class="add-icon">+</text>
+        <text class="add-text">上传照片</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">学校 <text class="required">*</text></view>
+      <input class="form-input" placeholder="请输入学校名称" data-field="school" value="{{school}}" bindinput="onInput" />
+    </view>
+    <view class="form-item">
+      <view class="form-label">姓名 <text class="required">*</text></view>
+      <input class="form-input" placeholder="请输入真实姓名" data-field="realName" value="{{realName}}" bindinput="onInput" />
+    </view>
+    <view class="form-item">
+      <view class="form-label">学号</view>
+      <input class="form-input" placeholder="请输入学号" data-field="studentNo" value="{{studentNo}}" bindinput="onInput" />
+    </view>
+
+    <button class="primary-btn submit-btn" bindtap="submitApplication" disabled="{{submitting}}">提交认证申请</button>
+  </view>
+</view>

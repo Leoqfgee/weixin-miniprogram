@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "调整信用分",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/index"
+  }
+}

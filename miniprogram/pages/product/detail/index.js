@@ -3,6 +3,14 @@ const { requireLogin } = require('../../../utils/auth')
 const { DEFAULT_AVATAR_IMAGE, DEFAULT_PRODUCT_IMAGE, normalizeImageList, normalizeImageUrl } = require('../../../utils/image')
 const { safeText, formatMoney, normalizeCampusText, productStatusText, conditionText } = require('../../../utils/format')
 
+function normalizeScore(value) {
+  if (value === 0 || value === '0') return 0
+  if (value === undefined || value === null || value === '') return 100
+  const score = Number(value)
+  if (Number.isNaN(score)) return 100
+  return Math.max(0, Math.min(100, score))
+}
+
 Page({
   data: {
     id: '',
@@ -42,7 +50,7 @@ Page({
             avatar_url: sellerAvatar,
             display_name: safeText(seller.nickname, '\u6821\u56ed\u540c\u5b66'),
             display_campus: normalizeCampusText(seller.campus || product.campus, '\u6821\u5185\u4ea4\u6613'),
-            display_credit: Number(seller.credit_score || 100)
+            display_credit: normalizeScore(seller.credit_score)
           })
         }),
         gallery: normalizeImageList(product.images && product.images.length ? product.images : [product.cover_image], 'product'),

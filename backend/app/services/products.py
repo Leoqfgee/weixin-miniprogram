@@ -11,6 +11,7 @@ from ..repositories.users import UserRepository
 from ..utils.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
 from ..utils.images import normalize_image_list, normalize_image_url
 from ..utils.serializers import serialize_doc, to_object_id
+from .content_moderation import ContentModerationService
 from .credit import CreditService
 
 
@@ -261,6 +262,7 @@ class ProductService:
         if submit_action == "publish":
             self.credit.ensure_can_publish(user_id)
         data = self._validate_product_payload(payload, partial=submit_action == "draft")
+        self._moderate_product_text(user_id, data)
 
         product = {
             "title": "",
@@ -297,6 +299,7 @@ class ProductService:
         data = self._validate_product_payload(payload, partial=True)
         if not data:
             raise ValidationError("参数校验失败", [{"field": "body", "message": "没有可更新字段"}])
+        self._moderate_product_text(user_id, data)
         updated = self.products.update_fields(product["_id"], data)
         return self._present(updated, {"_id": ObjectId(str(user_id)), "roles": []})
 
@@ -542,6 +545,15 @@ class ProductService:
     def _reject_client_status(self, payload):
         if "status" in payload:
             raise ValidationError("参数校验失败", [{"field": "status", "message": "商品状态由后端控制"}])
+
+    def _moderate_product_text(self, user_id, data):
+        fields = {}
+        if "title" in data:
+            fields["product_title"] = data.get("title")
+        if "description" in data:
+            fields["product_desc"] = data.get("description")
+        if fields:
+            ContentModerationService(self.db).validate_fields(user_id, fields)
 
     def _ensure_publish_ready(self, product):
         missing = []

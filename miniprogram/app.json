@@ -1,6 +1,7 @@
 {
   "pages": [
     "pages/index/index",
+    "pages/search/index",
     "pages/category/index",
     "pages/publish/edit/index",
     "pages/publish/product-edit/index",
@@ -22,6 +23,8 @@
     "pages/login/index",
     "pages/product/detail/index",
     "pages/report/apply/index",
+    "pages/report/user-report/index",
+    "pages/student-verification/apply/index",
     "pages/order/confirm/index",
     "pages/order/detail/index",
     "pages/refund/list/index",
@@ -33,6 +36,9 @@
     "pages/admin/report-handle/index",
     "pages/admin/appeals/index",
     "pages/admin/reports/index",
+    "pages/admin/student-verification/index",
+    "pages/admin/content-moderation/index",
+    "pages/admin/credit-adjust/index",
     "pages/admin/logs/index"
   ],
   "window": {

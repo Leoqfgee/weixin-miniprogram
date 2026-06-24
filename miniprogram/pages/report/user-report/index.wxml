@@ -1,0 +1,42 @@
+<view class="page report-page">
+  <view class="panel">
+    <view class="section-title">举报用户</view>
+    <view wx:if="{{user}}" class="report-target">
+      <image wx:if="{{user.avatar}}" class="target-avatar" src="{{user.avatar}}" mode="aspectFill"></image>
+      <view wx:else class="target-avatar placeholder">用</view>
+      <view class="target-info">
+        <view class="target-name">{{user.nickname}}</view>
+        <view class="target-tip">请选择原因并补充必要说明</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">举报原因</view>
+    <view class="reason-grid">
+      <view wx:for="{{reasons}}" wx:key="value" class="reason-item {{reasonType === item.value ? 'active' : ''}}" data-value="{{item.value}}" bindtap="chooseReason">{{item.label}}</view>
+    </view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">补充说明</view>
+    <textarea placeholder="请描述具体情况，最多 200 字" value="{{description}}" bindinput="onDescription" maxlength="200"></textarea>
+    <view class="char-count">{{description.length}}/200</view>
+  </view>
+
+  <view class="panel">
+    <view class="section-title">凭证图片</view>
+    <view class="evidence-upload">
+      <view wx:for="{{evidenceImages}}" wx:key="index" class="evidence-item">
+        <image src="{{item}}" mode="aspectFill"></image>
+        <view class="evidence-remove" data-index="{{index}}" bindtap="removeEvidence">×</view>
+      </view>
+      <view wx:if="{{evidenceImages.length < 3}}" class="evidence-add" bindtap="chooseEvidence">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <button class="primary-btn submit-btn" bindtap="submitReport">提交举报</button>
+</view>

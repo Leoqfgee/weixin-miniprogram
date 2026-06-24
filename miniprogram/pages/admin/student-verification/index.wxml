@@ -1,0 +1,70 @@
+<view class="page admin-verification-page">
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="key" class="tab-item {{currentTab === item.value ? 'active' : ''}}" data-tab="{{item.value}}" bindtap="onTabChange">
+      <text>{{item.label}}</text>
+      <text wx:if="{{item.value === 'pending' && pendingCount > 0}}" class="badge">{{pendingCount}}</text>
+    </view>
+  </view>
+
+  <view class="list-section">
+    <view wx:if="{{applications.length}}" class="application-list">
+      <view wx:for="{{applications}}" wx:key="id" class="application-item {{selected && selected.id === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="selectApplication">
+        <view class="item-header">
+          <text class="user-name">{{item.user.nickname}}</text>
+          <text class="status-tag {{item.status}}">{{item.status_text}}</text>
+        </view>
+        <view class="item-info">
+          <text class="info-text">申请编号：{{item.verification_no}}</text>
+          <text class="info-text">提交时间：{{item.created_at}}</text>
+          <text class="info-text">学校：{{item.school || item.school_name || '未填写'}}</text>
+        </view>
+      </view>
+    </view>
+    <empty-state wx:else title="暂无认证申请"></empty-state>
+  </view>
+
+  <view wx:if="{{selected}}" class="detail-modal">
+    <view class="modal-mask" bindtap="closeDetail"></view>
+    <view class="modal-content">
+      <view class="modal-header">
+        <text class="modal-title">认证申请详情</text>
+        <text class="close-btn" bindtap="closeDetail">×</text>
+      </view>
+      <view class="modal-body">
+        <view class="detail-section">
+          <view class="section-label">申请人信息</view>
+          <view class="user-info-card" bindtap="goUserProfile">
+            <text class="user-name">{{selected.user.nickname}}</text>
+            <text class="user-credit">信用分：{{selected.user.credit_score}}</text>
+            <text class="view-profile">查看主页 ></text>
+          </view>
+          <view class="info-row"><text class="label">学校：</text><text class="value">{{selected.school || selected.school_name}}</text></view>
+          <view class="info-row"><text class="label">姓名：</text><text class="value">{{selected.real_name}}</text></view>
+          <view class="info-row"><text class="label">学号：</text><text class="value">{{selected.student_no || selected.student_id || '未填写'}}</text></view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">学生证照片</view>
+          <view class="image-grid">
+            <view wx:for="{{selected.student_card_images}}" wx:key="index" class="image-item">
+              <image src="{{item}}" mode="aspectFill" data-url="{{item}}" data-urls="{{selected.student_card_images}}" bindtap="previewImage"></image>
+            </view>
+          </view>
+        </view>
+
+        <view class="detail-section">
+          <view class="section-label">审核备注</view>
+          <textarea wx:if="{{selected.status === 'pending'}}" class="note-input" placeholder="驳回时必须填写原因" value="{{adminNote}}" bindinput="onNoteChange" maxlength="200"></textarea>
+          <view wx:else class="note-display">{{selected.admin_note || selected.reject_reason || '无审核备注'}}</view>
+        </view>
+      </view>
+      <view wx:if="{{selected.status === 'pending'}}" class="modal-footer">
+        <button class="reject-btn" bindtap="rejectApplication">驳回</button>
+        <button class="approve-btn" bindtap="approveApplication">通过</button>
+      </view>
+      <view wx:else class="modal-footer single">
+        <button class="close-btn-footer" bindtap="closeDetail">关闭</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -207,7 +207,7 @@ Page({
       } else {
         wx.redirectTo({ url: `/pages/product/detail/index?id=${product.id}` })
       }
-    }).catch(() => wx.showToast({ title: '商品保存失败，请稍后重试', icon: 'none' }))
+    }).catch((err) => wx.showToast({ title: (err && err.message) || '商品保存失败，请稍后重试', icon: 'none' }))
   },
   goCreditDetail() {
     wx.navigateTo({ url: '/pages/mine/credit/index' })

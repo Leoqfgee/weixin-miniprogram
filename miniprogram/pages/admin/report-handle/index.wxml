@@ -7,13 +7,17 @@
   <scroll-view scroll-x class="tabs"><view class="tabs-inner">
     <view wx:for="{{tabs}}" wx:key="value" class="tab {{index === activeIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="switchTab">{{item.label}}</view>
   </view></scroll-view>
+  <scroll-view scroll-x class="tabs"><view class="tabs-inner">
+    <view wx:for="{{typeTabs}}" wx:key="value" class="tab {{index === activeTypeIndex ? 'active' : ''}}" data-index="{{index}}" bindtap="switchType">{{item.label}}</view>
+  </view></scroll-view>
 
   <view wx:if="{{reports.length}}" class="list">
     <view wx:for="{{reports}}" wx:key="id" class="panel report-item">
-      <image class="thumb" src="{{item.product_image}}" mode="aspectFill"></image>
+      <image wx:if="{{item.target_type !== 'user'}}" class="thumb" src="{{item.product_image}}" mode="aspectFill"></image>
+      <view wx:else class="thumb user-thumb">用户</view>
       <view class="main">
-        <view class="row"><view class="title small">{{item.product_title_snapshot}}</view><status-badge type="report" status="{{item.status}}"></status-badge></view>
-        <view class="muted">卖家：{{item.seller_nickname_snapshot}} · 举报人：{{item.reporter_nickname_snapshot}}</view>
+        <view class="row"><view class="title small">{{item.target_title}}</view><status-badge type="report" status="{{item.status}}"></status-badge></view>
+        <view class="muted">{{item.target_subtitle}} · 举报人：{{item.reporter.nickname || item.reporter_nickname_snapshot}}</view>
         <view class="muted">原因：{{item.reason_text}} · {{item.created_at_text}}</view>
         <button class="ghost-btn detail-btn" data-id="{{item.id}}" bindtap="viewDetail">查看详情</button>
       </view>
@@ -24,9 +28,11 @@
   <view wx:if="{{selected}}" class="detail-mask">
     <view class="detail-panel">
       <view class="detail-head"><view class="section-title">举报详情</view><text bindtap="closeDetail">关闭</text></view>
-      <view class="product-line"><image class="thumb" src="{{selected.product_image}}" mode="aspectFill"></image><view><view class="text-strong">{{selected.product_title_snapshot}}</view><view class="muted">状态：{{selected.status_text}}</view></view></view>
-      <view class="kv"><text>卖家</text><view>{{selected.seller_nickname_snapshot}} · 信用分 {{selected.seller.credit_score}}</view></view>
-      <view class="kv"><text>举报人</text><view>{{selected.reporter_nickname_snapshot}} · 信用分 {{selected.reporter.credit_score}}</view></view>
+      <view class="kv"><text>举报类型</text><view>{{selected.target_type_text}}</view></view>
+      <view class="kv"><text>被举报对象</text><view>{{selected.target_title}}</view></view>
+      <view wx:if="{{selected.target_type === 'user'}}" class="kv"><text>当前信用分</text><view>{{selected.target_user.credit_score}}</view></view>
+      <view wx:else class="kv"><text>卖家信用分</text><view>{{selected.seller.credit_score}}</view></view>
+      <view class="kv"><text>举报人</text><view>{{selected.reporter.nickname || selected.reporter_nickname_snapshot}} · 信用分 {{selected.reporter.credit_score}}</view></view>
       <view class="kv"><text>举报原因</text><view>{{selected.reason_text}}</view></view>
       <view class="kv"><text>补充说明</text><view>{{selected.description || '未填写'}}</view></view>
       <view class="block-title">凭证图片</view>

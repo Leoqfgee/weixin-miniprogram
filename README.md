@@ -31,9 +31,16 @@ WECHAT_APPID=你的小程序 AppID
 WECHAT_SECRET=你的小程序 AppSecret
 DEV_TEST_LOGIN_ENABLED=1
 INIT_TOKEN=你的初始化口令
+AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+AI_TIMEOUT_SECONDS=30
+DASHSCOPE_API_KEY=你的 DashScope API Key
+AI_SEARCH_ENABLED=false
+AI_SEARCH_MODEL=qwen-plus
 ```
 
 `STORAGE_BACKEND=cos` 时，如果 COS 配置缺失，后端会直接报错，不会自动退回本地 `uploads`。
+
+`AI_SEARCH_ENABLED=true` 且 `DASHSCOPE_API_KEY` 配置完整时，搜索页的 AI 智搜会调用真实大模型；未配置或调用失败时只回退普通搜索，不返回 mock 结果。
 
 ## 小程序合法域名
 
@@ -78,6 +85,50 @@ DELETE /api/v1/favorites/{product_id}
 ```
 
 未登录时，小程序会引导到登录页。
+
+## 搜索与 AI 智搜
+
+搜索页统一使用真实后端接口：
+
+```text
+GET /api/v1/search?q=关键词&type=all&ai=0
+GET /api/v1/search?q=水果&type=all&ai=1
+GET /api/v1/search?q=神秘黄色生物&type=all&ai=1
+```
+
+- 商品搜索和用户搜索仍共用同一个搜索页；`type=all` 会同时返回 `products` 和 `users`。
+- 普通搜索保留标题、描述关键词匹配，用户搜索仍按昵称、用户名、手机号、校区、学校、实名等字段检索。
+- 开启 AI 智搜后，后端先从数据库读取当前真实在售商品候选，再把用户搜索词和候选列表发送给 AI。
+- AI 只能返回候选列表中已经存在的商品 `id`，不能编造商品名，不能返回数据库不存在的商品。
+- 后端会再次校验 AI 返回的 `matched_product_ids`，只查询真实在售商品详情并与普通搜索结果合并去重。
+- 排序规则为：标题精确命中优先，其次普通关键词命中，再其次 AI 语义召回，最后参考浏览量、收藏量和发布时间。
+- AI 未启用、未配置、超时或返回格式异常时，会回退普通搜索，接口不报错、不返回 mock 数据。
+
+AI 智搜支持类目语义、描述性搜索和模糊意图搜索。例如数据库存在“荔枝”“红毛丹”时，搜索“水果”“吃的”可以由 AI 从当前候选中召回；存在“奶龙”“小黄鸭”“皮卡丘”等商品时，搜索“神秘黄色生物”“黄色鸭子玩具”“黄色电气老鼠”也可以按标题、描述、分类和常识语义匹配。最终展示结果仍然全部来自数据库真实商品。
+
+## 信用、认证与内容治理
+
+近期新增的用户治理能力都走真实后端数据，不在前端硬编码状态：
+
+```text
+GET /api/v1/users/me/credit
+GET /api/v1/users/me/credit/records
+POST /api/v1/student-verifications
+GET /api/v1/users/{user_id}/verification-status
+GET /api/v1/admin/student-verifications
+POST /api/v1/admin/student-verifications/{id}/review
+POST /api/v1/reports
+GET /api/v1/admin/reports
+POST /api/v1/admin/reports/{id}/handle
+GET /api/v1/admin/content-block-records
+GET /api/v1/admin/banned-words
+```
+
+- 信用分会影响发布、聊天等关键动作；举报成立、管理员调整等会写入信用记录，并通过消息通知相关用户。
+- 学生认证支持用户提交学校、姓名、学号和证件图片，管理员审核通过后个人主页、搜索结果和首页推荐用户会展示认证状态。
+- 举报支持商品举报和用户举报；管理员处理举报时可以判定成立、驳回或恶意举报，并按规则扣减信用分。
+- 内容审核覆盖商品、聊天、评价、举报描述和昵称等文本；本地违禁词规则始终可用，AI 内容审核需要配置 `CONTENT_AI_MODERATION_ENABLED=true` 和 `DASHSCOPE_API_KEY`。
+- 小程序新增页面包括 `pages/search/index`、`pages/mine/credit/index`、`pages/student-verification/apply/index`、`pages/report/user-report/index`、`pages/admin/student-verification/index`、`pages/admin/content-moderation/index` 和 `pages/admin/credit-adjust/index`。
 
 ## UI 参考页落地说明
 

@@ -3,6 +3,7 @@
 }
 
 .profile-hero {
+  position: relative;
   margin-top: 0;
   padding: 30rpx;
   background: rgba(255, 255, 255, 0.95);
@@ -45,6 +46,33 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
+}
+
+.report-user-btn {
+  position: absolute;
+  top: 22rpx;
+  right: 22rpx;
+  width: 108rpx;
+  height: 52rpx;
+  line-height: 52rpx;
+  padding: 0;
+  color: #b42318;
+  background: #fff1f0;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.report-user-btn::after { border: 0; }
+
+.verify-badge {
+  display: inline-flex;
+  margin-left: 12rpx;
+  padding: 4rpx 10rpx;
+  color: #0f8f58;
+  background: #e8f8ef;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: 800;
 }
 .bio {
   margin-top: 10rpx;

@@ -6,6 +6,7 @@
 .tab.active { color: #fff; background: #16a06a; font-weight: 800; }
 .report-item { display: flex; gap: 18rpx; }
 .thumb { width: 132rpx; height: 132rpx; flex: none; border-radius: 8rpx; background: #eef2f5; }
+.user-thumb { display: flex; align-items: center; justify-content: center; color: #0f8f58; background: #e8f8ef; font-weight: 900; }
 .main { flex: 1; min-width: 0; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
 .detail-btn { width: 180rpx; margin: 16rpx 0 0; font-size: 24rpx; }

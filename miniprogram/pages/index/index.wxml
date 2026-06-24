@@ -1,9 +1,9 @@
 <view class="page home-page">
   <view class="home-sticky">
-  <view class="search-panel">
+  <view class="search-panel" bindtap="openSearch">
     <text class="search-icon">⌕</text>
-    <input value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜索商品名称 / 分类 / 关键词" confirm-type="search" bindconfirm="goSearch" />
-    <button class="search-btn" bindtap="goSearch">搜索</button>
+    <input value="{{keyword}}" disabled placeholder="搜索商品 / 用户 / 关键词" />
+    <button class="search-btn" catchtap="goSearch">搜索</button>
   </view>
 
   <scroll-view wx:if="{{categories.length}}" scroll-x class="category-scroll" show-scrollbar="false">
@@ -24,8 +24,22 @@
   </view>
 
   <view wx:if="{{loading}}" class="mode-loading">加载中...</view>
-  <view wx:if="{{products.length}}" class="product-list">
+  <view wx:if="{{keyword}}" class="result-tabs">
+    <view wx:for="{{resultTabs}}" wx:key="value" class="result-tab {{resultTab === item.value ? 'active' : ''}}" data-tab="{{item.value}}" bindtap="switchResultTab">{{item.label}}</view>
+  </view>
+  <view wx:if="{{resultTab === 'products' && products.length}}" class="product-list">
     <product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
   </view>
+  <view wx:elif="{{resultTab === 'users' && users.length}}" class="user-result-list">
+    <view wx:for="{{users}}" wx:key="id" class="user-result" data-id="{{item.id}}" bindtap="openUser">
+      <image wx:if="{{item.avatar_url}}" class="user-avatar" src="{{item.avatar_url}}" mode="aspectFill"></image>
+      <view wx:else class="user-avatar placeholder">同</view>
+      <view class="user-main">
+        <view class="user-name">{{item.nickname}} <text wx:if="{{item.student_verify_status === 'verified'}}" class="verify-mini">已认证</text></view>
+        <view class="muted">{{item.campus || '未填写校区'}} · 信用分 {{item.credit_score}} · 在售 {{item.on_sale_count}}</view>
+      </view>
+    </view>
+  </view>
+  <empty-state wx:elif="{{resultTab === 'users'}}" title="未找到相关用户"></empty-state>
   <empty-state wx:else title="{{emptyTitle}}"></empty-state>
 </view>

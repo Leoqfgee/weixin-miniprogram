@@ -1,21 +1,36 @@
 <view class="page profile-home-page green-page">
-<view wx:if="{{profile}}" class="profile-hero">
+  <view wx:if="{{profile}}" class="profile-hero">
+    <button wx:if="{{canReport}}" class="report-user-btn" bindtap="reportUser">举报</button>
     <image wx:if="{{profile.avatar || profile.avatar_url}}" class="avatar" src="{{profile.avatar || profile.avatar_url}}" mode="aspectFill"></image>
     <view wx:else class="avatar placeholder">{{avatarText}}</view>
     <view class="profile-main">
-      <view class="title">{{profile.nickname}}</view>
-      <view class="muted">{{profile.campus || '未填写校区'}}</view>
+      <view class="title">
+        <text>{{profile.nickname}}</text>
+        <text wx:if="{{profile.student_verified}}" class="verify-badge">已认证</text>
+      </view>
+      <view class="muted">{{profile.campus || '未填写校区'}} · {{profile.student_verify_status_text}}</view>
       <view class="bio">{{profile.bio || '这个同学还没有填写简介'}}</view>
     </view>
     <view class="stats">
       <view><text>{{profile.publish_count || 0}}</text><text>发布</text></view>
       <view><text>{{profile.deal_count || 0}}</text><text>成交</text></view>
       <view><text>{{profile.good_rate || 0}}%</text><text>好评</text></view>
-      <view><text>{{profile.credit_score || 100}}</text><text>信用</text></view>
+      <view><text>{{profile.credit_score}}</text><text>信用</text></view>
     </view>
   </view>
+
   <view class="section-title">收到的评价（{{profile.review_count || 0}}）</view>
-  <view wx:if="{{reviews.length}}" class="reviews"><view wx:for="{{reviews}}" wx:key="id" class="panel review" data-id="{{item.id}}" bindtap="viewReview"><view class="review-head"><text class="text-strong">{{item.reviewer.nickname || '校园同学'}}</text><text class="rating">{{item.rating}} 星</text></view><view class="muted">{{item.content || '未填写评价内容'}}</view></view></view>
+  <view wx:if="{{reviews.length}}" class="reviews">
+    <view wx:for="{{reviews}}" wx:key="id" class="panel review" data-id="{{item.id}}" bindtap="viewReview">
+      <view class="review-head"><text class="text-strong">{{item.reviewer.nickname || '校园同学'}}</text><text class="rating">{{item.rating}} 星</text></view>
+      <view class="muted">{{item.content || '未填写评价内容'}}</view>
+    </view>
+  </view>
   <view wx:else class="muted empty-review">暂无评价</view>
-  <view class="section-title">在售商品</view><view wx:if="{{products.length}}" class="list"><product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card></view><empty-state wx:else title="暂无在售商品"></empty-state>
+
+  <view class="section-title">在售商品</view>
+  <view wx:if="{{products.length}}" class="list">
+    <product-card wx:for="{{products}}" wx:key="id" product="{{item}}" layout="grid"></product-card>
+  </view>
+  <empty-state wx:else title="暂无在售商品"></empty-state>
 </view>
